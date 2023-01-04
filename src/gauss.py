@@ -1,6 +1,6 @@
 import math
 import numpy
-from matrix import Matrix
+from src.matrix import Matrix
 
 class Gaussograph:
     '''
