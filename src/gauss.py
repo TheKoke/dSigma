@@ -1,40 +1,44 @@
 import math
-import numpy
-from src.matrix import Matrix
+import numpy as np
+from src.spectr import Spectr
 
 class Gaussograph:
     '''
-    Takes the info from locus, and tries to
+    Takes the info, and tries to
     draw gaussian distrubution around.
     '''
 
-    def __init__(self, matrix: Matrix, ranges: tuple[float, float]) -> None:
+    def __init__(self, spectr: Spectr) -> None:
         pass
 
-    def check_to_peaks(self) -> int:
+    def get_all_peaks(self) -> list[int]:
+        pass
+
+    def calc_fwhm(self) -> np.float128:
+        pass
+
+    def calc_areas(self) -> list[np.float128]:
         pass
 
 class GaussDistrubution:
     '''
-    W(x) = 1/(sqrt(2pi * sigma^2) * exp{-(x - <x>)^2/2sigma^2)}
-    sigma -> dispersion
+    W(x) = 1/(sqrt(2pi * sigma^2) * exp{-(x - <x>)^2 / 2sigma^2)}
     sigma = sqrt(1/(N - 1) * Sum(i, N, (x(i) - <x>)^2)
+    sigma -> dispersion
     '''
-    def __init__(self, data: list[float]) -> None:
+    def __init__(self, data: np.ndarray) -> None:
         self.data = data
 
-    def arithmetic_mean(self) -> float:
-        return sum(self.data) / len(self.data)
+    def arithmetic_mean(self) -> np.float128:
+        return self.data.mean(dtype=np.float128)
 
-    def dispersion(self) -> float:
+    def dispersion(self) -> np.float128:
         mean = self.arithmetic_mean()
-        return math.sqrt(sum(map(lambda x: (x - mean) ** 2, self.data)) / (len(self.data) - 1))
 
-    def w(self, x: float) -> float:
-        constpart = 1 / math.sqrt(2 * math.pi * self.dispersion() ** 2)
-        exppart = math.exp(-1 * (x - self.arithmetic_mean() ** 2) / (2 * self.dispersion()))
+        return np.sqrt(((self.data - mean) ** 2).sum() / (len(self.data) - 1), dtype=np.float128)
+
+    def w(self) -> np.float128:
+        constpart = 1 / np.sqrt(2 * math.pi * self.dispersion() ** 2, dtype=np.float128)
+        exppart = np.exp(-1 * (self.data - self.arithmetic_mean() ** 2) / 2 * self.dispersion(), dtype=np.float128)
 
         return constpart * exppart
-
-    def probability_density(self) -> list[float]:
-        return [self.w(self.data[i]) for i in range(len(self.data))]
