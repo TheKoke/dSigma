@@ -13,7 +13,7 @@ class Spectr:
     def to_energy_view(self) -> None:
         pass
 
-    def to_chennelview(self) -> None:
+    def to_channelview(self) -> None:
         pass
     
     def calc_fwhm(self) -> np.ndarray:
@@ -26,6 +26,9 @@ class Spectr:
         pass
 
     def get_baseline(self) -> str:
+        pass
+
+    def to_workbook(self) -> str:
         pass
 
     def __peak_search(self) -> np.ndarray:
