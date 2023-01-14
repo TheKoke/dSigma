@@ -1,43 +1,37 @@
 from __future__ import annotations
 
 import numpy as np
-from matplotlib import cm
+from parsing import USBParser
 
 class Matrix:
-    RGB = 3
-    colormap_types = [
-        'plasma',
-        'inferno',
-        'virdis',
-        'magma'
-        'cividis'
-    ]
-
-    def __init__(self, path: str, colormap: str = 'plasma') -> None:
+    def __init__(self, path: str, sizes: int) -> None:
         self.path = path
-        self.colormap = colormap
+        self.sizes = sizes
 
         self.components = self.__make_matrix()
         self.dim = self.components.shape 
 
-    @property
     def rescale(self) -> np.ndarray:
         transform_const = 255 / (self.components.max() - self.components.min())
         result = self.components - self.components.min()
 
         return result * transform_const
 
-    def get_colormap_values(self, rate: int) -> list[int]:
-        if rate < 0 or rate > 255: return [0, 0, 0]
-        if rate == 0: return [255, 255, 255]
+    def bright_up(self, amount: np.uint8) -> np.ndarray:
+        pass
 
-        mapper = cm.get_cmap(self.colormap, 256).colors[:, :Matrix.RGB]
-        mapper = (mapper * 255).astype(np.uint8) 
-
-        return [mapper[rate, i] for i in range(Matrix.RGB)]
+    def bright_down(self, amount: np.uint8) -> np.ndarray:
+        pass
 
     def cut(self, dots: np.ndarray) -> Matrix:
         pass
     
     def __make_matrix(self) -> np.ndarray:
-        return np.loadtxt(self.path, dtype=np.uint8, delimiter=',').reshape(256, 256)
+        if self.path.split('.')[1] == 'usb':
+            u = USBParser(self.path, self.sizes)
+            u.set_binary(48, 4 * self.sizes ** 2 + 48, 4)
+
+            return u.generate_matrix()
+
+        if self.path.split('.')[1] == 'txt':
+            return np.loadtxt(self.path, delimiter=',')
