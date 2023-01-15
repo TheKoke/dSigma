@@ -1,17 +1,28 @@
 from PyQt5 import QtWidgets
-from PyQt5.QtWidgets import QApplication, QMainWindow
+from PyQt5.QtWidgets import *
 
-import matplotlib.pyplot as plt
 import sys
 
-def default_window() -> None:
-    app = QApplication(sys.argv)
-    wind = QMainWindow()
+class MainWindow(QMainWindow):
+    def __init__(self) -> None:
+        super().__init__()
 
-    wind.setGeometry(200, 200, 600, 800)
+        #WINDOW SETTINGS 
+        self.setFixedSize(1200, 900)
+        self.setWindowTitle('PySpectrum')
 
-    wind.show()
-    app.exec_()
+        #TAB INITIALIZING
+        self.tabs = QTabWidget(self)
+        self.tabs.setEnabled(True)
+        self.tabs.setGeometry(0, 0, 1000, 900)
 
-if __name__ == 'main':
-    default_window()
+        #BUTTONS INITIALIZING
+        file_btn = QPushButton('Open a file', self)
+        file_btn.setGeometry(1010, 10, 180, 90)
+
+
+app = QApplication(sys.argv)
+wind = MainWindow()
+
+wind.show()
+app.exec()

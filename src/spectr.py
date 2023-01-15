@@ -1,4 +1,5 @@
 import numpy as np
+from scipy.signal import find_peaks
 from src.matrix import Matrix
 
 class Gaussian:
@@ -10,6 +11,9 @@ class Gaussian:
     def __init__(self, x: np.ndarray, y: np.ndarray) -> None:
         self.x = x
         self.y = y
+
+    def __str__(self) -> str:
+        pass
 
     def peak_center(self) -> np.float64:
         return self.x[self.y.argmax()]
@@ -51,7 +55,10 @@ class Spectr:
         self.is_channelview = True
 
         self.data = self.__calc()
+        self.clean_up()
+
         self.peaks = self.__all_peaks()
+        self.gausses = self.__gaussians()
     
     def to_energy_view(self) -> None:
         pass
@@ -72,8 +79,13 @@ class Spectr:
     def to_workbook(self) -> str:
         pass
 
+    def __gaussians(self) -> np.ndarray:
+        return np.array(
+            [Gaussian(self.data[0, i - 5: i + 5], self.data[1, i - 5 : i + 5]) for i in self.peaks]
+        )
+
     def __all_peaks(self) -> np.ndarray:
-        pass
+        return np.array(find_peaks(self.data, height=100, distance=10)[0])
 
     def __calc(self) -> np.ndarray:
         result = np.array([np.arange(0, 256, 1, dtype=np.uint32), np.zeros(self.source.dim, dtype=np.uint32)])
