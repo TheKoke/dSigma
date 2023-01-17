@@ -4,7 +4,7 @@ from src.matrix import Matrix
 
 class Gaussian:
     '''
-    W(x) = 1/(sqrt(2pi * sigma) * exp{-(x - <x>)^2 / 2sigma})
+    W(x) = 1/(sqrt(2pi * sigma) * exp{-(x - <x>)^2 / 2sigma}
     sigma = sqrt(1/(N - 1) * Sum(i, N, (x(i) - <x>)^2)
     sigma -> dispersion
     '''
@@ -12,17 +12,25 @@ class Gaussian:
         self.x = x
         self.y = y
 
-    def __str__(self) -> str:
-        pass
+    def __str__(self, /, dispersion_view: bool = True, fwhm_view: bool = False) -> str:
+        func = 'G(x) = '
+
+        if dispersion_view:
+            func += f'{self.area()} / (sqrt(2pi * {self.dispersion()}) * exp(-(x - {self.peak_center()})^2 / 2{self.dispersion()})'
+
+        if fwhm_view:
+            func += f'{self.area()} / ({self.fwhm()} * sqrt(pi / 4ln(2))) * exp(- 4ln(2) * (x - {self.peak_center()}) / {self.fwhm() ** 2}))'
+
+        return func
 
     def peak_center(self) -> np.float64:
         return self.x[self.y.argmax()]
 
     def area(self) -> np.float64:
-        return self.full_width_half_might() / np.sqrt(2 * np.log(2)) \
+        return self.fwhm() / np.sqrt(2 * np.log(2)) \
             * self.max_height() * np.sqrt(np.pi / 2)
 
-    def full_width_half_might(self) -> np.float64:
+    def fwhm(self) -> np.float64:
         return self.dispersion() / (2 * np.sqrt(2 * np.log(2)))
 
     def up_shift(self) -> np.float64:
@@ -32,9 +40,9 @@ class Gaussian:
         return self.y.max()
 
     def probability(self) -> np.ndarray:
-        constant = self.area() / (self.full_width_half_might() * np.sqrt(np.pi / (4 * np.log(2))))
+        constant = self.area() / (self.fwhm() * np.sqrt(np.pi / (4 * np.log(2))))
 
-        exp_constant = -1 * (4 * np.log(2)) / (self.full_width_half_might() ** 2)
+        exp_constant = -1 * (4 * np.log(2)) / (self.fwhm() ** 2)
         array_part = (self.x - self.peak_center()) ** 2
 
         return self.up_shift() + constant * np.exp(exp_constant * array_part)
@@ -47,7 +55,15 @@ class Gaussian:
         return np.sum((self.x - mean) ** 2, dtype=np.float64) / (len(self.x) - 1)
 
 class Parabola:
-    pass
+    def __init__(self, slope: np.float64, shift: np.float64) -> None:
+        self.slope = slope
+        self.shift = shift
+
+    def __str__(self) -> str:
+        return f'y = {self.slope}sqrt({self.shift} - x)'
+
+    def values(self, *args: np.float64) -> np.ndarray:
+        return self.slope * np.sqrt(self.shift - args)
 
 class Spectr:
     def __init__(self, source: Matrix) -> None:
@@ -71,10 +87,10 @@ class Spectr:
         pass
 
     def calc_fwhm(self) -> np.ndarray:
-        pass
+        return np.select(self.gausses, Gaussian.fwhm(self.gausses))
 
     def calc_areas(self) -> np.ndarray:
-        pass
+        return np.select(self.gausses, Gaussian.area(self.gausses))
 
     def to_workbook(self) -> str:
         pass

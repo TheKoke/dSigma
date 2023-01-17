@@ -13,6 +13,11 @@ class Matrixograph(QMainWindow):
     def __init__(self) -> None:
         super().__init__()
 
+        #WINDOW SETTINGS 
+        self.setFixedSize(1200, 900)
+        self.setWindowTitle('Matrix')
+        
+        #MATPLOTLIB INITIALIZING
         self.view = FigureCanvasQTAgg(Figure(figsize=(16, 9)))
         self.axes = self.view.figure.subplots()
         self.toolbar = NavigationToolbar2QT(self.view)
