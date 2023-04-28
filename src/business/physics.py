@@ -12,7 +12,14 @@ class Nuclei:
         return deltaM[(self.charge, self.nuclons)]
 
     def mass(self, unit: str = 'MeV') -> float:
-        return self.charge * 938.27 + (self.nuclons - self.charge) * 939.57
+        if unit == 'MeV':
+            return self.charge * 938.27 + (self.nuclons - self.charge) * 939.57
+        
+        if unit == 'a.m.u.':
+            return self.charge * 1.007276467 + (self.nuclons - self.charge) * 1.008664915
+        
+        if unit == 'g':
+            return self.charge * 1.672e-24 + (self.nuclons - self.charge) * 1.675e-24
 
 
 class Reaction:
