@@ -25,3 +25,7 @@ class Matrix:
 
     def cut(self, dots: np.ndarray) -> Matrix:
         pass
+
+
+if __name__ == '__main__':
+    pass

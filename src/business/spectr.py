@@ -6,14 +6,14 @@ from physics import *
 class Spectrum:
     PEAKS_LENGTH = 10
 
-    def __init__(self, angle: float, integrator: int, misscalculation: float, data: list[int], reaction: Reaction) -> None:
+    def __init__(self, angle: float, integrator: int, misscalculation: float, data: list[int], beam: Nuclei, target: Nuclei, fragment: Nuclei, beam_energy: float) -> None:
         self.angle = angle
         self.integrator = integrator
         self.misscalculation = misscalculation
 
         self.data = np.array(data)
 
-        self.reaction = reaction
+        self.reaction = Reaction(beam, target, fragment, beam_energy, self.angle)
 
     def find_anchor_peaks(self) -> list[int]:
         first_peak = self.data.argmax()
@@ -86,9 +86,7 @@ class Cutter:
 
 
 class Analyzer:
-    def __init__(self, spectrum: Spectrum, 
-                 states: list[float],
-                 gamma_widths: list[float]) -> None:
+    def __init__(self, spectrum: Spectrum, states: list[float], gamma_widths: list[float]) -> None:
         self.spectrum = spectrum
 
         self.states = states
@@ -173,10 +171,13 @@ class Analyzer:
             return
         
         if parameter == 'center':
-            pass
+            self.gaussians[index].peak_center += val
 
         if parameter == 'area':
-            pass
+            self.gaussians[index].area += val
 
         if parameter == 'fwhm':
-            pass
+            self.gaussians[index].fwhm += val
+
+if __name__ == '__main__':
+    pass

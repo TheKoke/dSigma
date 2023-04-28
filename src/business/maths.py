@@ -1,4 +1,5 @@
 import numpy as np
+from physics import *
 from scipy.optimize import curve_fit
 
 class Gaussian:
@@ -69,14 +70,14 @@ class Parabola:
 
 
 class CrossSection:
-    def __init__(self, A: int, a: int, B: int, b: int) -> None:
+    def __init__(self, reaction: Reaction) -> None:
         '''
         cross_section for reaction
         A(a, b)B
         '''
 
-        self.A = A; self.a = a
-        self.B = B; self.b = b
+        self.A = reaction.target.nuclons; self.a = reaction.beam.nuclons
+        self.B = reaction.residual.nuclons; self.b = reaction.fragment.nuclons
 
         self.integrator_const = 1e-6
         self.norm = 1
@@ -87,12 +88,8 @@ class CrossSection:
         self.target_concentrate = 1
         self.target_thickness = 1
 
-        self.reaction_q = 0
-        self.beam_energy = 0
-
-    def set_reaction_properties(self, reaction_q: float, beam: float) -> None:
-        self.reaction_q = reaction_q
-        self.beam_energy = beam
+        self.reaction_q = reaction.reaction_quit()
+        self.beam_energy = reaction.beam_energy
 
     def set_geometrical_parameters(self, distance: float, collimator_radius: float) -> None:
         self.distance = distance
