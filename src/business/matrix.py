@@ -6,7 +6,7 @@ from parsing import USBParser
 class Matrix:
     def __init__(self, parser: USBParser) -> None:
         self.angle = parser.get_angle()
-        self.integrator_count = parser.get_integrator_parameters()
+        self.integrator_count = parser.get_integrator_counts()
         self.misscalculation = parser.get_misscalculation()
 
         self.numbers = parser.get_matrix()
