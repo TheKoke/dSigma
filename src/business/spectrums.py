@@ -6,22 +6,31 @@ from physics import *
 class Spectrum:
     PEAKS_LENGTH = 10
 
-    def __init__(self, angle: float, integrator: int, misscalculation: float, data: list[int], beam: Nuclei, target: Nuclei, fragment: Nuclei, beam_energy: float) -> None:
+    def __init__(self, reaction: Reaction, angle: float, integrator: int, misscalculation: float, data: list[int]) -> None:
+        self.reaction = reaction
+
         self.angle = angle
         self.integrator = integrator
         self.misscalculation = misscalculation
 
         self.data = np.array(data)
 
-        self.reaction = Reaction(beam, target, fragment, beam_energy, self.angle)
+        self.__check_angles()
+
+    def __check_angles(self) -> None:
+        if self.reaction.fragment_angle != self.angle:
+            self.reaction.fragment_angle = self.angle
 
     def find_anchor_peaks(self) -> list[int]:
         first_peak = self.data.argmax()
-        second_peak = np.hstack([self.data[:first_peak - 5], self.data[first_peak + 6:]]).argmax()
+        second_peak = np.hstack([
+            self.data[:first_peak - self.PEAKS_LENGTH // 2], 
+            self.data[first_peak + self.PEAKS_LENGTH // 2 + 1:]
+            ]).argmax()
 
         first_peak += 1
         if second_peak >= first_peak:
-            second_peak += 12
+            second_peak += self.PEAKS_LENGTH + 2
         else:
             second_peak += 1
 

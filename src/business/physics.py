@@ -42,7 +42,7 @@ class Reaction:
         self.residual = self.__residual_nuclei()
 
         self.beam_energy = beam_energy
-        self.angle = angle * np.pi / 180
+        self.fragment_angle = angle * np.pi / 180
 
     def __residual_nuclei(self) -> Nuclei:
         nuclon = (self.beam.nuclons + self.target.nuclons) - self.fragment.nuclons
@@ -53,19 +53,59 @@ class Reaction:
         q0 = (self.beam.mass_excess + self.target.mass_excess) - (self.fragment.mass_excess + self.residual.mass_excess)
         return q0 - residual_state
     
-    def fragment_energy(self, residual_state: float) -> float:
-        r = self.r_const()
-        s = self.s_const(residual_state)
+    @staticmethod
+    def __r_factor(beam_mass: float, beam_energy: float, instance_mass: float, partner_mass: float, angle: float) -> float:
+        numerator = np.sqrt(beam_mass * instance_mass * beam_energy) * np.cos(angle)
+        return numerator / (instance_mass + partner_mass)
+
+    @staticmethod
+    def __s_factor(beam_mass: float, beam_energy: float, instance_mass: float, partner_mass: float, reaction_quit: float) -> float:
+        numerator = beam_energy * (partner_mass - beam_mass) + partner_mass * reaction_quit
+        return numerator / (instance_mass + partner_mass)
+    
+    def fragment_energy(self, residual_state: float) -> np.ndarray:
+        r = Reaction.__r_factor(
+            self.beam.mass(), 
+            self.beam_energy, 
+            self.fragment.mass(), 
+            self.residual.mass(), 
+            self.fragment_angle
+        )
+
+        s = Reaction.__s_factor(
+            self.beam.mass(), 
+            self.beam_energy, 
+            self.fragment.mass(), 
+            self.residual.mass(), 
+            self.reaction_quit(residual_state)
+        )
 
         return (r + np.sqrt(r ** 2 + s)) ** 2
+    
+    def residual_angle(self, residual_state: float) -> float:
+        fragment_ears = self.fragment_energy(residual_state)
+        energy_relation = np.sqrt(self.beam.mass() * self.beam_energy / (self.fragment.mass() * fragment_ears))
 
-    def r_const(self) -> float:
-        numerator = np.sqrt(self.beam.mass() * self.fragment.mass() * self.beam_energy) * np.cos(self.angle)
-        return numerator / (self.fragment.mass() + self.residual.mass())
+        return np.pi / 2 - np.arctan((energy_relation - np.cos(self.fragment_angle)) / np.sin(self.fragment_angle))
+    
+    def residual_energy(self, residual_state: float) -> np.ndarray:
+        r = Reaction.__r_factor(
+            self.beam.mass(),
+            self.beam_energy, 
+            self.residual.mass(),
+            self.fragment.mass(),
+            self.residual_angle(residual_state)
+        )
 
-    def s_const(self, residual_state: float) -> float:
-        numerator = self.beam_energy * (self.residual.mass() - self.beam.mass()) + self.residual.mass() * self.reaction_quit(residual_state)
-        return numerator / (self.fragment.mass() + self.residual.mass())
+        s = Reaction.__s_factor(
+            self.beam.mass(),
+            self.beam_energy,
+            self.residual.mass(),
+            self.fragment.mass(),
+            self.reaction_quit(residual_state)
+        )
+
+        return (r + np.sqrt(r ** 2 + s)) ** 2
 
     #TODO: implement this method. Note: minimalizing the energy
     def residual_collapse(self) -> tuple[Nuclei, Nuclei]:
