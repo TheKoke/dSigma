@@ -1,13 +1,15 @@
-from __future__ import annotations
-
 import numpy as np
 from parsing import USBParser
+from spectrums import Spectrum
 
 class Matrix:
     def __init__(self, parser: USBParser) -> None:
         self.angle = parser.get_angle()
-        self.integrator_count = parser.get_integrator_parameters()
+        self.integrator_count = parser.get_integrator_counts()
         self.misscalculation = parser.get_misscalculation()
+
+        self.locuses = parser.take_locuses()
+        self.reactions = parser.take_all_reactions()
 
         self.numbers = parser.get_matrix()
 
@@ -23,7 +25,10 @@ class Matrix:
     def bright_down(self, amount: int) -> np.ndarray:
         pass
 
-    def cut(self, dots: np.ndarray) -> Matrix:
+    def cut(self) -> np.ndarray:
+        pass
+
+    def generate_locus_spectrum(self, locus: str) -> Spectrum:
         pass
 
 
