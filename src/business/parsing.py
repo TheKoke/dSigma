@@ -19,6 +19,7 @@ TARGET_NAME = lambda length, width: (MATRIX_START + length * width * 4 + 33, 5)
 DETECTOR_ANGLE = lambda length, width: (MATRIX_START + length * width * 4 + 82, 4)
 DE_THICKNESS = lambda length, width: (MATRIX_START + length * width * 4 + 86, 4)
 LOCUSES_START = lambda length, width: length * width * 4 + 114
+POSSIBLE_LOCUSES = ['p', 'd', 't', 'he-3', 'he-4']
 
 BITES_PER_BYTE = 8
 
@@ -41,14 +42,25 @@ class ReactionParser:
     def __init__(self, path: str) -> None:
         self.path = path
 
+    def all_reactions(self) -> list[Reaction]:
+        pass
+
+    def take_reaction(self, locus: str) -> Reaction:
+        pass
+
+    def parse_beam(self) -> Nuclei:
+        pass
+
+    def parse_target(self) -> Nuclei:
+        pass 
+
 
 class USBParser:
     def __init__(self, path: str) -> None:
         self.path = path
         self.reactor = ReactionParser(path)
 
-    def generate_lab_report(self) -> str:
-        pass
+        self.sizes = self.find_out_sizes()
 
     def find_out_sizes(self) -> tuple[int, int]:
         buffer = open(self.path, 'rb').read()
@@ -57,49 +69,35 @@ class USBParser:
 
         return (e_channels, de_channels)
     
-    def def_matrix_end(self) -> int:
-        sizes = self.find_out_sizes()
-        return MATRIX_START + sizes[0] * sizes[1] * 4
-
     def get_matrix(self) -> np.ndarray:
-        sizes = self.find_out_sizes()
-
         buffer = open(self.path, 'rb').read()
         temp = []
-        for i in range(MATRIX_START, MATRIX_START + sizes[0] * sizes[1], 4):
+        for i in range(MATRIX_START, MATRIX_START + self.sizes[0] * self.sizes[1], 4):
             temp.append(int(buffer[i]))
 
         temp = np.array(temp)
-
-        return temp.reshape(sizes[1], sizes[0])
+        return temp.reshape(self.sizes[1], self.sizes[0])
 
     def get_angle(self) -> float:
-        sizes = self.find_out_sizes()
         buffer = open(self.path, 'rb').read()
 
-        coordinates = DETECTOR_ANGLE(sizes[0], sizes[1])
+        coordinates = DETECTOR_ANGLE(self.sizes[0], self.sizes[1])
         integer_value = binary_sum(buffer, coordinates[0], coordinates[1])
 
         return binary_to_float(bin(integer_value))
 
     def get_integrator_counts(self) -> int:
         buffer = open(self.path, 'rb').read()
-        return int(buffer[INTEGRATOR])
+        return binary_sum(buffer, INTEGRATOR[0], INTEGRATOR[1])
 
     def get_misscalculation(self) -> int:
         buffer = open(self.path, 'rb').read()
-        return int(buffer[CONGRUENCE])
-    
-    def take_all_reactions(self) -> list[Reaction]:
-        pass
-
-    def target_properties(self) -> dict[str, float]:
-        pass
+        return binary_sum(buffer, CONGRUENCE[0], CONGRUENCE[1])
 
     def take_locuses(self) -> dict[str, list[tuple[int, int]]]:
         pass
 
 
 if __name__ == '__main__':
-    usb = USBParser("E:\\Данные по Win EDE\\Win EdE to Python\\9Be d_14MeV_38BT_A1.usb")
-    print(usb.get_angle())
+    usb = USBParser("D:\\Данные по Win EDE\\Win EdE to Python\\9Be d_14MeV_38BT_A1.usb")
+    print(usb.get_integrator_counts())
