@@ -3,7 +3,7 @@ import numpy as np
 from physics import Nuclei, Reaction
 
 # Binary coordinates
-E_SIZE = (0, 2)
+E_SIZE = (0, 2) # (start, size)
 DE_SIZE = (2, 2)
 TIMER = (4, 4)
 FULLTIME = (8, 4)
@@ -18,10 +18,11 @@ INTEGRATOR_CONST = lambda length, width: (MATRIX_START + length * width * 4 + 29
 TARGET_NAME = lambda length, width: (MATRIX_START + length * width * 4 + 33, 5)
 DETECTOR_ANGLE = lambda length, width: (MATRIX_START + length * width * 4 + 82, 4)
 DE_THICKNESS = lambda length, width: (MATRIX_START + length * width * 4 + 86, 4)
-LOCUSES_START = lambda length, width: length * width * 4 + 114
+LOCUSES_START = lambda length, width: MATRIX_START + length * width * 4 + 115
 POSSIBLE_LOCUSES = ['p', 'd', 't', 'he-3', 'he-4']
 
 BITES_PER_BYTE = 8
+INTEGER_BINARY_SIZE = 4
 
 
 def generate_binary_string(number: int) -> str:
@@ -49,10 +50,18 @@ class ReactionParser:
         pass
 
     def parse_beam(self) -> Nuclei:
-        pass
+        name = ''
+        buffer = open(self.path, 'rb').read()
+
+        for i in range(BEAM_NAME()[1]):
+            pass
 
     def parse_target(self) -> Nuclei:
-        pass 
+        name = ''
+        buffer = open(self.path, 'rb').read()
+
+        for i in range(TARGET_NAME()[1]):
+            pass
 
 
 class USBParser:
@@ -72,7 +81,7 @@ class USBParser:
     def get_matrix(self) -> np.ndarray:
         buffer = open(self.path, 'rb').read()
         temp = []
-        for i in range(MATRIX_START, MATRIX_START + self.sizes[0] * self.sizes[1], 4):
+        for i in range(MATRIX_START, MATRIX_START + self.sizes[0] * self.sizes[1], INTEGER_BINARY_SIZE):
             temp.append(int(buffer[i]))
 
         temp = np.array(temp)
@@ -95,9 +104,33 @@ class USBParser:
         return binary_sum(buffer, CONGRUENCE[0], CONGRUENCE[1])
 
     def take_locuses(self) -> dict[str, list[tuple[int, int]]]:
-        pass
+        result = dict()
+        buffer = open(self.path, 'rb').read()
+
+        current_locus_start = LOCUSES_START(self.sizes[0], self.sizes[1])
+        for locus in POSSIBLE_LOCUSES:
+            current_size = binary_sum(buffer, current_locus_start, INTEGER_BINARY_SIZE)
+            current_locus_start += INTEGER_BINARY_SIZE
+
+            result[locus] = self.accumulate_locus(current_size, current_locus_start)
+            
+            current_locus_start += 2 * INTEGER_BINARY_SIZE * current_size
+
+        return result
+    
+    def accumulate_locus(self, size: int, start: int) -> list[tuple[int, int]]:
+        buffer = open(self.path, 'rb').read()
+
+        locus_positions = []
+        for i in range(size - 1):
+            locus_positions.append((
+                binary_sum(buffer, start + 8 * i, INTEGER_BINARY_SIZE), 
+                binary_sum(buffer, start + 8 * i + INTEGER_BINARY_SIZE, INTEGER_BINARY_SIZE)
+            ))
+
+        return locus_positions
 
 
 if __name__ == '__main__':
-    usb = USBParser("D:\\Данные по Win EDE\\Win EdE to Python\\9Be d_14MeV_38BT_A1.usb")
-    print(usb.get_integrator_counts())
+    usb = USBParser("D:\\Данные по Win EDE\\Win EdE to Python\\Li7+d14_2017_BT_54_b_4.usb")
+    print(usb.take_locuses())

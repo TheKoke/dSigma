@@ -1,6 +1,6 @@
 import numpy as np
 from maths import *
-from physics import *
+from physics import Reaction
 
 
 class Spectrum:
