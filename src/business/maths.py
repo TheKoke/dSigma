@@ -1,5 +1,5 @@
 import numpy as np
-from physics import *
+from physics import Reaction
 from scipy.optimize import curve_fit
 
 class Gaussian:
