@@ -14,6 +14,10 @@ MASS_EXCESSES = {
 }
 
 
+def nuclei_from_name(name: str) -> tuple[int, int]:
+    pass
+
+
 class Nuclei:
     def __init__(self, nuclons: int, charge: int) -> None:
         self.nuclons = nuclons

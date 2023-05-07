@@ -1,6 +1,6 @@
 import struct
 import numpy as np
-from physics import Nuclei, Reaction
+from physics import *
 
 # Binary coordinates
 E_SIZE = (0, 2) # (start, size)
@@ -40,36 +40,45 @@ def binary_sum(buffer: bytes, start: int, size: int) -> int:
 
 
 class ReactionParser:
-    def __init__(self, path: str) -> None:
+    def __init__(self, path: str, matrix_sizes: tuple[int, int]) -> None:
         self.path = path
+        self.matrix_sizes = matrix_sizes
 
     def all_reactions(self) -> list[Reaction]:
         pass
 
     def take_reaction(self, locus: str) -> Reaction:
-        pass
+        beam = self.parse_beam()
+        target = self.parse_target()
 
     def parse_beam(self) -> Nuclei:
-        name = ''
         buffer = open(self.path, 'rb').read()
-
-        for i in range(BEAM_NAME()[1]):
-            pass
+        binary_coordinates = BEAM_NAME(self.matrix_sizes[0], self.matrix_sizes[1])
+        
+        name = self.__parsing_str(buffer, binary_coordinates[0], binary_coordinates[1]).replace(' ', '')
+        return Nuclei(nuclei_from_name(name)[0], nuclei_from_name(name)[1])
 
     def parse_target(self) -> Nuclei:
-        name = ''
         buffer = open(self.path, 'rb').read()
+        binary_coordinates = TARGET_NAME(self.matrix_sizes[0], self.matrix_sizes[1])
 
-        for i in range(TARGET_NAME()[1]):
-            pass
+        name = self.__parsing_str(buffer, binary_coordinates[0], binary_coordinates[1]).replace(' ', '')
+        return Nuclei(nuclei_from_name(name)[0], nuclei_from_name(name)[1])
+    
+    def __parsing_str(self, buffer: bytes, binary_start: int, binary_size: int) -> str:
+        collected = ''
+        for i in range(binary_start, binary_start + binary_size):
+            collected += chr(buffer[i])
+
+        return collected
 
 
 class USBParser:
     def __init__(self, path: str) -> None:
         self.path = path
-        self.reactor = ReactionParser(path)
-
         self.sizes = self.find_out_sizes()
+
+        self.reactor = ReactionParser(path, self.sizes)
 
     def find_out_sizes(self) -> tuple[int, int]:
         buffer = open(self.path, 'rb').read()
@@ -128,9 +137,16 @@ class USBParser:
                 binary_sum(buffer, start + 8 * i + INTEGER_BINARY_SIZE, INTEGER_BINARY_SIZE)
             ))
 
-        return locus_positions
+        return USBParser.to_matrix_indexes(locus_positions)
+    
+    @staticmethod
+    def to_matrix_indexes(points: list[tuple[int, int]]) -> list[tuple[int, int]]:
+        WINEDE_WINDOW_ZOOM = 2
+        WINEDE_WINDOW_SHIFT = 604
+
+        return [(point[0] // WINEDE_WINDOW_ZOOM, (WINEDE_WINDOW_SHIFT - point[1]) // WINEDE_WINDOW_ZOOM) for point in points]
 
 
 if __name__ == '__main__':
-    usb = USBParser("D:\\Данные по Win EDE\\Win EdE to Python\\Li7+d14_2017_BT_54_b_4.usb")
-    print(usb.take_locuses())
+    usb = USBParser("C:\\Users\\Damir\\Desktop\\.phys\\Данные по Win EDE\\Win EdE to Python\\9Be d_14MeV_38BT_1.usb")
+    print(usb.reactor.parse_target())
