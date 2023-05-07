@@ -9,17 +9,11 @@ class Spectrum:
     def __init__(self, reaction: Reaction, angle: float, integrator: int, misscalculation: float, data: list[int]) -> None:
         self.reaction = reaction
 
-        self.angle = angle
+        self.angle = reaction.fragment_angle
         self.integrator = integrator
         self.misscalculation = misscalculation
 
         self.data = np.array(data)
-
-        self.__check_angles()
-
-    def __check_angles(self) -> None:
-        if self.reaction.fragment_angle != self.angle:
-            self.reaction.fragment_angle = self.angle
 
     def find_anchor_peaks(self) -> list[int]:
         first_peak = self.data.argmax()
