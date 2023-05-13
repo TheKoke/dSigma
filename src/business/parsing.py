@@ -56,33 +56,30 @@ class ReactionParser:
         return Reaction(beam, target, fragment, self.get_beam_energy, self.get_angle())
 
     def parse_beam(self) -> Nuclei:
-        buffer = open(self.path, 'rb').read()
-        binary_coordinates = BEAM_NAME(self.matrix_sizes[0], self.matrix_sizes[1])
-        
-        name = self.__parsing_str(buffer, binary_coordinates[0], binary_coordinates[1])
-        return Nuclei(nuclei_from_name(name)[0], nuclei_from_name(name)[1])
+        return self.__parsing_nucleis(BEAM_NAME)
 
     def parse_target(self) -> Nuclei:
+        return self.__parsing_nucleis(TARGET_NAME)
+    
+    def get_angle(self) -> float:
+        coordinates = DETECTOR_ANGLE(self.matrix_sizes[0], self.matrix_sizes[1])
+        return self.__parsing_float(coordinates[0], coordinates[1])
+    
+    def get_beam_energy(self) -> float:
+        coordinates = BEAM_ENERGY(self.matrix_sizes[0], self.matrix_sizes[1])
+        return self.__parsing_float(coordinates[0], coordinates[1])
+    
+    def __parsing_nucleis(self, position: function) -> Nuclei:
         buffer = open(self.path, 'rb').read()
-        binary_coordinates = TARGET_NAME(self.matrix_sizes[0], self.matrix_sizes[1])
+        binary_coordinates = position(self.matrix_sizes[0], self.matrix_sizes[1])
 
         name = self.__parsing_str(buffer, binary_coordinates[0], binary_coordinates[1])
         return Nuclei(nuclei_from_name(name)[0], nuclei_from_name(name)[1])
     
-    def get_angle(self) -> float:
+    def __parsing_float(self, binary_start: int, binary_size: int) -> float:
         buffer = open(self.path, 'rb').read()
 
-        coordinates = DETECTOR_ANGLE(self.sizes[0], self.sizes[1])
-        integer_value = binary_sum(buffer, coordinates[0], coordinates[1])
-
-        return binary_to_float(bin(integer_value))
-    
-    def get_beam_energy(self) -> float:
-        buffer = open(self.path, 'rb').read()
-
-        coordinates = BEAM_ENERGY(self.matrix_sizes[0], self.matrix_sizes[1])
-        integer_value = binary_sum(buffer, coordinates[0], coordinates[1])
-
+        integer_value = binary_sum(buffer, binary_start, binary_size)
         return binary_to_float(bin(integer_value))
     
     def __parsing_str(self, buffer: bytes, binary_start: int, binary_size: int) -> str:
@@ -143,16 +140,16 @@ class USBParser:
         buffer = open(self.path, 'rb').read()
 
         locus_positions = []
-        for i in range(size - 1):
+        for i in range(size):
             locus_positions.append((
                 binary_sum(buffer, start + 8 * i, INTEGER_BINARY_SIZE), 
                 binary_sum(buffer, start + 8 * i + INTEGER_BINARY_SIZE, INTEGER_BINARY_SIZE)
             ))
 
-        return USBParser.to_matrix_indexes(locus_positions)
+        return USBParser.to_cartesian(locus_positions)
     
     @staticmethod
-    def to_matrix_indexes(points: list[tuple[int, int]]) -> list[tuple[int, int]]:
+    def to_cartesian(points: list[tuple[int, int]]) -> list[tuple[int, int]]:
         WINEDE_WINDOW_ZOOM = 2
         WINEDE_WINDOW_SHIFT = 604
 
@@ -165,5 +162,4 @@ class USBParser:
 
 
 if __name__ == '__main__':
-    usb = USBParser("C:\\Users\\Damir\\Desktop\\.phys\\Данные по Win EDE\\Win EdE to Python\\Li7+d14_2017_BT_54_b_4.usb")
-    print(usb.reactor.parse_beam())
+    pass

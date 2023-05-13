@@ -1,13 +1,13 @@
 import numpy as np
 from parsing import *
-from spectrums import Spectrum
+from spectrums import *
 
 
 def rescale(numbers: np.ndarray) -> np.ndarray:
-    transform_const = 255 / (numbers.max() - numbers.min())
+    transform_cost = 255 / (numbers.max() - numbers.min())
     result = numbers - numbers.min()
 
-    return result * transform_const
+    return result * transform_cost
 
 
 class Locus:
@@ -32,7 +32,7 @@ class Locus:
         return [dEmin, dEmax, Emin, Emax]
     
     def cut_rectangle(self) -> np.ndarray:
-        return self.matrix[self.boundaries[0]: self.boundaries[1], self.boundaries[2]: self.boundaries[3]]
+        return self.matrix[self.boundaries[2]: self.boundaries[3], self.boundaries[0]: self.boundaries[1]]
     
     def cut_locus_shape(self) -> list[list[int]]:
         pass
@@ -53,8 +53,8 @@ class Matrix:
         return rescale(self.numbers - amount)
     
     def generate_all_locuses(self) -> list[Locus]:
-        locuses = self.parser.take_locuses()
-        return [Locus(particle, self.numbers, locuses[particle]) for particle in locuses]
+        particles = self.parser.take_locuses()
+        return [Locus(particle, self.numbers, particles[particle]) for particle in particles]
 
     def generate_locus_spectrum(self, particle: str) -> Spectrum:
         if particle not in self.parser.take_locuses():
