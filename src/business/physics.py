@@ -14,8 +14,36 @@ MASS_EXCESSES = {
 }
 
 
+
+def match_charge_by_name(name: str) -> int:
+    match name:
+        case 'h' | 'p' | 'd' | 't': return 1
+        case 'he': return 2
+        case 'li': return 3
+        case 'be': return 4
+        case 'b': return 5
+        case 'c': return 6
+        case 'n': return 7
+        case 'o': return 8
+        case 'f': return 9
+        case _: return -1
+
+def nuclons_from_name(name: str) -> int:
+    pretend = ''
+    for i in name:
+        if i.isdigit():
+            pretend += i
+
+    return int(pretend)
+
 def nuclei_from_name(name: str) -> tuple[int, int]:
-    pass
+    name = name.lower()
+
+    if name in ['p', 'd', 't']:
+        return (['p', 'd', 't'].index(name) + 1, match_charge_by_name(name))
+    
+    nuclons = nuclons_from_name(name)
+    return (nuclons, match_charge_by_name(name.replace(f'{nuclons}', '')))
 
 
 class Nuclei:

@@ -1,6 +1,6 @@
 import struct
 import numpy as np
-from physics import *
+from business.physics import *
 
 # Binary coordinates
 E_SIZE = (0, 2) # (start, size)
@@ -45,32 +45,49 @@ class ReactionParser:
         self.matrix_sizes = matrix_sizes
 
     def all_reactions(self) -> list[Reaction]:
-        pass
+        return [self.take_reaction(locus) for locus in POSSIBLE_LOCUSES]
 
     def take_reaction(self, locus: str) -> Reaction:
         beam = self.parse_beam()
         target = self.parse_target()
 
+        fragment = nuclei_from_name(locus)
+
+        return Reaction(beam, target, fragment, self.get_beam_energy, self.get_angle())
+
     def parse_beam(self) -> Nuclei:
-        buffer = open(self.path, 'rb').read()
-        binary_coordinates = BEAM_NAME(self.matrix_sizes[0], self.matrix_sizes[1])
-        
-        name = self.__parsing_str(buffer, binary_coordinates[0], binary_coordinates[1]).replace(' ', '')
-        return Nuclei(nuclei_from_name(name)[0], nuclei_from_name(name)[1])
+        return self.__parsing_nucleis(BEAM_NAME)
 
     def parse_target(self) -> Nuclei:
+        return self.__parsing_nucleis(TARGET_NAME)
+    
+    def get_angle(self) -> float:
+        coordinates = DETECTOR_ANGLE(self.matrix_sizes[0], self.matrix_sizes[1])
+        return self.__parsing_float(coordinates[0], coordinates[1])
+    
+    def get_beam_energy(self) -> float:
+        coordinates = BEAM_ENERGY(self.matrix_sizes[0], self.matrix_sizes[1])
+        return self.__parsing_float(coordinates[0], coordinates[1])
+    
+    def __parsing_nucleis(self, position) -> Nuclei:
         buffer = open(self.path, 'rb').read()
-        binary_coordinates = TARGET_NAME(self.matrix_sizes[0], self.matrix_sizes[1])
+        binary_coordinates = position(self.matrix_sizes[0], self.matrix_sizes[1])
 
-        name = self.__parsing_str(buffer, binary_coordinates[0], binary_coordinates[1]).replace(' ', '')
+        name = self.__parsing_str(buffer, binary_coordinates[0], binary_coordinates[1])
         return Nuclei(nuclei_from_name(name)[0], nuclei_from_name(name)[1])
+    
+    def __parsing_float(self, binary_start: int, binary_size: int) -> float:
+        buffer = open(self.path, 'rb').read()
+
+        integer_value = binary_sum(buffer, binary_start, binary_size)
+        return binary_to_float(bin(integer_value))
     
     def __parsing_str(self, buffer: bytes, binary_start: int, binary_size: int) -> str:
         collected = ''
         for i in range(binary_start, binary_start + binary_size):
             collected += chr(buffer[i])
 
-        return collected
+        return collected.replace(' ', '')
 
 
 class USBParser:
@@ -95,14 +112,6 @@ class USBParser:
 
         temp = np.array(temp)
         return temp.reshape(self.sizes[1], self.sizes[0])
-
-    def get_angle(self) -> float:
-        buffer = open(self.path, 'rb').read()
-
-        coordinates = DETECTOR_ANGLE(self.sizes[0], self.sizes[1])
-        integer_value = binary_sum(buffer, coordinates[0], coordinates[1])
-
-        return binary_to_float(bin(integer_value))
 
     def get_integrator_counts(self) -> int:
         buffer = open(self.path, 'rb').read()
@@ -131,22 +140,26 @@ class USBParser:
         buffer = open(self.path, 'rb').read()
 
         locus_positions = []
-        for i in range(size - 1):
+        for i in range(size):
             locus_positions.append((
                 binary_sum(buffer, start + 8 * i, INTEGER_BINARY_SIZE), 
                 binary_sum(buffer, start + 8 * i + INTEGER_BINARY_SIZE, INTEGER_BINARY_SIZE)
             ))
 
-        return USBParser.to_matrix_indexes(locus_positions)
+        return USBParser.to_cartesian(locus_positions)
     
     @staticmethod
-    def to_matrix_indexes(points: list[tuple[int, int]]) -> list[tuple[int, int]]:
+    def to_cartesian(points: list[tuple[int, int]]) -> list[tuple[int, int]]:
         WINEDE_WINDOW_ZOOM = 2
         WINEDE_WINDOW_SHIFT = 604
 
-        return [(point[0] // WINEDE_WINDOW_ZOOM, (WINEDE_WINDOW_SHIFT - point[1]) // WINEDE_WINDOW_ZOOM) for point in points]
+        return [
+            (   
+                point[0] // WINEDE_WINDOW_ZOOM, 
+                (WINEDE_WINDOW_SHIFT - point[1]) // WINEDE_WINDOW_ZOOM
+            ) for point in points
+        ]
 
 
 if __name__ == '__main__':
-    usb = USBParser("C:\\Users\\Damir\\Desktop\\.phys\\Данные по Win EDE\\Win EdE to Python\\9Be d_14MeV_38BT_1.usb")
-    print(usb.reactor.parse_target())
+    pass

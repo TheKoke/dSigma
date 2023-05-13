@@ -1,13 +1,13 @@
 import numpy as np
-from parsing import *
-from spectrums import Spectrum
+from business.parsing import *
+from business.spectrums import *
 
 
 def rescale(numbers: np.ndarray) -> np.ndarray:
-    transform_const = 255 / (numbers.max() - numbers.min())
+    transform_cost = 255 / (numbers.max() - numbers.min())
     result = numbers - numbers.min()
 
-    return result * transform_const
+    return result * transform_cost
 
 
 class Locus:
@@ -30,6 +30,12 @@ class Locus:
             dEmin = min(dEmin, point[1])
 
         return [dEmin, dEmax, Emin, Emax]
+    
+    def cut_rectangle(self) -> np.ndarray:
+        return self.matrix[self.boundaries[2]: self.boundaries[3], self.boundaries[0]: self.boundaries[1]]
+    
+    def cut_locus_shape(self) -> list[list[int]]:
+        pass
 
     def to_spectrum(self) -> list[int]:
         pass
@@ -37,14 +43,8 @@ class Locus:
 
 class Matrix:
     def __init__(self, parser: USBParser) -> None:
-        self.angle = parser.get_angle()
-        self.integrator_count = parser.get_integrator_counts()
-        self.misscalculation = parser.get_misscalculation()
-
-        self.locuses = parser.take_locuses()
-        self.reactions = parser.reactor.all_reactions()
-
-        self.numbers = parser.get_matrix()
+        self.parser = parser
+        self.numbers = self.parser.get_matrix()
 
     def bright_up(self, amount: int) -> np.ndarray:
         return rescale(self.numbers + amount)
@@ -53,14 +53,20 @@ class Matrix:
         return rescale(self.numbers - amount)
     
     def generate_all_locuses(self) -> list[Locus]:
-        return [Locus(particle, self.numbers, self.locuses[particle]) for particle in self.locuses]
+        particles = self.parser.take_locuses()
+        return [Locus(particle, self.numbers, particles[particle]) for particle in particles]
 
     def generate_locus_spectrum(self, particle: str) -> Spectrum:
-        if particle not in self.locuses:
+        if particle not in self.parser.take_locuses():
             return None
         
         locus = next(item for item in self.generate_all_locuses() if item.name == particle)
-        return Spectrum(locus.to_spectrum())
+        return Spectrum(
+            self.parser.reactor.take_reaction(particle), 
+            self.parser.get_integrator_counts(), 
+            self.parser.get_misscalculation(),
+            locus.to_spectrum()
+        )
 
 
 if __name__ == '__main__':
