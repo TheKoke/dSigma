@@ -1,5 +1,5 @@
 import numpy as np
-from physics import *
+from business.physics import *
 
 
 class ImpurityMaster:

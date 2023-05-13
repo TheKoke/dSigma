@@ -1,8 +1,9 @@
-from PyQt5 import QtWidgets
+import sys
+
 from PyQt5.QtWidgets import *
 from pages import *
+from controllers import *
 
-import sys
 
 class MainWindow(QMainWindow):
     def __init__(self) -> None:
@@ -22,8 +23,9 @@ class MainWindow(QMainWindow):
         file_btn.setGeometry(1010, 10, 180, 90)
 
 
-app = QApplication(sys.argv)
-wind = MainWindow()
+if __name__ == '__main__':
+    app = QApplication(sys.argv)
+    wind = MainWindow()
 
-wind.show()
-app.exec()
+    wind.show()
+    app.exec()

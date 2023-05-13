@@ -1,6 +1,6 @@
 import numpy as np
-from parsing import *
-from spectrums import *
+from business.parsing import *
+from business.spectrums import *
 
 
 def rescale(numbers: np.ndarray) -> np.ndarray:

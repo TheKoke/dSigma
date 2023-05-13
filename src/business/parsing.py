@@ -1,6 +1,6 @@
 import struct
 import numpy as np
-from physics import *
+from business.physics import *
 
 # Binary coordinates
 E_SIZE = (0, 2) # (start, size)
@@ -69,7 +69,7 @@ class ReactionParser:
         coordinates = BEAM_ENERGY(self.matrix_sizes[0], self.matrix_sizes[1])
         return self.__parsing_float(coordinates[0], coordinates[1])
     
-    def __parsing_nucleis(self, position: function) -> Nuclei:
+    def __parsing_nucleis(self, position) -> Nuclei:
         buffer = open(self.path, 'rb').read()
         binary_coordinates = position(self.matrix_sizes[0], self.matrix_sizes[1])
 
