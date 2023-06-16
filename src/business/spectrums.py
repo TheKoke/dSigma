@@ -9,7 +9,7 @@ class Spectrum:
     def __init__(self, reaction: Reaction, angle: float, integrator: int, misscalculation: float, data: list[int]) -> None:
         self.reaction = reaction
 
-        self.angle = reaction.fragment_angle
+        self.angle = angle
         self.integrator = integrator
         self.misscalculation = misscalculation
 
@@ -84,7 +84,8 @@ class Cutter:
         return (mean, self.ending_channel * self.calib_coeff + self.calib_e0)
 
     def __subract_background(self) -> np.ndarray:
-        temp_data = self.spectrum.data[:self.ending_channel] - self.parabola.values(np.arange(self.ending_channel) * self.calib_coeff + self.calib_e0)
+        temp_data = self.spectrum.data[:self.ending_channel] - \
+            self.parabola.values(np.arange(self.ending_channel) * self.calib_coeff + self.calib_e0)
         self.cutted_data = np.hstack((temp_data, self.spectrum.data[self.ending_channel + 1:]))
 
 
@@ -93,7 +94,7 @@ class Analyzer:
         self.spectrum = spectrum
 
         self.states = states
-        self.theory_peaks = [spectrum.reaction.fragment_energy(state) for state in states]
+        self.theory_peaks = [spectrum.reaction.fragment_energy(state, self.spectrum.angle) for state in states]
         self.gamma_widths = gamma_widths
 
         self.calibrator = Calibrator(spectrum)
@@ -143,10 +144,13 @@ class Analyzer:
             if pretend_channel <= 5:
                 continue
             
-            index_ranges = (pretend_channel - self.spectrum.PEAKS_LENGTH // 2, pretend_channel + self.spectrum.PEAKS_LENGTH // 2 + 1)
-            all_peak = self.cutter.cutted_data[index_ranges[0]: index_ranges[1]]
+            index_ranges = (pretend_channel - self.spectrum.PEAKS_LENGTH // 2, 
+                            pretend_channel + self.spectrum.PEAKS_LENGTH // 2 + 1
+            )
 
+            all_peak = self.cutter.cutted_data[index_ranges[0]: index_ranges[1]]
             center = all_peak.argmax() + pretend_channel - self.spectrum.PEAKS_LENGTH // 2
+
             if center not in collected:
                 collected.append(center)
 
@@ -181,6 +185,7 @@ class Analyzer:
 
         if parameter == 'fwhm':
             self.gaussians[index].fwhm += val
+
 
 if __name__ == '__main__':
     pass

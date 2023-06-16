@@ -1,5 +1,5 @@
 import numpy as np
-from business.physics import *
+from business.physics import Reaction, Nuclei
 
 
 class ImpurityMaster:

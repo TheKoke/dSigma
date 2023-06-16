@@ -1,60 +1,31 @@
+from __future__ import annotations
+
 import numpy as np
-
-
-MASS_EXCESSES = {
-    (1, 1)  : 7.28900, (1, 2)  : 13.1357, (1, 3)  : 14.9498,
-    (2, 3)  : 14.9312, (2, 4)  : 2.42490,
-    (3, 6)  : 14.0869, (3, 7)  : 14.9071, (3, 8)  : 20.9458,
-    (4, 7)  : 15.7690, (4, 9)  : 11.3485, (4, 10) : 12.6075, (4, 11) : 20.1772,
-    (5, 8)  : 22.9216, (5, 10) : 12.0506, (5, 11) : 8.66770, (5, 12) : 13.3694,
-    (6, 10) : 15.6987, (6, 11) : 10.6494, (6, 12) : 0.00000, (6, 13) : 3.12500, (6, 14) : 3.01990,
-    (7, 12) : 17.3381, (7, 13) : 5.34550, (7, 14) : 2.86340, (7, 15) : 0.10140, (7, 16) : 5.68390,
-    (8, 14) : 8.00780, (8, 15) : 2.85560, (8, 16) : -4.7370, (8, 17) : -0.8088, (8, 18) : -0.7828, (8, 19) : 3.3329,
-    (9, 17) : 1.95170, (9, 18) : 0.87310, (9, 19) : -1.4874, (9, 20) : -0.0175, (9, 21) : -0.0476, (9, 22) : 2.7934,
-}
-
-
-
-def match_charge_by_name(name: str) -> int:
-    match name:
-        case 'h' | 'p' | 'd' | 't': return 1
-        case 'he': return 2
-        case 'li': return 3
-        case 'be': return 4
-        case 'b': return 5
-        case 'c': return 6
-        case 'n': return 7
-        case 'o': return 8
-        case 'f': return 9
-        case _: return -1
-
-def nuclons_from_name(name: str) -> int:
-    pretend = ''
-    for i in name:
-        if i.isdigit():
-            pretend += i
-
-    return int(pretend)
-
-def nuclei_from_name(name: str) -> tuple[int, int]:
-    name = name.lower()
-
-    if name in ['p', 'd', 't']:
-        return (['p', 'd', 't'].index(name) + 1, match_charge_by_name(name))
-    
-    nuclons = nuclons_from_name(name)
-    return (nuclons, match_charge_by_name(name.replace(f'{nuclons}', '')))
+from consts import *
 
 
 class Nuclei:
-    def __init__(self, nuclons: int, charge: int) -> None:
+    def __init__(self, charge: int, nuclons: int) -> None:
         self.nuclons = nuclons
         self.charge = charge
-        self.mass_excess = self.__mass_excess()
 
-    def __mass_excess(self) -> float:
+    @property
+    def mass_excess(self) -> float:
         return MASS_EXCESSES[(self.charge, self.nuclons)]
+    
+    @property
+    def states(self) -> list[float]:
+        return STATES[(self.charge, self.nuclons)]
 
+    def __str__(self) -> str:
+        return f'A: {self.nuclons}, Z: {self.charge}'
+    
+    def __eq__(self, __o: Nuclei) -> bool:
+        return self.nuclons == __o.nuclons and self.charge == __o.charge
+    
+    def __add__(self, __o: Nuclei) -> Nuclei:
+        return Nuclei(self.nuclons + __o.nuclons, self.charge + __o.charge)
+    
     def mass(self, unit: str = 'MeV') -> float:
         if unit == 'MeV':
             return self.charge * 938.27 + (self.nuclons - self.charge) * 939.57
@@ -67,41 +38,40 @@ class Nuclei:
 
 
 class Reaction:
-    def __init__(self, beam: Nuclei, target: Nuclei, fragment: Nuclei, beam_energy: float, angle: float) -> None:
+    def __init__(self, beam: Nuclei, target: Nuclei, fragment: Nuclei, beam_energy: float) -> None:
         self.beam = beam
         self.target = target
         self.fragment = fragment
         self.residual = self.__residual_nuclei()
 
         self.beam_energy = beam_energy
-        self.fragment_angle = angle * np.pi / 180
+
+    @property
+    def is_elastic(self) -> bool:
+        return self.beam == self.fragment
 
     def __residual_nuclei(self) -> Nuclei:
         nuclon = (self.beam.nuclons + self.target.nuclons) - self.fragment.nuclons
         charge = (self.beam.charge + self.target.charge) - self.fragment.charge
-        return Nuclei(nuclon, charge)
+        return Nuclei(charge, nuclon)
 
     def reaction_quit(self, residual_state: float = 0) -> float:
         q0 = (self.beam.mass_excess + self.target.mass_excess) - (self.fragment.mass_excess + self.residual.mass_excess)
         return q0 - residual_state
     
-    @staticmethod
-    def __r_factor(beam_mass: float, beam_energy: float, instance_mass: float, partner_mass: float, angle: float) -> float:
-        numerator = np.sqrt(beam_mass * instance_mass * beam_energy) * np.cos(angle)
-        return numerator / (instance_mass + partner_mass)
+    def reaction_threshold(self, residual_state: float = 0) -> float:
+        brackets = 1 + (self.beam.mass() / self.target.mass())
+        brackets += (abs(self.reaction_quit(residual_state)) / (2 * self.target.mass()))
 
-    @staticmethod
-    def __s_factor(beam_mass: float, beam_energy: float, instance_mass: float, partner_mass: float, reaction_quit: float) -> float:
-        numerator = beam_energy * (partner_mass - beam_mass) + partner_mass * reaction_quit
-        return numerator / (instance_mass + partner_mass)
+        return abs(self.reaction_quit(residual_state)) * brackets
     
-    def fragment_energy(self, residual_state: float) -> np.ndarray:
+    def fragment_energy(self, residual_state: float, fragment_angle: float) -> float:
         r = Reaction.__r_factor(
             self.beam.mass(), 
             self.beam_energy, 
             self.fragment.mass(), 
             self.residual.mass(), 
-            self.fragment_angle
+            fragment_angle * np.pi / 180
         )
 
         s = Reaction.__s_factor(
@@ -114,13 +84,7 @@ class Reaction:
 
         return (r + np.sqrt(r ** 2 + s)) ** 2
     
-    def residual_angle(self, residual_state: float) -> float:
-        fragment_ears = self.fragment_energy(residual_state)
-        energy_relation = np.sqrt(self.beam.mass() * self.beam_energy / (self.fragment.mass() * fragment_ears))
-
-        return np.pi / 2 - np.arctan((energy_relation - np.cos(self.fragment_angle)) / np.sin(self.fragment_angle))
-    
-    def residual_energy(self, residual_state: float) -> np.ndarray:
+    def residual_energy(self, residual_state: float) -> float:
         r = Reaction.__r_factor(
             self.beam.mass(),
             self.beam_energy, 
@@ -138,11 +102,64 @@ class Reaction:
         )
 
         return (r + np.sqrt(r ** 2 + s)) ** 2
+    
+    def residual_angle(self, residual_state: float, fragment_angle: float) -> float:
+        fragment_ears = self.fragment_energy(residual_state, fragment_angle)
+        energy_relation = np.sqrt(self.beam.mass() * self.beam_energy / (self.fragment.mass() * fragment_ears))
 
-    #TODO: implement this method. Note: minimalizing the energy
-    def residual_collapse(self) -> tuple[Nuclei, Nuclei]:
-        if self.residual.nuclons == 6 and self.residual.charge == 3:
-            return (Nuclei(4, 2), Nuclei(2, 1))
+        return np.pi / 2 - np.arctan(
+            (energy_relation - np.cos(fragment_angle * np.pi / 180)) / np.sin(fragment_angle * np.pi / 180)
+        )
+    
+    @staticmethod
+    def __r_factor(beam_mass: float, beam_energy: float, 
+                   instance_mass: float, partner_mass: float, angle: float) -> float:
+        numerator = np.sqrt(beam_mass * instance_mass * beam_energy) * np.cos(angle)
+        return numerator / (instance_mass + partner_mass)
+
+    @staticmethod
+    def __s_factor(beam_mass: float, beam_energy: float, 
+                   instance_mass: float, partner_mass: float, reaction_quit: float) -> float:
+        numerator = beam_energy * (partner_mass - beam_mass) + partner_mass * reaction_quit
+        return numerator / (instance_mass + partner_mass)
+    
+
+class Ionization:
+    def __init__(self, stray: Nuclei, environ: Nuclei) -> None:
+        self.stray = stray
+        self.environ = environ
+
+    def energy_loss(self, energy: float, thickness: float, ro: float) -> None:
+        return self.specific_energy_loss(energy, ro) * thickness
+    
+    def specific_energy_loss(self, energy: float, ro: float) -> float:
+        electron_mass = 0.511 # MeV
+        reduced_planck = 6.582e-22 # MeV * s
+        lightspeed = 3e10 # cm / s
+        fine_structure = 1 / 137 # dimensionless
+
+        e_power_4 = (reduced_planck * lightspeed * fine_structure) ** 2
+        betta_power_2 = self.lorenz_parameter(energy) ** 2
+
+        common = 4 * np.pi * self.electrons_density(ro) * self.stray.charge ** 2
+        common *= e_power_4 / (electron_mass * betta_power_2)
+
+        logarithm = np.log(2 * electron_mass * betta_power_2 / self.mean_environ_excitation())
+        relativistic = np.log(1 - betta_power_2) + betta_power_2
+
+        return common * (logarithm - relativistic) # MeV * sm^-1
+
+    def mean_environ_excitation(self) -> float:
+        hydrogen_ionization = 13.6e-6 # MeV
+        return hydrogen_ionization * self.environ.charge
+    
+    def electrons_density(self, ro: float) -> float:
+        avogadro = 6.02e23 # mol^-1
+        return self.environ.charge * ro * avogadro / self.environ.nuclons # electrons * sm^-3
+    
+    def lorenz_parameter(self, energy: float) -> float:
+        #  dimensionless     MeV          MeV        
+        return np.sqrt(2 * energy / self.stray.mass())
 
 
 if __name__ == '__main__':

@@ -1,6 +1,6 @@
 import numpy as np
 from business.physics import Reaction
-from scipy.optimize import curve_fit
+
 
 class Gaussian:
     def __init__(self, xy: np.ndarray, fwhm: np.float64) -> None:
@@ -30,13 +30,7 @@ class Gaussian:
         return func
 
     def __area(self) -> np.float64:
-        def gauss(x, a):
-            return (a / (self.fwhm * np.sqrt(np.pi / (4 * np.log(2))))) * np.exp(-1 * (4 * np.log(2))
-            / (self.fwhm ** 2) * (x - self.peak_center) ** 2)
-
-        parameters = curve_fit(gauss, self.xdata, self.ydata)
-
-        return parameters[0][0]
+        pass
     
     def refresh_area(self) -> float:
         self.area = self.__area()

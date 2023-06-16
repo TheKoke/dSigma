@@ -1,6 +1,8 @@
 import struct
 import numpy as np
-from business.physics import *
+from business.physics import Reaction, Nuclei
+from business.yard import ReactionMaster
+
 
 # Binary coordinates
 E_SIZE = (0, 2) # (start, size)
@@ -32,11 +34,11 @@ def binary_to_float(binary: str) -> float:
     return struct.unpack('!f',struct.pack('!I', int(binary, 2)))[0]
 
 def binary_sum(buffer: bytes, start: int, size: int) -> int:
-        result = ''
-        for i in range(start, start + size):
-            result = generate_binary_string(buffer[i]) + result
+    result = ''
+    for i in range(start, start + size):
+        result = generate_binary_string(buffer[i]) + result
 
-        return int(result, 2)
+    return int(result, 2)
 
 
 class ReactionParser:
@@ -51,8 +53,7 @@ class ReactionParser:
         beam = self.parse_beam()
         target = self.parse_target()
 
-        fragment = nuclei_from_name(locus)
-
+        fragment = ReactionMaster.to_nuclei(locus)
         return Reaction(beam, target, fragment, self.get_beam_energy, self.get_angle())
 
     def parse_beam(self) -> Nuclei:
@@ -74,7 +75,7 @@ class ReactionParser:
         binary_coordinates = position(self.matrix_sizes[0], self.matrix_sizes[1])
 
         name = self.__parsing_str(buffer, binary_coordinates[0], binary_coordinates[1])
-        return Nuclei(nuclei_from_name(name)[0], nuclei_from_name(name)[1])
+        return Nuclei(ReactionMaster.to_nuclei(name)[0], ReactionMaster.to_nuclei(name)[1])
     
     def __parsing_float(self, binary_start: int, binary_size: int) -> float:
         buffer = open(self.path, 'rb').read()
