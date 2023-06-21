@@ -1,7 +1,7 @@
 from __future__ import annotations
 
 import numpy as np
-from consts import *
+from business.consts import MASS_EXCESSES, STATES, WIGNER_WIDTHS
 
 
 class Nuclei:
@@ -16,6 +16,15 @@ class Nuclei:
     @property
     def states(self) -> list[float]:
         return STATES[(self.charge, self.nuclons)]
+    
+    @property
+    def wigner_widths(self) -> list[float]:
+        return WIGNER_WIDTHS[(self.charge, self.nuclons)]
+    
+    @property
+    def radius(self) -> float:
+        fermi = 1.28e-13 # cm
+        return fermi * np.cbrt(self.nuclons) # cm
 
     def __str__(self) -> str:
         return f'A: {self.nuclons}, Z: {self.charge}'
@@ -122,6 +131,32 @@ class Reaction:
                    instance_mass: float, partner_mass: float, reaction_quit: float) -> float:
         numerator = beam_energy * (partner_mass - beam_mass) + partner_mass * reaction_quit
         return numerator / (instance_mass + partner_mass)
+    
+    def grazing_angle(self) -> float:
+        E = self.cm_energy()
+        V = self.couloumb_potential()
+        return 2 * np.arcsin(V / (2 * E - V)) * 180 / np.pi
+
+    def couloumb_potential(self) -> float:
+        reduced_planck = 6.582e-22 # MeV * s
+        lightspeed = 3e10 # cm / s
+        fine_structure = 1 / 137 # dimensionless
+
+        e_power_2 = fine_structure * reduced_planck * lightspeed
+        effective_radius = self.beam.radius + self.target.radius + 2e-13
+        return self.beam.charge * self.target.charge * e_power_2 / effective_radius
+    
+    def rutherford_scattering(self) -> np.ndarray:
+        angle_range = np.arange(1, 179) * np.pi / 180 # rad
+        reduced_planck = 6.582e-22 # MeV * s
+        lightspeed = 3e10 # cm / s
+        fine_structure = 1 / 137 # dimensionless
+
+        e_power_2 = fine_structure * reduced_planck * lightspeed
+        numerator = self.beam.charge * self.target.charge * e_power_2 # MeV * cm
+        denumerator = 4 * self.beam_energy * np.sin(angle_range / 2) ** 2 # MeV * rad
+
+        return np.power(numerator / denumerator, 2) * 1e24 # cm^2 / rad^2  => barn / srad
     
 
 class Ionization:
