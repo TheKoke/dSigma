@@ -23,7 +23,4 @@ class Sleuth:
 
 
 if __name__ == '__main__':
-    path = 'C:\\Users\\Damir\\Desktop\\.phys\\Данные по Win EDE\\Win EDE to Python'
-    sleuth = Sleuth(path)
-
-    print(sleuth.sort())
+    pass

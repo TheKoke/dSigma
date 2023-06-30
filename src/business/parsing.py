@@ -1,7 +1,7 @@
 import struct
 import numpy as np
 from business.physics import Reaction, Nuclei
-from business.yard import ReactionMaster
+from business.yard import ReactionMaster, NucleiConverter
 
 
 # Binary coordinates
@@ -33,7 +33,7 @@ def generate_binary_string(number: int) -> str:
 def binary_to_float(binary: str) -> float:
     return struct.unpack('!f',struct.pack('!I', int(binary, 2)))[0]
 
-def binary_sum(buffer: bytes, start: int, size: int) -> int:
+def binary_to_int(buffer: bytes, start: int, size: int) -> int:
     result = ''
     for i in range(start, start + size):
         result = generate_binary_string(buffer[i]) + result
@@ -54,7 +54,7 @@ class ReactionParser:
         target = self.parse_target()
 
         fragment = ReactionMaster.to_nuclei(locus)
-        return Reaction(beam, target, fragment, self.get_beam_energy, self.get_angle())
+        return Reaction(beam, target, fragment, self.get_beam_energy())
 
     def parse_beam(self) -> Nuclei:
         return self.__parsing_nucleis(BEAM_NAME)
@@ -75,12 +75,12 @@ class ReactionParser:
         binary_coordinates = position(self.matrix_sizes[0], self.matrix_sizes[1])
 
         name = self.__parsing_str(buffer, binary_coordinates[0], binary_coordinates[1])
-        return Nuclei(ReactionMaster.to_nuclei(name)[0], ReactionMaster.to_nuclei(name)[1])
+        return NucleiConverter.to_nuclei(name)
     
     def __parsing_float(self, binary_start: int, binary_size: int) -> float:
         buffer = open(self.path, 'rb').read()
 
-        integer_value = binary_sum(buffer, binary_start, binary_size)
+        integer_value = binary_to_int(buffer, binary_start, binary_size)
         return binary_to_float(bin(integer_value))
     
     def __parsing_str(self, buffer: bytes, binary_start: int, binary_size: int) -> str:
@@ -100,8 +100,8 @@ class USBParser:
 
     def find_out_sizes(self) -> tuple[int, int]:
         buffer = open(self.path, 'rb').read()
-        e_channels = binary_sum(buffer, E_SIZE[0], E_SIZE[1])
-        de_channels =  binary_sum(buffer, DE_SIZE[0], DE_SIZE[1])
+        e_channels = binary_to_int(buffer, E_SIZE[0], E_SIZE[1])
+        de_channels =  binary_to_int(buffer, DE_SIZE[0], DE_SIZE[1])
 
         return (e_channels, de_channels)
     
@@ -116,11 +116,11 @@ class USBParser:
 
     def get_integrator_counts(self) -> int:
         buffer = open(self.path, 'rb').read()
-        return binary_sum(buffer, INTEGRATOR[0], INTEGRATOR[1])
+        return binary_to_int(buffer, INTEGRATOR[0], INTEGRATOR[1])
 
     def get_misscalculation(self) -> int:
         buffer = open(self.path, 'rb').read()
-        return binary_sum(buffer, CONGRUENCE[0], CONGRUENCE[1])
+        return binary_to_int(buffer, CONGRUENCE[0], CONGRUENCE[1])
 
     def take_locuses(self) -> dict[str, list[tuple[int, int]]]:
         result = dict()
@@ -128,7 +128,7 @@ class USBParser:
 
         current_locus_start = LOCUSES_START(self.sizes[0], self.sizes[1])
         for locus in POSSIBLE_LOCUSES:
-            current_size = binary_sum(buffer, current_locus_start, INTEGER_BINARY_SIZE)
+            current_size = binary_to_int(buffer, current_locus_start, INTEGER_BINARY_SIZE)
             current_locus_start += INTEGER_BINARY_SIZE
 
             result[locus] = self.accumulate_locus(current_size, current_locus_start)
@@ -143,8 +143,8 @@ class USBParser:
         locus_positions = []
         for i in range(size):
             locus_positions.append((
-                binary_sum(buffer, start + 8 * i, INTEGER_BINARY_SIZE), 
-                binary_sum(buffer, start + 8 * i + INTEGER_BINARY_SIZE, INTEGER_BINARY_SIZE)
+                binary_to_int(buffer, start + 8 * i, INTEGER_BINARY_SIZE), 
+                binary_to_int(buffer, start + 8 * i + INTEGER_BINARY_SIZE, INTEGER_BINARY_SIZE)
             ))
 
         return USBParser.to_cartesian(locus_positions)

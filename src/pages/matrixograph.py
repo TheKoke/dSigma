@@ -7,7 +7,7 @@ from matplotlib.figure import Figure
 from matplotlib.backends.backend_qt5agg import FigureCanvasQTAgg, NavigationToolbar2QT
 from PyQt5.QtWidgets import *
 
-from src.matrix import Matrix
+from business.matrix import Matrix
 
 class Matrixograph(QMainWindow):
     def __init__(self) -> None:

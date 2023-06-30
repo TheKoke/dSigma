@@ -11,7 +11,7 @@ class MainWindow(QMainWindow):
 
         #WINDOW SETTINGS 
         self.setFixedSize(1200, 900)
-        self.setWindowTitle('PySpectrum')
+        self.setWindowTitle('dSigma')
 
         #TAB INITIALIZING
         self.tabs = QTabWidget(self)

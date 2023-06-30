@@ -4,8 +4,6 @@ from business.physics import Reaction
 
 
 class Spectrum:
-    PEAKS_LENGTH = 10
-
     def __init__(self, reaction: Reaction, angle: float, integrator: int, misscalculation: float, data: list[int]) -> None:
         self.reaction = reaction
 
@@ -14,21 +12,6 @@ class Spectrum:
         self.misscalculation = misscalculation
 
         self.data = np.array(data)
-
-    def find_anchor_peaks(self) -> list[int]:
-        first_peak = self.data.argmax()
-        second_peak = np.hstack([
-            self.data[:first_peak - self.PEAKS_LENGTH // 2], 
-            self.data[first_peak + self.PEAKS_LENGTH // 2 + 1:]
-            ]).argmax()
-
-        first_peak += 1
-        if second_peak >= first_peak:
-            second_peak += self.PEAKS_LENGTH + 2
-        else:
-            second_peak += 1
-
-        return [first_peak, second_peak]
 
 
 class Calibrator:
@@ -90,49 +73,21 @@ class Cutter:
 
 
 class Analyzer:
-    def __init__(self, spectrum: Spectrum, states: list[float], gamma_widths: list[float]) -> None:
+    def __init__(self, spectrum: Spectrum, states: list[float]) -> None:
         self.spectrum = spectrum
 
-        self.states = states
         self.theory_peaks = [spectrum.reaction.fragment_energy(state, self.spectrum.angle) for state in states]
-        self.gamma_widths = gamma_widths
+        self.gamma_widths = self.spectrum.reaction.residual.wigner_widths
 
         self.calibrator = Calibrator(spectrum)
-        self.cutter = Cutter(spectrum)
-
         self._is_calibrated = False
-        self._is_cutted = False
 
         self.events: list[float] = list()
         self.gaussians: list[Gaussian] = list()
 
-    def calibrate_spectrum(self) -> None:
-        peak_indexes = self.spectrum.find_anchor_peaks()
-        self.calibrator.calibrate(peak_indexes)
-
+    def calibrate_spectrum(self, peak_indexes: list[int]) -> None:
+        self.calibrator.calibrate(peak_indexes, self.theory_peaks)
         self._is_calibrated = True
-
-    def cut_spectrum(self) -> None:
-        if not self._is_calibrated:
-            self.calibrate_spectrum()
-        
-        anchors = np.array(self.spectrum.find_anchor_peaks())
-        last_peak = anchors[anchors.argmin()]
-        
-        self.cutter.cut(self.calibrator.scale_value, self.calibrator.scale_shift, last_peak)
-        self._is_cutted = True
-
-    def change_cut(self, val: float) -> None:
-        if not self._is_calibrated:
-            self.calibrate_spectrum()
-
-        if not self._is_cutted:
-            self.cut_spectrum()
-        
-        if val == 0:
-            return
-        
-        self.cutter.change_cut(val)
 
     def find_peaks(self) -> list[int]:
         if not self._is_calibrated:
@@ -141,18 +96,8 @@ class Analyzer:
         collected = []
         for peak in self.theory_peaks:
             pretend_channel = int((peak - self.calibrator.scale_shift) / self.calibrator.scale_value)
-            if pretend_channel <= 5:
+            if pretend_channel <= 0:
                 continue
-            
-            index_ranges = (pretend_channel - self.spectrum.PEAKS_LENGTH // 2, 
-                            pretend_channel + self.spectrum.PEAKS_LENGTH // 2 + 1
-            )
-
-            all_peak = self.cutter.cutted_data[index_ranges[0]: index_ranges[1]]
-            center = all_peak.argmax() + pretend_channel - self.spectrum.PEAKS_LENGTH // 2
-
-            if center not in collected:
-                collected.append(center)
 
         return collected
 
@@ -160,18 +105,9 @@ class Analyzer:
         if not self._is_calibrated:
             self.calibrate_spectrum()
 
-        if not self._is_cutted:
-            self.cut_spectrum()
-
         peaks = self.find_peaks()
         for i in range(len(peaks)):
-            index_ranges = (peaks[i] - self.spectrum.PEAKS_LENGTH // 2, peaks[i] + self.spectrum.PEAKS_LENGTH // 2 + 1)
-
-            peak_x = self.calibrator.energy_view[index_ranges[0]: index_ranges[1]]
-            peak_y = self.cutter.cutted_data[index_ranges[0]: index_ranges[1]]
-
-            self.gaussians.append(Gaussian(np.array([peak_x, peak_y]), self.gamma_widths[i]))
-            self.events.append(self.gaussians[-1].area)
+            pass
 
     def change_gaussian(self, index: int, parameter: str, val: float) -> None:
         if index >= len(self.gaussians) or index <= 0:

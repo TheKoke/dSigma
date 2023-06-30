@@ -1,13 +1,6 @@
 import numpy as np
 from business.parsing import *
-from business.spectrums import *
-
-
-def rescale(numbers: np.ndarray) -> np.ndarray:
-    transform_cost = 255 / (numbers.max() - numbers.min())
-    result = numbers - numbers.min()
-
-    return result * transform_cost
+from business.analysis import *
 
 
 class Locus:
@@ -45,16 +38,10 @@ class Matrix:
     def __init__(self, parser: USBParser) -> None:
         self.parser = parser
         self.numbers = self.parser.get_matrix()
-
-    def bright_up(self, amount: int) -> np.ndarray:
-        return rescale(self.numbers + amount)
-
-    def bright_down(self, amount: int) -> np.ndarray:
-        return rescale(self.numbers - amount)
     
     def generate_all_locuses(self) -> list[Locus]:
-        particles = self.parser.take_locuses()
-        return [Locus(particle, self.numbers, particles[particle]) for particle in particles]
+        locuses = self.parser.take_locuses()
+        return [Locus(particle, self.numbers, locuses[particle]) for particle in locuses]
 
     def generate_locus_spectrum(self, particle: str) -> Spectrum:
         if particle not in self.parser.take_locuses():
@@ -63,7 +50,8 @@ class Matrix:
         locus = next(item for item in self.generate_all_locuses() if item.name == particle)
         return Spectrum(
             self.parser.reactor.take_reaction(particle), 
-            self.parser.get_integrator_counts(), 
+            self.parser.reactor.get_angle(),
+            self.parser.get_integrator_counts(),
             self.parser.get_misscalculation(),
             locus.to_spectrum()
         )
