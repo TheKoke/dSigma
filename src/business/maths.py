@@ -16,16 +16,11 @@ class Gaussian:
     def to_workbook(self) -> str:
         pass
 
-    def __str__(self, /, dispersion_view: bool = False, fwhm_view: bool = True) -> str:
+    def __str__(self) -> str:
         func = 'G(x) = '
 
-        if dispersion_view:
-            func += f'{np.round(self.area, 3)} / (sqrt(2pi * {np.round(self.dispersion(), 3)}) * ' \
-                    f'exp(-(x - {np.round(self.peak_center, 3)})^2 / 2{np.round(self.dispersion(), 3)})'
-
-        if fwhm_view:
-            func += f'{np.round(self.area, 3)} / ({np.round(self.fwhm, 3)} * sqrt(pi / 4ln2)) * ' \
-                    f'exp(- 4ln2 * (x - {np.round(self.peak_center, 3)})^2 / {np.round(self.fwhm ** 2, 3)}))'
+        func += f'{np.round(self.area, 3)} / (sqrt(2pi * {np.round(self.dispersion(), 3)}) * ' \
+                f'exp(-(x - {np.round(self.peak_center, 3)})^2 / 2{np.round(self.dispersion(), 3)})'
 
         return func
 
@@ -78,18 +73,6 @@ class Lorentzian:
         return constant * brackets
 
 
-class Parabola:
-    def __init__(self, slope: float, shift: float) -> None:
-        self.slope = slope
-        self.shift = shift
-
-    def __str__(self) -> str:
-        return f'y = {self.slope}sqrt({self.shift} - x)'
-
-    def values(self, args: np.ndarray) -> np.ndarray:
-        return self.slope * np.sqrt(self.shift - args)
-
-
 class CrossSection:
     def __init__(self, reaction: Reaction) -> None:
         '''
@@ -106,9 +89,6 @@ class CrossSection:
         self.distance = 200
         self.collimator_radius = 1.6
 
-        self.target_concentrate = 1
-        self.target_thickness = 1
-
         self.reaction_q = reaction.reaction_quit()
         self.beam_energy = reaction.beam_energy
 
@@ -116,17 +96,13 @@ class CrossSection:
         self.distance = distance
         self.collimator_radius = collimator_radius
 
-    def set_target_properties(self, concentrate: float, thickness: float) -> None:
-        self.target_concentrate = concentrate
-        self.target_thickness = thickness
-
     def set_electronics(self, integrator_const: float, norm: float) -> None:
         self.integrator_const = integrator_const
         self.norm = norm
     
     def formula(self, events: np.ndarray, angles: np.ndarray, integrator: np.ndarray, misscalculation: np.ndarray) -> np.ndarray:
         numerator = self.A * events * misscalculation * self.norm
-        denumerator = integrator * self.integrator_const * self.target_concentrate * self.target_thickness * self.solid_angle()
+        denumerator = integrator * self.integrator_const * self.solid_angle()
 
         return self.g_constant(angles) * numerator / denumerator
 

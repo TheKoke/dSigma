@@ -1,31 +1,15 @@
 import numpy as np
-from business.parsing import *
-from business.analysis import *
+from business.parsing import USBParser
+from business.physics import Nuclei, Reaction
+from business.analysis import Analyzer, Spectrum
+from business.electronics import Detector, Telescope
 
 
 class Locus:
-    def __init__(self, name: str, matrix: np.ndarray, points: list[tuple[int, int]]) -> None:
-        self.name = name
+    def __init__(self, nuclei: Nuclei, matrix: np.ndarray, points: list[tuple[int, int]]) -> None:
+        self.nuclei = nuclei
         self.matrix = matrix
         self.points = points
-
-        self.boundaries = self.define_boundaries() # [dE(min), dE(max), E(min), E(max)]
-
-    def define_boundaries(self) -> list[int]:
-        Emax = 0; Emin = len(self.matrix)
-        dEmax = 0; dEmin = len(self.matrix)
-
-        for point in self.points:
-            Emax = max(Emax, point[0])
-            Emin = min(Emin, point[0])
-
-            dEmax = max(dEmax, point[1])
-            dEmin = min(dEmin, point[1])
-
-        return [dEmin, dEmax, Emin, Emax]
-    
-    def cut_rectangle(self) -> np.ndarray:
-        return self.matrix[self.boundaries[2]: self.boundaries[3], self.boundaries[0]: self.boundaries[1]]
     
     def cut_locus_shape(self) -> list[list[int]]:
         pass
@@ -38,23 +22,35 @@ class Matrix:
     def __init__(self, parser: USBParser) -> None:
         self.parser = parser
         self.numbers = self.parser.get_matrix()
+
+    @property
+    def angle(self) -> float:
+        return self.parser.get_angle()
+
+    @property
+    def integrator_counts(self) -> int:
+        return self.parser.get_integrator_counts()
+    
+    @property
+    def misscalculation(self) -> float:
+        return self.parser.get_misscalculation()
+    
+    def all_spectres(self) -> dict[Nuclei, Spectrum]:
+        pass
     
     def generate_all_locuses(self) -> list[Locus]:
-        locuses = self.parser.take_locuses()
-        return [Locus(particle, self.numbers, locuses[particle]) for particle in locuses]
+        pass
 
-    def generate_locus_spectrum(self, particle: str) -> Spectrum:
-        if particle not in self.parser.take_locuses():
-            return None
-        
-        locus = next(item for item in self.generate_all_locuses() if item.name == particle)
-        return Spectrum(
-            self.parser.reactor.take_reaction(particle), 
-            self.parser.reactor.get_angle(),
-            self.parser.get_integrator_counts(),
-            self.parser.get_misscalculation(),
-            locus.to_spectrum()
-        )
+    def generate_locus_spectrum(self, particle: Nuclei) -> Spectrum:
+        locus = next(item for item in self.generate_all_locuses() if item.nuclei == particle)
+        return Spectrum(self.__build_reaction(particle), self.angle, locus.to_spectrum())
+    
+    def __build_reaction(self, fragment: Nuclei) -> Reaction:
+        beam = self.parser.parse_beam()
+        target = self.parser.parse_target()
+        energy = self.parser.get_beam_energy()
+
+        return Reaction(beam, target, fragment, energy)
 
 
 if __name__ == '__main__':

@@ -4,13 +4,9 @@ from business.physics import Reaction
 
 
 class Spectrum:
-    def __init__(self, reaction: Reaction, angle: float, integrator: int, misscalculation: float, data: list[int]) -> None:
+    def __init__(self, reaction: Reaction, angle: float, data: list[int]) -> None:
         self.reaction = reaction
-
         self.angle = angle
-        self.integrator = integrator
-        self.misscalculation = misscalculation
-
         self.data = np.array(data)
 
 

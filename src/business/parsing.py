@@ -40,63 +40,15 @@ def binary_to_int(buffer: bytes, start: int, size: int) -> int:
 
     return int(result, 2)
 
-
-class ReactionParser:
-    def __init__(self, path: str, matrix_sizes: tuple[int, int]) -> None:
-        self.path = path
-        self.matrix_sizes = matrix_sizes
-
-    def all_reactions(self) -> list[Reaction]:
-        return [self.take_reaction(locus) for locus in POSSIBLE_LOCUSES]
-
-    def take_reaction(self, locus: str) -> Reaction:
-        beam = self.parse_beam()
-        target = self.parse_target()
-
-        fragment = ReactionMaster.to_nuclei(locus)
-        return Reaction(beam, target, fragment, self.get_beam_energy())
-
-    def parse_beam(self) -> Nuclei:
-        return self.__parsing_nucleis(BEAM_NAME)
-
-    def parse_target(self) -> Nuclei:
-        return self.__parsing_nucleis(TARGET_NAME)
-    
-    def get_angle(self) -> float:
-        coordinates = DETECTOR_ANGLE(self.matrix_sizes[0], self.matrix_sizes[1])
-        return self.__parsing_float(coordinates[0], coordinates[1])
-    
-    def get_beam_energy(self) -> float:
-        coordinates = BEAM_ENERGY(self.matrix_sizes[0], self.matrix_sizes[1])
-        return self.__parsing_float(coordinates[0], coordinates[1])
-    
-    def __parsing_nucleis(self, position) -> Nuclei:
-        buffer = open(self.path, 'rb').read()
-        binary_coordinates = position(self.matrix_sizes[0], self.matrix_sizes[1])
-
-        name = self.__parsing_str(buffer, binary_coordinates[0], binary_coordinates[1])
-        return NucleiConverter.to_nuclei(name)
-    
-    def __parsing_float(self, binary_start: int, binary_size: int) -> float:
-        buffer = open(self.path, 'rb').read()
-
-        integer_value = binary_to_int(buffer, binary_start, binary_size)
-        return binary_to_float(bin(integer_value))
-    
-    def __parsing_str(self, buffer: bytes, binary_start: int, binary_size: int) -> str:
-        collected = ''
-        for i in range(binary_start, binary_start + binary_size):
-            collected += chr(buffer[i])
-
-        return collected.replace(' ', '')
+def parsing_float(buffer: bytes, binary_start: int, binary_size: int) -> float:
+    integer_value = binary_to_int(buffer, binary_start, binary_size)
+    return binary_to_float(bin(integer_value))
 
 
 class USBParser:
     def __init__(self, path: str) -> None:
         self.path = path
         self.sizes = self.find_out_sizes()
-
-        self.reactor = ReactionParser(path, self.sizes)
 
     def find_out_sizes(self) -> tuple[int, int]:
         buffer = open(self.path, 'rb').read()
@@ -113,6 +65,10 @@ class USBParser:
 
         temp = np.array(temp)
         return temp.reshape(self.sizes[1], self.sizes[0])
+    
+    def get_angle(self) -> float:
+        coordinates = DETECTOR_ANGLE(self.sizes[0], self.sizes[1])
+        return parsing_float(open(self.path, 'rb'), coordinates[0], coordinates[1])
 
     def get_integrator_counts(self) -> int:
         buffer = open(self.path, 'rb').read()
@@ -121,6 +77,30 @@ class USBParser:
     def get_misscalculation(self) -> int:
         buffer = open(self.path, 'rb').read()
         return binary_to_int(buffer, CONGRUENCE[0], CONGRUENCE[1])
+    
+    def parse_beam(self) -> Nuclei:
+        return self.__parsing_nucleis(BEAM_NAME)
+
+    def parse_target(self) -> Nuclei:
+        return self.__parsing_nucleis(TARGET_NAME)
+    
+    def get_beam_energy(self) -> float:
+        coordinates = BEAM_ENERGY(self.sizes[0], self.sizes[1])
+        return parsing_float(open(self.path, 'rb'), coordinates[0], coordinates[1])
+    
+    def __parsing_nucleis(self, position) -> Nuclei:
+        buffer = open(self.path, 'rb').read()
+        binary_coordinates = position(self.sizes[0], self.sizes[1])
+
+        name = self.__parsing_str(buffer, binary_coordinates[0], binary_coordinates[1])
+        return NucleiConverter.to_nuclei(name)
+    
+    def __parsing_str(self, buffer: bytes, binary_start: int, binary_size: int) -> str:
+        collected = ''
+        for i in range(binary_start, binary_start + binary_size):
+            collected += chr(buffer[i])
+
+        return collected.replace(' ', '')
 
     def take_locuses(self) -> dict[str, list[tuple[int, int]]]:
         result = dict()
