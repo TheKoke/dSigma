@@ -3,46 +3,33 @@ from business.physics import Reaction
 
 
 class Gaussian:
-    def __init__(self, xy: np.ndarray, fwhm: np.float64) -> None:
-        self.xdata = xy[0]
-        self.ydata = xy[1]
-
-        self.peak_index = len(self.xdata) // 2
-        self.peak_center = self.xdata[self.peak_index]
+    def __init__(self, mu: float, fwhm: float, area: float) -> None:
+        self.mu = mu
         self.fwhm = fwhm
-
-        self.area = self.__area()
+        self.area = area
 
     def to_workbook(self) -> str:
         pass
 
     def __str__(self) -> str:
         func = 'G(x) = '
-
-        func += f'{np.round(self.area, 3)} / (sqrt(2pi * {np.round(self.dispersion(), 3)}) * ' \
-                f'exp(-(x - {np.round(self.peak_center, 3)})^2 / 2{np.round(self.dispersion(), 3)})'
+        func += f'{np.round(self.area, 3)} / (sqrt(2pi * {np.round(self.dispersion(), 3)}) * '
+        func += f'exp(-(x - {np.round(self.mu, 3)})^2 / 2{np.round(self.dispersion(), 3)})'
 
         return func
-
-    def __area(self) -> np.float64:
-        pass
-    
-    def refresh_area(self) -> float:
-        self.area = self.__area()
-        return self.area
 
     def dispersion(self) -> np.float64:
         return self.fwhm / (2 * np.sqrt(2 * np.log(2)))
 
     def three_sigma(self) -> np.ndarray:
-        return np.linspace(-3 * self.dispersion() + self.peak_center, 3 * self.dispersion() + self.peak_center, 50)
+        sigma = self.dispersion()
+        return np.linspace(-3 * sigma + self.mu, 3 * sigma + self.mu, 50)
 
     def function(self) -> np.ndarray:
         constant = self.area / (self.fwhm * np.sqrt(np.pi / (4 * np.log(2))))
         exp_constant = -1 * (4 * np.log(2)) / (self.fwhm ** 2)
 
-        array_part = (self.three_sigma() - self.peak_center) ** 2
-
+        array_part = (self.three_sigma() - self.mu) ** 2
         return constant * np.exp(exp_constant * array_part)
     
 

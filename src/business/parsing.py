@@ -5,7 +5,8 @@ from business.yard import ReactionMaster, NucleiConverter
 
 
 # Binary coordinates
-E_SIZE = (0, 2) # (start, size)
+#      (start, size)
+E_SIZE = (0, 2)
 DE_SIZE = (2, 2)
 TIMER = (4, 4)
 FULLTIME = (8, 4)

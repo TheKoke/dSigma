@@ -25,6 +25,9 @@ class Nuclei:
     def radius(self) -> float:
         fermi = 1.28e-13 # cm
         return fermi * np.cbrt(self.nuclons) # cm
+    
+    def __hash__(self) -> int:
+        return hash(str(self))
 
     def __str__(self) -> str:
         return f'A: {self.nuclons}, Z: {self.charge}'
@@ -33,7 +36,10 @@ class Nuclei:
         return self.nuclons == __o.nuclons and self.charge == __o.charge
     
     def __add__(self, __o: Nuclei) -> Nuclei:
-        return Nuclei(self.nuclons + __o.nuclons, self.charge + __o.charge)
+        return Nuclei(self.charge + __o.charge, self.nuclons + __o.nuclons)
+    
+    def __sub__(self, __o: Nuclei) -> Nuclei:
+        return Nuclei(self.charge - __o.charge, self.nuclons - __o.nuclons)
     
     def mass(self, unit: str = 'MeV') -> float:
         if unit == 'MeV':
@@ -60,9 +66,7 @@ class Reaction:
         return self.beam == self.fragment
 
     def __residual_nuclei(self) -> Nuclei:
-        nuclon = (self.beam.nuclons + self.target.nuclons) - self.fragment.nuclons
-        charge = (self.beam.charge + self.target.charge) - self.fragment.charge
-        return Nuclei(charge, nuclon)
+        return self.beam + self.target - self.fragment
 
     def reaction_quit(self, residual_state: float = 0) -> float:
         q0 = (self.beam.mass_excess + self.target.mass_excess) - (self.fragment.mass_excess + self.residual.mass_excess)
@@ -73,6 +77,10 @@ class Reaction:
         brackets += (abs(self.reaction_quit(residual_state)) / (2 * self.target.mass()))
 
         return abs(self.reaction_quit(residual_state)) * brackets
+    
+    def cm_energy(self) -> float:
+        to_system = self.beam.mass() / (self.beam.mass() + self.target.mass()) * self.beam_energy
+        return self.beam_energy - to_system
     
     def fragment_energy(self, residual_state: float, fragment_angle: float) -> float:
         r = Reaction.__r_factor(

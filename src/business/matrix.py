@@ -2,7 +2,7 @@ import numpy as np
 from business.parsing import USBParser
 from business.physics import Nuclei, Reaction
 from business.analysis import Analyzer, Spectrum
-from business.electronics import Detector, Telescope
+from business.electronics import Telescope
 
 
 class Locus:
@@ -19,8 +19,10 @@ class Locus:
 
 
 class Matrix:
-    def __init__(self, parser: USBParser) -> None:
+    def __init__(self, parser: USBParser, electronics: Telescope) -> None:
         self.parser = parser
+        self.electronics = electronics
+
         self.numbers = self.parser.get_matrix()
 
     @property
@@ -37,13 +39,13 @@ class Matrix:
     
     def all_spectres(self) -> dict[Nuclei, Spectrum]:
         pass
-    
-    def generate_all_locuses(self) -> list[Locus]:
-        pass
 
     def generate_locus_spectrum(self, particle: Nuclei) -> Spectrum:
         locus = next(item for item in self.generate_all_locuses() if item.nuclei == particle)
-        return Spectrum(self.__build_reaction(particle), self.angle, locus.to_spectrum())
+        return Spectrum(self.__build_reaction(particle), self.angle, self.electronics, locus.to_spectrum())
+    
+    def generate_all_locuses(self) -> list[Locus]:
+        pass
     
     def __build_reaction(self, fragment: Nuclei) -> Reaction:
         beam = self.parser.parse_beam()
