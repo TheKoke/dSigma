@@ -2,9 +2,10 @@ from business.physics import Nuclei
 
 
 class Detector:
-    def __init__(self, madeof: str, thickness: float) -> None:
+    def __init__(self, madeof: str, thickness: float, resolution: float = 0.01) -> None:
         self.__madeof = madeof
         self.__thickness = thickness
+        self.__resolution = resolution
 
     @property
     def madeof(self) -> str:
@@ -22,6 +23,10 @@ class Detector:
         return self.__thickness
     
     @property
+    def resolution(self) -> float:
+        return self.__resolution
+    
+    @property
     def density(self) -> float:
         match self.__madeof.lower():
             case 'ge': return 5.323
@@ -31,16 +36,12 @@ class Detector:
 
 class Telescope:
     def __init__(self, e_detector: Detector, de_detector: Detector, 
-                 e_binning: int = 256, de_binning: int = 256,
-                 e_resolution: float = 0.01, de_resolution: float = 0.01) -> None:
+                 e_binning: int = 256, de_binning: int = 256) -> None:
         self.__e_detector = e_detector
         self.__de_detector = de_detector
 
         self.__e_binning = e_binning
         self.__de_binning = de_binning
-
-        self.__e_resolution = e_resolution
-        self.__de_resolution = de_resolution
 
     @property
     def e_detector(self) -> Detector:
@@ -57,14 +58,6 @@ class Telescope:
     @property
     def de_binning(self) -> int:
         return self.__de_binning
-    
-    @property
-    def e_resolution(self) -> float:
-        return self.__e_resolution
-    
-    @property
-    def de_resolution(self) -> float:
-        return self.__de_resolution
     
 
 if __name__ == '__main__':

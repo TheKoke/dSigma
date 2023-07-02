@@ -1,6 +1,6 @@
 import numpy as np
 from business.maths import Gaussian, CrossSection
-from business.physics import Reaction, Nuclei, Ionization
+from business.physics import Reaction, Ionization
 from business.electronics import Telescope
 
 
@@ -24,7 +24,10 @@ class Spectrum:
     @property
     def gamma_widths(self) -> list[float]:
         self_widths = np.array(self.reaction.residual.wigner_widths)
-        environment_resolution = self.reaction.beam_energy * 0.01 # cyclotrone resolution
+
+        detector_resolution = self.electronics.e_detector.resolution
+        beam_energy_emittance = self.reaction.beam_energy * 0.01 # cyclotrone u-150m
+        environment_resolution = np.sqrt(detector_resolution ** 2 + beam_energy_emittance ** 2)
 
         return np.sqrt(self_widths ** 2 + environment_resolution ** 2).tolist()
 
@@ -102,6 +105,9 @@ class Analyzer:
         self.events: list[list[float]] = [0] * len(self.spectrums)
         self.gaussians: list[list[Gaussian]] = [0] * len(spectrums)
 
+    def to_workbook(self, index: int) -> str:
+        pass
+
     def approximate(self, index: int) -> None:
         if not self.spectrums[index].is_calibrated:
             raise ValueError('Spectrum must be calibrated before finding peaks')
@@ -129,7 +135,8 @@ class Analyzer:
             if pretend_channel <= 0:
                 continue
 
-            collected.append(Peak(self.spectrums[index], pretend_channel, self.spectrums[index].gamma_widths[i]))
+            fwhm_in_channels = int(self.spectrums[index].gamma_widths[i] / self.spectrums[index].scale_value)
+            collected.append(Peak(self.spectrums[index], pretend_channel, fwhm_in_channels))
 
         return collected
 

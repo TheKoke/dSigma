@@ -38,11 +38,13 @@ class Matrix:
         return self.parser.get_misscalculation()
     
     def all_spectres(self) -> dict[Nuclei, Spectrum]:
-        pass
+        locuses = self.generate_all_locuses()
+        return {each.nuclei : each.to_spectrum() for each in locuses}
 
-    def generate_locus_spectrum(self, particle: Nuclei) -> Spectrum:
-        locus = next(item for item in self.generate_all_locuses() if item.nuclei == particle)
-        return Spectrum(self.__build_reaction(particle), self.angle, self.electronics, locus.to_spectrum())
+    def generate_locus_spectrum(self, locus: Locus) -> Spectrum:
+        reaction = self.__build_reaction(locus.nuclei)
+        data = locus.to_spectrum()
+        return Spectrum(reaction, self.angle, self.electronics, data)
     
     def generate_all_locuses(self) -> list[Locus]:
         pass

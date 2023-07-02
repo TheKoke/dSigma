@@ -9,7 +9,7 @@ class Gaussian:
         self.area = area
 
     def to_workbook(self) -> str:
-        pass
+        return f'Peak on mu=({self.mu}) with fwhm=({self.fwhm}) and area under peak=({self.area})'
 
     def __str__(self) -> str:
         func = 'G(x) = '
@@ -39,6 +39,9 @@ class Lorentzian:
         self.fwhm = fwhm
         self.area = area
 
+    def to_workbook(self) -> str:
+        return f'Peak on mu=({self.mu}) with fwhm=({self.fwhm}) and area under peak=({self.area})'
+
     def __str__(self) -> str:
         func = 'L(x) = '
         func += f'2 * {round(self.area, 3)} / pi'
@@ -63,10 +66,8 @@ class Lorentzian:
 class CrossSection:
     def __init__(self, reaction: Reaction) -> None:
         '''
-        cross_section for reaction
-        A(a, b)B
+        Diff. cross section for reaction A(a, b)B
         '''
-
         self.A = reaction.target.nuclons; self.a = reaction.beam.nuclons
         self.B = reaction.residual.nuclons; self.b = reaction.fragment.nuclons
 
