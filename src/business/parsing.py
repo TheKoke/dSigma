@@ -1,7 +1,8 @@
 import struct
 import numpy as np
-from business.physics import Reaction, Nuclei
-from business.yard import ReactionMaster, NucleiConverter
+
+from business.physics import Nuclei
+from business.yard import NucleiConverter
 
 
 # Binary coordinates
@@ -22,7 +23,7 @@ TARGET_NAME = lambda length, width: (MATRIX_START + length * width * 4 + 33, 5)
 DETECTOR_ANGLE = lambda length, width: (MATRIX_START + length * width * 4 + 82, 4)
 DE_THICKNESS = lambda length, width: (MATRIX_START + length * width * 4 + 86, 4)
 LOCUSES_START = lambda length, width: MATRIX_START + length * width * 4 + 115
-POSSIBLE_LOCUSES = ['p', 'd', 't', 'he-3', 'he-4']
+POSSIBLE_LOCUSES = ['p', 'd', 't', 'he3', 'he4']
 
 BITES_PER_BYTE = 8
 INTEGER_BINARY_SIZE = 4

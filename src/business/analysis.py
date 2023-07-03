@@ -1,7 +1,8 @@
 import numpy as np
-from business.maths import Gaussian, CrossSection
-from business.physics import Reaction, Ionization
+
+from business.maths import Gaussian
 from business.electronics import Telescope
+from business.physics import Reaction, Ionization
 
 
 class Spectrum:
@@ -106,7 +107,17 @@ class Analyzer:
         self.gaussians: list[list[Gaussian]] = [0] * len(spectrums)
 
     def to_workbook(self, index: int) -> str:
-        pass
+        report = f'{self.spectrums[index].angle} degree spectrum analysis.\n'
+
+        report += f'Spectrum was calibrated by:'
+        report += f' E(ch) = {round(self.spectrums[index].scale_value, 3)}*ch + {round(self.spectrums[index].scale_shift)}\n'
+
+        report += 'Peaks analysis info:\n'
+        for peak in self.gaussians[index]:
+            report += '\t' + peak.to_workbook() + '\n'
+
+        report += '\n\n'
+        return report
 
     def approximate(self, index: int) -> None:
         if not self.spectrums[index].is_calibrated:
