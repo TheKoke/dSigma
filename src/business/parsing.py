@@ -104,7 +104,7 @@ class USBParser:
 
         return collected.replace(' ', '')
 
-    def take_locuses(self) -> dict[str, list[tuple[int, int]]]:
+    def take_locuses(self) -> dict[Nuclei, list[tuple[int, int]]]:
         result = dict()
         buffer = open(self.path, 'rb').read()
 
@@ -113,7 +113,8 @@ class USBParser:
             current_size = binary_to_int(buffer, current_locus_start, INTEGER_BINARY_SIZE)
             current_locus_start += INTEGER_BINARY_SIZE
 
-            result[locus] = self.accumulate_locus(current_size, current_locus_start)
+            review_particle = NucleiConverter.to_nuclei(locus)
+            result[review_particle] = self.accumulate_locus(current_size, current_locus_start)
             
             current_locus_start += 2 * INTEGER_BINARY_SIZE * current_size
 
