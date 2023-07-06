@@ -1,5 +1,6 @@
 from enum import Enum
-from physics import Reaction, Nuclei
+
+from business.physics import Reaction, Nuclei
 
 
 class ReactionNotation(Enum):

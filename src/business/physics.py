@@ -42,14 +42,15 @@ class Nuclei:
         return Nuclei(self.charge - other.charge, self.nuclons - other.nuclons)
     
     def mass(self, unit: str = 'MeV') -> float:
-        if unit == 'MeV':
-            return self.charge * 938.27 + (self.nuclons - self.charge) * 939.57
-        
-        if unit == 'a.m.u.':
-            return self.charge * 1.007276467 + (self.nuclons - self.charge) * 1.008664915
-        
-        if unit == 'g':
-            return self.charge * 1.672e-24 + (self.nuclons - self.charge) * 1.675e-24
+        match unit.lower():
+            case 'mev': 
+                return self.charge * 938.27 + (self.nuclons - self.charge) * 939.57
+            case 'amu' | 'a.m.u':
+                return self.charge * 1.007276467 + (self.nuclons - self.charge) * 1.008664915
+            case 'g':
+                return self.charge * 1.672e-24 + (self.nuclons - self.charge) * 1.675e-24
+            case _:
+                return self.nuclons
 
 
 class Reaction:
@@ -187,8 +188,8 @@ class Struggling:
         lightspeed = 3e10 # cm / s
         fine_structure = 1 / 137 # dimensionless
 
-        e_power_4 = (reduced_planck * lightspeed * fine_structure) ** 2
-        betta_power_2 = self.lorenz_parameter(energy) ** 2
+        e_power_4 = (reduced_planck * lightspeed * fine_structure) ** 2 # MeV^2 * cm^2
+        betta_power_2 = self.lorenz_parameter(energy) ** 2 # dimensionless
 
         common = 4 * np.pi * self.electrons_density(ro) * self.stray.charge ** 2
         common *= e_power_4 / (electron_mass * betta_power_2)
@@ -196,7 +197,7 @@ class Struggling:
         logarithm = np.log(2 * electron_mass * betta_power_2 / self.mean_environ_excitation())
         relativistic = np.log(1 - betta_power_2) + betta_power_2
 
-        return common * (logarithm - relativistic) # MeV * sm^-1
+        return common * (logarithm - relativistic) # MeV * cm^-1
 
     def mean_environ_excitation(self) -> float:
         hydrogen_ionization = 13.6e-6 # MeV
@@ -204,7 +205,7 @@ class Struggling:
     
     def electrons_density(self, ro: float) -> float:
         avogadro = 6.02e23 # mol^-1
-        return self.environ.charge * ro * avogadro / self.environ.nuclons # electrons * sm^-3
+        return self.environ.charge * ro * avogadro / self.environ.nuclons # electrons * cm^-3
     
     def lorenz_parameter(self, energy: float) -> float:
         #  dimensionless     MeV          MeV        
