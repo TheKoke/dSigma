@@ -32,14 +32,14 @@ class Nuclei:
     def __str__(self) -> str:
         return f'A: {self.nuclons}, Z: {self.charge}'
     
-    def __eq__(self, __o: Nuclei) -> bool:
-        return self.nuclons == __o.nuclons and self.charge == __o.charge
+    def __eq__(self, other: Nuclei) -> bool:
+        return self.nuclons == other.nuclons and self.charge == other.charge
     
-    def __add__(self, __o: Nuclei) -> Nuclei:
-        return Nuclei(self.charge + __o.charge, self.nuclons + __o.nuclons)
+    def __add__(self, other: Nuclei) -> Nuclei:
+        return Nuclei(self.charge + other.charge, self.nuclons + other.nuclons)
     
-    def __sub__(self, __o: Nuclei) -> Nuclei:
-        return Nuclei(self.charge - __o.charge, self.nuclons - __o.nuclons)
+    def __sub__(self, other: Nuclei) -> Nuclei:
+        return Nuclei(self.charge - other.charge, self.nuclons - other.nuclons)
     
     def mass(self, unit: str = 'MeV') -> float:
         if unit == 'MeV':
@@ -64,6 +64,12 @@ class Reaction:
     @property
     def is_elastic(self) -> bool:
         return self.beam == self.fragment
+    
+    def __eq__(self, other: Reaction) -> bool:
+        return self.beam == other.beam \
+            and self.target == other.target \
+            and self.fragment == other.fragment \
+            and self.beam_energy == other.beam_energy
 
     def __residual_nuclei(self) -> Nuclei:
         return self.beam + self.target - self.fragment
@@ -167,7 +173,7 @@ class Reaction:
         return np.power(numerator / denumerator, 2) * 1e24 # cm^2 / rad^2  => barn / srad
     
 
-class Ionization:
+class Struggling:
     def __init__(self, stray: Nuclei, environ: Nuclei) -> None:
         self.stray = stray
         self.environ = environ

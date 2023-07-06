@@ -1,6 +1,6 @@
 import numpy as np
 from business.maths import Gaussian, CrossSection
-from business.physics import Reaction, Ionization
+from business.physics import Reaction, Struggling
 from business.electronics import Telescope
 
 
@@ -35,8 +35,8 @@ class Spectrum:
         piercing = self.electronics.de_detector
         stopping = self.electronics.e_detector
 
-        de_bete_bloch = Ionization(self.reaction.fragment, piercing.madeof_nuclei)
-        e_bete_bloch = Ionization(self.reaction.fragment, stopping.madeof_nuclei)
+        de_bete_bloch = Struggling(self.reaction.fragment, piercing.madeof_nuclei)
+        e_bete_bloch = Struggling(self.reaction.fragment, stopping.madeof_nuclei)
 
         likely_peaks = []
         for state in self.reaction.residual.states:
