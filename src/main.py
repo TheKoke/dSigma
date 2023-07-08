@@ -1,26 +1,60 @@
+import os
 import sys
+from PyQt5 import QtCore
 
 from PyQt5.QtWidgets import *
+from PyQt5.QtWidgets import QWidget
+
 from pages import *
-from controllers import *
+from business.matrix import Matrix
+from business.parsing import USBParser
+from business.analysis import Analyzer, Spectrum
+from business.electronics import Telescope, Detector
+
+
+class ExperimentConfig:
+    def __init__(self) -> None:
+        pass
+
+    def get_electronics(self) -> Telescope:
+        pass
+
+    def gather_detector(self) -> Detector:
+        pass
+
+
+class Sleuth:
+    def __init__(self, main_directory: str) -> None:
+        self.main = main_directory
+
+    def create_matrixes(self, electronics: Telescope) -> list[Matrix]:
+        parsers = self.all_parsers()
+        return [Matrix(parser, electronics) for parser in parsers]
+
+    def all_parsers(self) -> list[USBParser]:
+        files = self.sort()
+        return [USBParser(file) for file in files]
+
+    def sort(self) -> list[str]:
+        directories = os.listdir(self.main)
+        return self.only_usb(directories)
+    
+    def only_usb(self, dirs: list[str]) -> list[str]:
+        sifted = self.only_files(dirs)
+        return [file for file in sifted if '.usb' in file]
+    
+    def only_files(self, dirs: list[str]) -> list[str]:
+        return [direc for direc in dirs if '.' if direc]
+
+
+class WelcomeWindow(QDialog):
+    def __init__(self) -> None:
+        super().__init__()
 
 
 class MainWindow(QMainWindow):
     def __init__(self) -> None:
         super().__init__()
-
-        #WINDOW SETTINGS 
-        self.setFixedSize(1200, 900)
-        self.setWindowTitle('dSigma')
-
-        #TAB INITIALIZING
-        self.tabs = QTabWidget(self)
-        self.tabs.setEnabled(True)
-        self.tabs.setGeometry(0, 0, 1000, 900)
-
-        #BUTTONS INITIALIZING
-        file_btn = QPushButton('Open a file', self)
-        file_btn.setGeometry(1010, 10, 180, 90)
 
 
 if __name__ == '__main__':
