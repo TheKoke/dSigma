@@ -26,9 +26,12 @@ class Cell:
         return self.__de_position
 
 
-class Locus:
-    def __init__(self, particle: Nuclei, matrix: np.ndarray, points: list[tuple[int, int]]) -> None:
-        self.particle = particle
+class RPF:
+    '''
+    Class for implementing Locus cutting in matrix.\n
+    Uses RPF (Rectangular Path Finding) algortihm. 
+    '''
+    def __init__(self, matrix: np.ndarray, points: list[tuple[int, int]]) -> None:
         self.matrix = matrix
         self.points = [Cell(*point) for point in points]
 
@@ -50,6 +53,9 @@ class Locus:
         return self.project(ceiling, floor)
     
     def handle_border(self, ceiling: list[Cell], floor: list[Cell], left: list[Cell], right: list[Cell]) -> tuple[list[Cell], list[Cell]]:
+        '''
+        Method that handles border of locus and glue upper and lower borders.
+        '''
         up_start, up_stop, low_start, low_stop = self.find_body(ceiling, floor)
 
         if up_start < low_start:
@@ -73,6 +79,9 @@ class Locus:
         return (ceiling[:len(floor)], floor[:len(ceiling)])
 
     def project(self, ceiling: list[Cell], floor: list[Cell]) -> list[int]:
+        '''
+        Method for projecting locus to E-axis.
+        '''
         spectrum = list()
         for i in range(len(ceiling)):
             e_index = ceiling[i].e_position
@@ -84,6 +93,11 @@ class Locus:
         return spectrum
     
     def find_body(self, ceiling: list[Cell], floor: list[Cell]) -> tuple[int, int, int, int]:
+        '''
+        Method for finding covered area between ceiling and floor of locus.\n
+        Returns tuple of:\n
+        (ceiling start index, ceiling stop index, floor start index, floor stop index).
+        '''
         up_start, up_stop = 0, len(ceiling) - 1
         low_start, low_stop = 0, len(floor) - 1
 
@@ -189,6 +203,39 @@ class Locus:
         upper = sorted(self.points[i:], key=lambda x: x.e_position)
         lower = sorted(self.points[:i], key=lambda x: x.e_position)
         return (upper, lower)
+
+
+class Locus:
+    def __init__(self, particle: Nuclei, matrix: np.ndarray, points: list[tuple[int, int]]) -> None:
+        self.__particle = particle
+        self.__rpf = RPF(matrix, points)
+
+    @property
+    def particle(self) -> Nuclei:
+        return self.__particle
+
+    def to_spectrum(self) -> list[int]:
+        return self.__rpf.to_spectrum()
+
+
+class Demo:
+    def __init__(self, parser: USBParser) -> None:
+        self.parser = parser
+
+    def spectrums(self) -> list[list[int]]:
+        alls = self.locuses()
+        return [self.locus_spectrum(each) for each in alls]
+
+    def locus_spectrum(self, points: list[tuple[int, int]]) -> list[int]:
+        matrix = self.matrix()
+        return RPF(matrix, points).to_spectrum()
+    
+    def locuses(self) -> list[list[tuple[int, int]]]:
+        alls = self.parser.take_locuses()
+        return [each for each in alls]
+    
+    def matrix(self) -> np.ndarray:
+        return self.parser.get_matrix()
 
 
 class Matrix:

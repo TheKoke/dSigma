@@ -1,12 +1,11 @@
 import os
 import sys
-from PyQt5 import QtCore
 
 from PyQt5.QtWidgets import *
 from PyQt5.QtWidgets import QWidget
 
 from pages import *
-from business.matrix import Matrix
+from business.matrix import Demo
 from business.parsing import USBParser
 from business.analysis import Analyzer, Spectrum
 from business.electronics import Telescope, Detector
@@ -27,10 +26,6 @@ class Sleuth:
     def __init__(self, main_directory: str) -> None:
         self.main = main_directory
 
-    def create_matrixes(self, electronics: Telescope) -> list[Matrix]:
-        parsers = self.all_parsers()
-        return [Matrix(parser, electronics) for parser in parsers]
-
     def all_parsers(self) -> list[USBParser]:
         files = self.sort()
         return [USBParser(file) for file in files]
@@ -41,7 +36,7 @@ class Sleuth:
     
     def only_usb(self, dirs: list[str]) -> list[str]:
         sifted = self.only_files(dirs)
-        return [file for file in sifted if '.usb' in file]
+        return [self.main + '\\' + file for file in sifted if '.usb' in file]
     
     def only_files(self, dirs: list[str]) -> list[str]:
         return [direc for direc in dirs if '.' if direc]
@@ -52,14 +47,24 @@ class WelcomeWindow(QDialog):
         super().__init__()
 
 
-class MainWindow(QMainWindow):
-    def __init__(self) -> None:
+class RevWindow(QMainWindow):
+    def __init__(self, directory: str) -> None:
         super().__init__()
+        self.directory = directory
+
+        sleuth = Sleuth(self.directory)
+        self.usbs = sleuth.sort()
+
+    def open_usb(self) -> None:
+        file = 'some.usb' # plug
+        parser = USBParser(file)
+
+        matrix = Demo(parser)
 
 
 if __name__ == '__main__':
     app = QApplication(sys.argv)
-    wind = MainWindow()
+    wind = RevWindow()
 
     wind.show()
     app.exec()
