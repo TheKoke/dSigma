@@ -62,8 +62,8 @@ class USBParser:
     def get_matrix(self) -> np.ndarray:
         buffer = open(self.path, 'rb').read()
         temp = []
-        for i in range(MATRIX_START, MATRIX_START + self.sizes[0] * self.sizes[1], INTEGER_BINARY_SIZE):
-            temp.append(int(buffer[i]))
+        for i in range(MATRIX_START, MATRIX_START + self.sizes[0] * self.sizes[1] * INTEGER_BINARY_SIZE, INTEGER_BINARY_SIZE):
+            temp.append(binary_to_int(buffer, i, INTEGER_BINARY_SIZE))
 
         temp = np.array(temp)
         return temp.reshape(self.sizes[1], self.sizes[0])

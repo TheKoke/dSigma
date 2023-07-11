@@ -232,7 +232,7 @@ class Demo:
     
     def locuses(self) -> list[list[tuple[int, int]]]:
         alls = self.parser.take_locuses()
-        return [each for each in alls]
+        return [alls[each] for each in alls]
     
     def matrix(self) -> np.ndarray:
         return self.parser.get_matrix()

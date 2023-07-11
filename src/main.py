@@ -2,9 +2,13 @@ import os
 import sys
 
 from PyQt5.QtWidgets import *
-from PyQt5.QtWidgets import QWidget
+from matplotlib.figure import Figure
+from matplotlib.patches import PathPatch
+from matplotlib.backends.backend_qt5agg import FigureCanvasQTAgg, NavigationToolbar2QT
 
-from pages import *
+from pages.welcome import Ui_Welcome
+from pages.matrixograph import Ui_Demo
+
 from business.matrix import Demo
 from business.parsing import USBParser
 from business.analysis import Analyzer, Spectrum
@@ -36,35 +40,105 @@ class Sleuth:
     
     def only_usb(self, dirs: list[str]) -> list[str]:
         sifted = self.only_files(dirs)
-        return [self.main + '\\' + file for file in sifted if '.usb' in file]
+        return [self.main + '/' + file for file in sifted if '.usb' in file]
     
     def only_files(self, dirs: list[str]) -> list[str]:
         return [direc for direc in dirs if '.' if direc]
 
 
-class WelcomeWindow(QDialog):
+class WelcomeWindow(QDialog, Ui_Welcome):
     def __init__(self) -> None:
         super().__init__()
+        self.setupUi(self)
+
+        self.path = ''
+
+        self.file_button.clicked.connect(self.take_directory)
+        self.enter_button.clicked.connect(self.start)
+
+    def take_directory(self) -> None:
+        paths = QFileDialog.getExistingDirectory(self)
+        self.input.setText(paths)
+        self.path = paths
+
+    def start(self) -> None:
+        if self.path == '':
+            pass
+
+        self.window = RevWindow(self.path)
+        self.window.show()
+        self.hide()
 
 
-class RevWindow(QMainWindow):
+class RevWindow(QMainWindow, Ui_Demo):
     def __init__(self, directory: str) -> None:
+        # SETUP OF WINDOW
         super().__init__()
-        self.directory = directory
+        self.setupUi(self)
 
-        sleuth = Sleuth(self.directory)
-        self.usbs = sleuth.sort()
+        # COLLECTING DATA AND PREPARING TO SHOW
+        self.usbs = Sleuth(directory).sort()
+        self.demo: Demo = None
+        self.matrix = None
+        self.luminiosity = 0
+
+        # MATPLOTLIB INITIALIZING
+        layout = QVBoxLayout(self.matplotlib_layout)
+        self.view = FigureCanvasQTAgg(Figure(figsize=(16, 9)))
+        self.axes = self.view.figure.subplots()
+        self.toolbar = NavigationToolbar2QT(self.view, self.matplotlib_layout)
+        layout.addWidget(self.toolbar)
+        layout.addWidget(self.view)
+
+        self.angles_box.currentTextChanged.connect(self.open_usb)
+        self.angles_box.addItems(self.usbs)
+
+        # EVENT HANDLING
+        self.show_button.clicked.connect(self.draw_matrix)
+        self.bright_up_button.clicked.connect(self.bright_up)
+        self.bright_down_button.clicked.connect(self.bright_down)
+        self.bright_def_button.clicked.connect(self.bright_default)
+        self.locus_show_button.clicked.connect(self.draw_locuses)
+        self.locus_unshow_button.clicked.connect(self.undraw_locuses)
 
     def open_usb(self) -> None:
-        file = 'some.usb' # plug
-        parser = USBParser(file)
+        parser = USBParser(self.angles_box.currentText())
 
-        matrix = Demo(parser)
+        self.demo = Demo(parser)
+        self.matrix = self.demo.matrix()
+        self.luminiosity = self.matrix.mean()
+
+    def bright_up(self) -> None:
+        self.luminiosity -= 10
+        self.draw_matrix()
+
+    def bright_down(self) -> None:
+        self.luminiosity += 10
+        self.draw_matrix()
+
+    def bright_default(self) -> None:
+        self.luminiosity = self.matrix.mean()
+        self.draw_matrix()
+
+    def draw_locuses(self) -> None:
+        locuses = self.demo.locuses()
+        for locus in locuses:
+            self.axes.plot([locus[i][0] for i in range(len(locus))], [locus[i][1] for i in range(len(locus))])
+        self.view.draw()
+
+    def undraw_locuses(self) -> None:
+        self.axes.clear()
+        self.draw_matrix()
+        self.view.draw()
+
+    def draw_matrix(self) -> None:
+        self.axes.pcolor(self.matrix, vmin=-self.luminiosity / 2, vmax=self.luminiosity / 2, cmap='coolwarm')
+        self.view.draw()
 
 
 if __name__ == '__main__':
     app = QApplication(sys.argv)
-    wind = RevWindow()
+    wind = WelcomeWindow()
 
     wind.show()
     app.exec()
