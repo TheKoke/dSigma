@@ -22,7 +22,6 @@ class Ui_Demo(object):
         font.setBold(True)
         font.setWeight(75)
         dSigma.setFont(font)
-        dSigma.setStyleSheet("")
         self.centralwidget = QtWidgets.QWidget(dSigma)
         self.centralwidget.setObjectName("centralwidget")
         self.horizontalLayout = QtWidgets.QHBoxLayout(self.centralwidget)
@@ -136,8 +135,7 @@ class Ui_Demo(object):
         font.setBold(True)
         font.setWeight(75)
         self.show_button.setFont(font)
-        self.show_button.setStyleSheet("background-color: rgb(85, 85, 127);\n"
-"color: rgb(255, 255, 255);")
+        self.show_button.setStyleSheet("background-color: rgb(85, 85, 127);\ncolor: rgb(255, 255, 255);")
         self.show_button.setObjectName("show_button")
         self.verticalLayout_2.addWidget(self.show_button)
         self.verticalLayout = QtWidgets.QVBoxLayout()
@@ -165,8 +163,7 @@ class Ui_Demo(object):
         font.setBold(True)
         font.setWeight(75)
         self.bright_up_button.setFont(font)
-        self.bright_up_button.setStyleSheet("background-color: rgb(85, 85, 127);\n"
-"color: rgb(255, 255, 255);")
+        self.bright_up_button.setStyleSheet("background-color: rgb(85, 85, 127);\ncolor: rgb(255, 255, 255);")
         self.bright_up_button.setObjectName("bright_up_button")
         self.bright_layout.addWidget(self.bright_up_button)
         self.bright_down_button = QtWidgets.QPushButton(self.services_layout)
@@ -178,8 +175,7 @@ class Ui_Demo(object):
         font.setBold(True)
         font.setWeight(75)
         self.bright_down_button.setFont(font)
-        self.bright_down_button.setStyleSheet("background-color: rgb(85, 85, 127);\n"
-"color: rgb(255, 255, 255);")
+        self.bright_down_button.setStyleSheet("background-color: rgb(85, 85, 127);\ncolor: rgb(255, 255, 255);")
         self.bright_down_button.setObjectName("bright_down_button")
         self.bright_layout.addWidget(self.bright_down_button)
         self.bright_def_button = QtWidgets.QPushButton(self.services_layout)
@@ -191,8 +187,7 @@ class Ui_Demo(object):
         font.setBold(True)
         font.setWeight(75)
         self.bright_def_button.setFont(font)
-        self.bright_def_button.setStyleSheet("background-color: rgb(85, 85, 127);\n"
-"color: rgb(255, 255, 255);")
+        self.bright_def_button.setStyleSheet("background-color: rgb(85, 85, 127);\ncolor: rgb(255, 255, 255);")
         self.bright_def_button.setObjectName("bright_def_button")
         self.bright_layout.addWidget(self.bright_def_button)
         self.verticalLayout.addLayout(self.bright_layout)
@@ -206,8 +201,7 @@ class Ui_Demo(object):
         font.setBold(True)
         font.setWeight(75)
         self.locus_show_button.setFont(font)
-        self.locus_show_button.setStyleSheet("background-color: rgb(85, 85, 127);\n"
-"color: rgb(255, 255, 255);")
+        self.locus_show_button.setStyleSheet("background-color: rgb(85, 85, 127);\ncolor: rgb(255, 255, 255);")
         self.locus_show_button.setObjectName("locus_show_button")
         self.verticalLayout_2.addWidget(self.locus_show_button)
         self.locus_unshow_button = QtWidgets.QPushButton(self.services_layout)
@@ -219,8 +213,7 @@ class Ui_Demo(object):
         font.setBold(True)
         font.setWeight(75)
         self.locus_unshow_button.setFont(font)
-        self.locus_unshow_button.setStyleSheet("background-color: rgb(85, 85, 127);\n"
-"color: rgb(255, 255, 255);")
+        self.locus_unshow_button.setStyleSheet("background-color: rgb(85, 85, 127);\ncolor: rgb(255, 255, 255);")
         self.locus_unshow_button.setObjectName("locus_unshow_button")
         self.verticalLayout_2.addWidget(self.locus_unshow_button)
         self.spectrum_button = QtWidgets.QPushButton(self.services_layout)
@@ -232,8 +225,7 @@ class Ui_Demo(object):
         font.setBold(True)
         font.setWeight(75)
         self.spectrum_button.setFont(font)
-        self.spectrum_button.setStyleSheet("background-color: rgb(85, 85, 127);\n"
-"color: rgb(255, 255, 255);")
+        self.spectrum_button.setStyleSheet("background-color: rgb(85, 85, 127);\ncolor: rgb(255, 255, 255);")
         self.spectrum_button.setObjectName("spectrum_button")
         self.verticalLayout_2.addWidget(self.spectrum_button)
         self.report_button = QtWidgets.QPushButton(self.services_layout)
@@ -245,8 +237,7 @@ class Ui_Demo(object):
         font.setBold(True)
         font.setWeight(75)
         self.report_button.setFont(font)
-        self.report_button.setStyleSheet("background-color: rgb(85, 85, 127);\n"
-"color: rgb(255, 255, 255);")
+        self.report_button.setStyleSheet("background-color: rgb(85, 85, 127);\ncolor: rgb(255, 255, 255);")
         self.report_button.setObjectName("report_button")
         self.verticalLayout_2.addWidget(self.report_button)
         self.start_button = QtWidgets.QPushButton(self.services_layout)
@@ -258,8 +249,7 @@ class Ui_Demo(object):
         font.setBold(True)
         font.setWeight(75)
         self.start_button.setFont(font)
-        self.start_button.setStyleSheet("background-color: rgb(85, 85, 127);\n"
-"color: rgb(255, 255, 255);")
+        self.start_button.setStyleSheet("background-color: rgb(85, 85, 127);\ncolor: rgb(255, 255, 255);")
         self.start_button.setObjectName("start_button")
         self.verticalLayout_2.addWidget(self.start_button)
         self.label = QtWidgets.QLabel(self.services_layout)

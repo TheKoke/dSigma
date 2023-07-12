@@ -1,13 +1,17 @@
 import os
 import sys
+import typing
+from PyQt5 import QtCore
 
 from PyQt5.QtWidgets import *
+from PyQt5.QtWidgets import QWidget
 from matplotlib.figure import Figure
 from matplotlib.patches import PathPatch
 from matplotlib.backends.backend_qt5agg import FigureCanvasQTAgg, NavigationToolbar2QT
 
 from pages.welcome import Ui_Welcome
 from pages.matrixograph import Ui_Demo
+from pages.spectrograph import Ui_SpectrumDemo
 
 from business.matrix import Demo
 from business.parsing import USBParser
@@ -63,11 +67,26 @@ class WelcomeWindow(QDialog, Ui_Welcome):
 
     def start(self) -> None:
         if self.path == '':
-            pass
+            return
 
         self.window = RevWindow(self.path)
         self.window.show()
         self.hide()
+
+
+class SpectrumRevWindow(QMainWindow, Ui_SpectrumDemo):
+    def __init__(self) -> None:
+        # SETUP OF WINDOW
+        super().__init__()
+        self.setupUi(self)
+
+        # MATPLOTLIB INITIALIZING
+        layout = QVBoxLayout(self.matplotlib_layout)
+        self.view = FigureCanvasQTAgg(Figure(figsize=(16, 9)))
+        self.axes = self.view.figure.subplots()
+        self.toolbar = NavigationToolbar2QT(self.view, self.matplotlib_layout)
+        layout.addWidget(self.toolbar)
+        layout.addWidget(self.view)
 
 
 class RevWindow(QMainWindow, Ui_Demo):
@@ -100,30 +119,36 @@ class RevWindow(QMainWindow, Ui_Demo):
         self.bright_def_button.clicked.connect(self.bright_default)
         self.locus_show_button.clicked.connect(self.draw_locuses)
         self.locus_unshow_button.clicked.connect(self.undraw_locuses)
+        self.spectrum_button.clicked.connect(self.open_spectrums)
+        self.report_button.clicked.connect(self.open_workbook)
 
     def open_usb(self) -> None:
         parser = USBParser(self.angles_box.currentText())
-
         self.demo = Demo(parser)
         self.matrix = self.demo.matrix()
-        self.luminiosity = self.matrix.mean()
+        self.luminiosity = self.matrix.mean() * 2
+
+    def open_workbook(self) -> None:
+        pass
 
     def bright_up(self) -> None:
-        self.luminiosity -= 10
-        self.draw_matrix()
+        if self.luminiosity > 20:
+            self.luminiosity -= 10
+            self.draw_matrix()
 
     def bright_down(self) -> None:
         self.luminiosity += 10
         self.draw_matrix()
 
     def bright_default(self) -> None:
-        self.luminiosity = self.matrix.mean()
+        self.luminiosity = self.matrix.mean() * 2
         self.draw_matrix()
 
     def draw_locuses(self) -> None:
         locuses = self.demo.locuses()
         for locus in locuses:
             self.axes.plot([locus[i][0] for i in range(len(locus))], [locus[i][1] for i in range(len(locus))])
+
         self.view.draw()
 
     def undraw_locuses(self) -> None:
@@ -131,8 +156,14 @@ class RevWindow(QMainWindow, Ui_Demo):
         self.draw_matrix()
         self.view.draw()
 
+    def open_spectrums(self) -> None:
+        locuses = self.demo.locuses()
+        for locus in locuses:
+            self.demo.locus_spectrum(locus)
+
     def draw_matrix(self) -> None:
-        self.axes.pcolor(self.matrix, vmin=-self.luminiosity / 2, vmax=self.luminiosity / 2, cmap='coolwarm')
+        self.axes.clear()
+        self.axes.pcolor(self.matrix, vmin=-self.luminiosity / 2, vmax=self.luminiosity / 2, cmap='bone_r')
         self.view.draw()
 
 

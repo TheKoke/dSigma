@@ -29,7 +29,7 @@ class Cell:
 class RPF:
     '''
     Class for implementing Locus cutting in matrix.\n
-    Uses RPF (Rectangular Path Finding) algortihm. 
+    Uses Extrapolation algortihm. 
     '''
     def __init__(self, matrix: np.ndarray, points: list[tuple[int, int]]) -> None:
         self.matrix = matrix
@@ -38,20 +38,20 @@ class RPF:
     def to_spectrum(self) -> list[int]:
         '''
         From locus gives an spectrum of projection to E-axis.
-        Returns spectrum as numpy array.
+        Returns spectrum as list.
         '''
         upper, lower = self.break_up()
 
         ceiling = self.select(upper)
         floor = self.select(lower)
 
-        left_border = sorted(self.rpf(upper[0], lower[0]), key=lambda x: x.e_position)
-        right_border = sorted(self.rpf(upper[-1], lower[-1]), key=lambda x: x.e_position)
+        left_border = sorted(self.step(upper[0], lower[0]), key=lambda x: x.e_position)
+        right_border = sorted(self.step(upper[-1], lower[-1]), key=lambda x: x.e_position)
 
         ceiling, floor = self.handle_border(ceiling, floor, left_border, right_border)
 
         return self.project(ceiling, floor)
-    
+
     def handle_border(self, ceiling: list[Cell], floor: list[Cell], left: list[Cell], right: list[Cell]) -> tuple[list[Cell], list[Cell]]:
         '''
         Method that handles border of locus and glue upper and lower borders.
@@ -71,26 +71,12 @@ class RPF:
             floor = mask
 
         if up_stop - len(ceiling) < low_stop - len(floor):
-            ceiling.extend(right[low_stop - len(floor):])
-
-        if up_stop - len(ceiling) > low_stop - len(floor):
             floor.extend(right[up_stop - len(ceiling):])
 
+        if up_stop - len(ceiling) > low_stop - len(floor):
+            ceiling.extend(right[low_stop - len(floor):])
+
         return (ceiling[:len(floor)], floor[:len(ceiling)])
-
-    def project(self, ceiling: list[Cell], floor: list[Cell]) -> list[int]:
-        '''
-        Method for projecting locus to E-axis.
-        '''
-        spectrum = list()
-        for i in range(len(ceiling)):
-            e_index = ceiling[i].e_position
-            de_start = floor[i].de_position
-            de_stop = ceiling[i].de_position
-
-            spectrum.append(self.matrix[de_start:de_stop, e_index].sum())
-
-        return spectrum
     
     def find_body(self, ceiling: list[Cell], floor: list[Cell]) -> tuple[int, int, int, int]:
         '''
@@ -115,82 +101,45 @@ class RPF:
 
         return (up_start, up_stop, low_start, low_stop)
 
+    def project(self, ceiling: list[Cell], floor: list[Cell]) -> list[int]:
+        '''
+        Method for projecting locus to E-axis.
+        '''
+        spectrum = list()
+        for i in range(len(ceiling)):
+            e_index = ceiling[i].e_position
+            de_start = ceiling[i].de_position
+            de_stop = floor[i].de_position + 1
+
+            spectrum.append(self.matrix[de_start:de_stop, e_index].sum())
+
+        return spectrum
+
     def select(self, queue: list[Cell]) -> list[Cell]:
         '''
         Taking points for each column of matrix through all locus.\n
-        Returns the result as numpy array.
+        Returns the result as list of Cells.
         '''
         collected = []
-        for i in range(len(queue) - 2):
-            collected.extend(self.rpf(queue[i], queue[i + 1])[:-1])
+        for i in range(len(queue) - 1):
+            collected.extend(self.step(queue[i], queue[i + 1])[:-1])
 
-        collected.extend(self.rpf(queue[-2], queue[-1]))
         return collected
-    
-    def rpf(self, first: Cell, second: Cell) -> list[Cell]:
-        '''
-        Actually RPF-algorithm method.\n
-        Returns a covered cells.
-        '''
-        horizonthal, vertical = self.rectangle_parameters(first, second)
-        longs, shorts = self.steps(max(horizonthal, vertical), min(horizonthal, vertical))
-        pointer = 0
 
-        current = [first.e_position, first.de_position]
-        e_dir = np.sign(second.e_position - first.e_position)
-        de_dir = np.sign(second.de_position - first.de_position)
+    def step(self, start: Cell, stop: Cell) -> list[Cell]:
+        '''
+        Method, that extrapolates dots between 2 points.\n
+        Returns list of covered cells.
+        '''
+        system = np.array([[start.e_position, 1], [stop.e_position, 1]])
+        righthand = np.array([start.de_position, stop.de_position])
+        line = np.linalg.solve(system, righthand)
 
         covered = []
-        for i in range(len(longs) + len(shorts)):
-            if i % 2 == 0 and horizonthal > vertical:
-                destination = current[0] + e_dir * longs[pointer]
+        for x in range(start.e_position, stop.e_position):
+            covered.append(Cell(x, round(line[0] * x + line[1])))
 
-                covered.extend([Cell(j, current[1]) for j in range(current[0] + e_dir, destination + e_dir, e_dir)])
-                current[0] = destination
-                pointer += 1
-
-            if i % 2 == 1 and horizonthal > vertical:
-                current[1] += de_dir * shorts[pointer - 1]
-
-            if i % 2 == 0 and horizonthal <= vertical:
-                covered.append(Cell(*current))
-                current[1] += de_dir * longs[pointer]
-                pointer += 1
-
-            if i % 2 == 1 and horizonthal <= vertical:
-                current[0] += e_dir * shorts[pointer - 1]
-
-        if horizonthal > vertical: covered.insert(0, first)
         return covered
-        
-    def steps(self, max_side: int, min_side: int) -> tuple[list[int], list[int]]:
-        '''
-        Function for calculating steps to take step-by-step.\n
-        Returns tuple of list where elements are steps count:\n
-        ([longer steps], [shorter steps])
-        '''
-        if min_side == 0:
-            return ([max_side], [0])
-
-        if min_side == 1:
-            return ([max_side // 2, max_side // 2 + max_side % 2, 0], [1, 0])
-
-        long_steps = (max_side // min_side * np.ones(min_side, dtype=np.int32)).tolist()
-        long_steps.append(max_side % min_side)
-
-        short_steps = np.ones(min_side, dtype=np.int32).tolist()
-
-        return (long_steps, short_steps)
-
-    def rectangle_parameters(self, first: Cell, second: Cell) -> tuple[int, int]:
-        '''
-        Function for calculate rectangle's, that builds on 2 dots, length and width.\n
-        Returns the rectangle sizes, builded on 2 cells, as tuple: (length, width).
-        '''
-        length = abs(first.e_position - second.e_position)
-        width = abs(first.de_position - second.de_position)
-
-        return (length, width)
     
     def break_up(self) -> tuple[list[Cell], list[Cell]]:
         '''
