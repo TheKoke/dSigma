@@ -22,9 +22,43 @@ class Modelier:
         self.telescope = telescope
 
     def fill(self, angle: float) -> np.ndarray:
-        e_de = np.ones((self.telescope.e_binning, self.telescope.de_binning))
+        graphs = self.collect_bethes(angle)
+        matrixes = [np.zeros((self.telescope.e_binning, self.telescope.de_binning))] * len(graphs)
 
-    def stop_energy_losses(self, reaction: Reaction, angle: float) -> dict[Nuclei, np.ndarray]:
+        threads = []
+        for i in range(len(graphs)):
+            threads.append(threading.Thread(target=self.smash, args=[graphs, matrixes[i]]))
+            threads[-1].start()
+
+        for t in threads:
+            t.join()
+
+        final = np.zeros_like(matrixes[0])
+        for matrix in matrixes:
+            final = final + matrix
+
+        del threads
+        return final
+
+    def smash(self, graph: np.ndarray, destination: np.ndarray) -> None:
+        pass
+
+    def collect_bethes(self, angle: float) -> list[np.ndarray]:
+        reactions = self.possible_reactions()
+        threads = []
+        result = [np.array([])] * len(reactions)
+
+        for i in range(len(reactions)):
+            threads.append(threading.Thread(target=self.energy_losses, args=[reactions[i], angle, result[i]]))
+            threads[-1].start()
+
+        for t in threads:
+            t.join()
+
+        del threads
+        return result
+
+    def energy_losses(self, reaction: Reaction, angle: float, destination: np.ndarray) -> None:
         de_losses = self.de_energy_losses(reaction, angle)
         after_reactions = self.__ear_range(reaction, angle)
 
@@ -36,10 +70,10 @@ class Modelier:
 
         bethe_bloch = Struggling(reaction.fragment, material)
 
-        loses = bethe_bloch.energy_loss(quits, dx, ro)
-        loses[loses > quits] = quits[loses > quits]
+        losses = bethe_bloch.energy_loss(quits, dx, ro)
+        losses[losses > quits] = quits[losses > quits]
 
-        return loses
+        destination = np.vstack((de_losses, losses))
 
     def de_energy_losses(self, reaction: Reaction, angle: float) -> np.ndarray:
         quits = self.__ear_range(reaction, angle)
@@ -61,16 +95,16 @@ class Modelier:
 
         for i in range(1, len(reaction.residual.states)):
             current_state = reaction.residual.states[i]
-
             if reaction.reaction_quit(current_state) + reaction.cm_energy() <= 0:
                 break
+
             minimum = min(reaction.fragment_energy(current_state, angle), minimum)
 
         return np.linspace(minimum, maximum, 50)
 
     def possible_reactions(self) -> list[Reaction]:
         hypotetic = [Reaction(self.beam, self.target, one, self.beam_energy) for one in self.POSSIBLE_PARTICLES]
-        return [react for react in hypotetic if react.cm_energy() + react.reaction_quit() >= 0]
+        return [react for react in hypotetic if react.beam_energy > react.reaction_threshold()]
 
 
 if __name__ == '__main__':

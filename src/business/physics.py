@@ -80,6 +80,9 @@ class Reaction:
         return q0 - residual_state
     
     def reaction_threshold(self, residual_state: float = 0) -> float:
+        if self.reaction_quit(residual_state) > 0:
+            return self.couloumb_potential()
+
         brackets = 1 + (self.beam.mass() / self.target.mass())
         brackets += (abs(self.reaction_quit(residual_state)) / (2 * self.target.mass()))
 

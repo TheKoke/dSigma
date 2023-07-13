@@ -26,7 +26,7 @@ class Cell:
         return self.__de_position
 
 
-class RPF:
+class Extrapolation:
     '''
     Class for implementing Locus cutting in matrix.\n
     Uses Extrapolation algortihm. 
@@ -40,6 +40,9 @@ class RPF:
         From locus gives an spectrum of projection to E-axis.
         Returns spectrum as list.
         '''
+        if len(self.points) == 0:
+            return []
+        
         upper, lower = self.break_up()
 
         ceiling = self.select(upper)
@@ -48,11 +51,11 @@ class RPF:
         left_border = sorted(self.step(upper[0], lower[0]), key=lambda x: x.e_position)
         right_border = sorted(self.step(upper[-1], lower[-1]), key=lambda x: x.e_position)
 
-        ceiling, floor = self.handle_border(ceiling, floor, left_border, right_border)
+        ceiling, floor = self.handle_borders(ceiling, floor, left_border, right_border)
 
         return self.project(ceiling, floor)
 
-    def handle_border(self, ceiling: list[Cell], floor: list[Cell], left: list[Cell], right: list[Cell]) -> tuple[list[Cell], list[Cell]]:
+    def handle_borders(self, ceiling: list[Cell], floor: list[Cell], left: list[Cell], right: list[Cell]) -> tuple[list[Cell], list[Cell]]:
         '''
         Method that handles border of locus and glue upper and lower borders.
         '''
@@ -108,8 +111,8 @@ class RPF:
         spectrum = list()
         for i in range(len(ceiling)):
             e_index = ceiling[i].e_position
-            de_start = ceiling[i].de_position
-            de_stop = floor[i].de_position + 1
+            de_start = min(ceiling[i].de_position, floor[i].de_position)
+            de_stop = max(ceiling[i].de_position, floor[i].de_position) + 1
 
             spectrum.append(self.matrix[de_start:de_stop, e_index].sum())
 
@@ -131,6 +134,9 @@ class RPF:
         Method, that extrapolates dots between 2 points.\n
         Returns list of covered cells.
         '''
+        if start.e_position == stop.e_position:
+            return [start if start.de_position < stop.de_position else stop]
+
         system = np.array([[start.e_position, 1], [stop.e_position, 1]])
         righthand = np.array([start.de_position, stop.de_position])
         line = np.linalg.solve(system, righthand)
@@ -157,7 +163,7 @@ class RPF:
 class Locus:
     def __init__(self, particle: Nuclei, matrix: np.ndarray, points: list[tuple[int, int]]) -> None:
         self.__particle = particle
-        self.__rpf = RPF(matrix, points)
+        self.__rpf = Extrapolation(matrix, points)
 
     @property
     def particle(self) -> Nuclei:
@@ -177,7 +183,7 @@ class Demo:
 
     def locus_spectrum(self, points: list[tuple[int, int]]) -> list[int]:
         matrix = self.matrix()
-        return RPF(matrix, points).to_spectrum()
+        return Extrapolation(matrix, points).to_spectrum()
     
     def locuses(self) -> list[list[tuple[int, int]]]:
         alls = self.parser.take_locuses()

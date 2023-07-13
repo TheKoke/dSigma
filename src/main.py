@@ -1,10 +1,7 @@
 import os
 import sys
-import typing
-from PyQt5 import QtCore
 
 from PyQt5.QtWidgets import *
-from PyQt5.QtWidgets import QWidget
 from matplotlib.figure import Figure
 from matplotlib.patches import PathPatch
 from matplotlib.backends.backend_qt5agg import FigureCanvasQTAgg, NavigationToolbar2QT
@@ -75,10 +72,12 @@ class WelcomeWindow(QDialog, Ui_Welcome):
 
 
 class SpectrumRevWindow(QMainWindow, Ui_SpectrumDemo):
-    def __init__(self) -> None:
+    def __init__(self, spectres: list[list[int]]) -> None:
         # SETUP OF WINDOW
         super().__init__()
         self.setupUi(self)
+
+        self.spectrums = spectres
 
         # MATPLOTLIB INITIALIZING
         layout = QVBoxLayout(self.matplotlib_layout)
@@ -87,6 +86,26 @@ class SpectrumRevWindow(QMainWindow, Ui_SpectrumDemo):
         self.toolbar = NavigationToolbar2QT(self.view, self.matplotlib_layout)
         layout.addWidget(self.toolbar)
         layout.addWidget(self.view)
+
+        self.calibrate_button.setEnabled(False)
+        self.peaks_button.setEnabled(False)
+
+        # EVENT HANDLING
+        self.particle_box.currentIndexChanged.connect(self.draw_spectrum)
+        self.txt_button.clicked.connect(self.save_spectrum)
+
+        self.draw_spectrum()
+
+    def draw_spectrum(self) -> None:
+        index = self.particle_box.currentIndex()
+        spectrum = self.spectrums[index]
+
+        self.axes.clear()
+        self.axes.plot(list(range(1, len(spectrum) + 1)), spectrum)
+        self.view.draw()
+
+    def save_spectrum(self) -> None:
+        pass
 
 
 class RevWindow(QMainWindow, Ui_Demo):
@@ -111,6 +130,7 @@ class RevWindow(QMainWindow, Ui_Demo):
 
         self.angles_box.currentTextChanged.connect(self.open_usb)
         self.angles_box.addItems(self.usbs)
+        self.start_button.setEnabled(False)
 
         # EVENT HANDLING
         self.show_button.clicked.connect(self.draw_matrix)
@@ -145,9 +165,13 @@ class RevWindow(QMainWindow, Ui_Demo):
         self.draw_matrix()
 
     def draw_locuses(self) -> None:
+        colors = ['blue', 'red', 'green', 'yellow', 'white']
         locuses = self.demo.locuses()
-        for locus in locuses:
-            self.axes.plot([locus[i][0] for i in range(len(locus))], [locus[i][1] for i in range(len(locus))])
+        for i in range(len(locuses)):
+            xs = [locuses[i][j][0] for j in range(len(locuses[i]))]
+            ys = [locuses[i][j][1] for j in range(len(locuses[i]))]
+
+            self.axes.plot(xs, ys, colors[i])
 
         self.view.draw()
 
@@ -158,8 +182,12 @@ class RevWindow(QMainWindow, Ui_Demo):
 
     def open_spectrums(self) -> None:
         locuses = self.demo.locuses()
+        spectres = []
         for locus in locuses:
-            self.demo.locus_spectrum(locus)
+            spectres.append(self.demo.locus_spectrum(locus[:-1]))
+
+        self.window = SpectrumRevWindow(spectres)
+        self.window.show()
 
     def draw_matrix(self) -> None:
         self.axes.clear()
