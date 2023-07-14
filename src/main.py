@@ -3,11 +3,10 @@ import sys
 
 from PyQt5.QtWidgets import *
 from matplotlib.figure import Figure
-from matplotlib.patches import PathPatch
 from matplotlib.backends.backend_qt5agg import FigureCanvasQTAgg, NavigationToolbar2QT
 
 from pages.welcome import Ui_Welcome
-from pages.matrixograph import Ui_Demo
+from pages.matrixograph import Ui_MatrixDemo
 from pages.spectrograph import Ui_SpectrumDemo
 
 from business.matrix import Demo
@@ -37,7 +36,7 @@ class Sleuth:
 
     def sort(self) -> list[str]:
         directories = os.listdir(self.main)
-        return self.only_usb(directories)
+        return sorted(self.only_usb(directories))
     
     def only_usb(self, dirs: list[str]) -> list[str]:
         sifted = self.only_files(dirs)
@@ -105,10 +104,21 @@ class SpectrumRevWindow(QMainWindow, Ui_SpectrumDemo):
         self.view.draw()
 
     def save_spectrum(self) -> None:
-        pass
+        name, _ = QFileDialog.getSaveFileName(self, 'Save File', filter='TXT Documents (*.txt)')
+        if name == '':
+            return
+        
+        index = self.particle_box.currentIndex()
+        spectrum = self.spectrums[index]
+
+        txt = open(name, 'w')
+        for i in range(len(spectrum)):
+            print(f'{i + 1}\t{spectrum[i]}', file=txt)
+
+        txt.close()
 
 
-class RevWindow(QMainWindow, Ui_Demo):
+class RevWindow(QMainWindow, Ui_MatrixDemo):
     def __init__(self, directory: str) -> None:
         # SETUP OF WINDOW
         super().__init__()
@@ -184,7 +194,7 @@ class RevWindow(QMainWindow, Ui_Demo):
         locuses = self.demo.locuses()
         spectres = []
         for locus in locuses:
-            spectres.append(self.demo.locus_spectrum(locus[:-1]))
+            spectres.append(self.demo.locus_spectrum(locus))
 
         self.window = SpectrumRevWindow(spectres)
         self.window.show()
