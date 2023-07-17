@@ -155,7 +155,7 @@ class RevWindow(QMainWindow, Ui_MatrixDemo):
     def open_usb(self) -> None:
         parser = USBParser(self.angles_box.currentText())
         self.demo = Demo(parser)
-        self.matrix = self.demo.matrix()
+        self.matrix = self.demo.numbers
         self.luminiosity = self.matrix.mean() * 2
 
     def open_workbook(self) -> None:
