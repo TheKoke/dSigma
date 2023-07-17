@@ -1,8 +1,8 @@
 import numpy as np
 
 from business.parsing import USBParser
-from business.physics import Nuclei, Reaction
-from business.analysis import Analyzer, Spectrum
+from business.physics import Nuclei, Reaction, PhysicalExperiment
+from business.analysis import Spectrum
 from business.electronics import Telescope
 
 
@@ -101,6 +101,19 @@ class Locus:
 class Demo:
     def __init__(self, parser: USBParser) -> None:
         self.parser = parser
+        self.numbers = self.parser.get_matrix()
+
+    @property
+    def angle(self) -> float:
+        return self.parser.get_angle()
+
+    @property
+    def integrator_counts(self) -> int:
+        return self.parser.get_integrator_counts()
+    
+    @property
+    def misscalculation(self) -> float:
+        return self.parser.get_misscalculation()
 
     def spectrums(self) -> list[list[int]]:
         alls = self.locuses()
@@ -113,9 +126,6 @@ class Demo:
     def locuses(self) -> list[list[tuple[int, int]]]:
         alls = self.parser.take_locuses()
         return [alls[each] for each in alls]
-    
-    def matrix(self) -> np.ndarray:
-        return self.parser.get_matrix()
 
 
 class Matrix:
@@ -137,18 +147,15 @@ class Matrix:
     def misscalculation(self) -> float:
         return self.parser.get_misscalculation()
     
-    def all_spectres(self) -> dict[Nuclei, Spectrum]:
-        locuses = self.generate_all_locuses()
-        return {each.particle : each.to_spectrum() for each in locuses}
+    def spectrum_of(self, particle: Nuclei) -> Spectrum:
+        collected = self.parser.take_locuses()
+        locus = Locus(particle, self.numbers, next(locus for locus in collected if locus == particle))
+        return self.generate_locus_spectrum(locus)
 
     def generate_locus_spectrum(self, locus: Locus) -> Spectrum:
         reaction = self.__build_reaction(locus.particle)
         data = locus.to_spectrum()
         return Spectrum(reaction, self.angle, self.electronics, data)
-    
-    def generate_all_locuses(self) -> list[Locus]:
-        alls = self.parser.take_locuses()
-        return [Locus(each, self.numbers, alls[each]) for each in alls]
     
     def __build_reaction(self, fragment: Nuclei) -> Reaction:
         beam = self.parser.parse_beam()
@@ -156,6 +163,15 @@ class Matrix:
         energy = self.parser.get_beam_energy()
 
         return Reaction(beam, target, fragment, energy)
+    
+
+class Matrix:
+    def __init__(self, matrix: np.ndarray, experiment: PhysicalExperiment, electronics: Telescope, lab_angle: float) -> None:
+        self.matrix = matrix
+
+        self.experiment = experiment
+        self.electronics = electronics
+        self.angle = lab_angle
 
 
 if __name__ == '__main__':
