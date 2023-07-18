@@ -2,6 +2,7 @@ import os
 import sys
 
 from PyQt5.QtWidgets import *
+from PyQt5.QtGui import *
 from matplotlib.figure import Figure
 from matplotlib.backends.backend_qt5agg import FigureCanvasQTAgg, NavigationToolbar2QT
 
@@ -65,7 +66,7 @@ class WelcomeWindow(QDialog, Ui_Welcome):
         if self.path == '':
             return
 
-        self.window = RevWindow(self.path)
+        self.window = MatrixRevWindow(self.path)
         self.window.show()
         self.hide()
 
@@ -118,7 +119,32 @@ class SpectrumRevWindow(QMainWindow, Ui_SpectrumDemo):
         txt.close()
 
 
-class RevWindow(QMainWindow, Ui_MatrixDemo):
+class WorkbookRevWindow(QMainWindow):
+    def __init__(self, report: str):
+        super().__init__()
+        self.resize(800, 600)
+        self.setMinimumSize(800, 600)
+
+        self.setWindowTitle("dSigma — Workbook viewer")
+
+        font = QFont()
+        font.setFamily("Bahnschrift SemiBold")
+        font.setPointSize(15)
+        font.setBold(True)
+        font.setWeight(75)
+        self.setFont(font)
+
+        self.centralwidget = QWidget(self)
+        self.verticalLayout = QVBoxLayout(self.centralwidget)
+        self.plainTextEdit = QPlainTextEdit(self.centralwidget)
+        self.plainTextEdit.setFont(font)
+        self.plainTextEdit.setPlainText(report)
+        self.plainTextEdit.setReadOnly(True)
+        self.verticalLayout.addWidget(self.plainTextEdit)
+        self.setCentralWidget(self.centralwidget)
+
+
+class MatrixRevWindow(QMainWindow, Ui_MatrixDemo):
     def __init__(self, directory: str) -> None:
         # SETUP OF WINDOW
         super().__init__()
@@ -159,7 +185,8 @@ class RevWindow(QMainWindow, Ui_MatrixDemo):
         self.luminiosity = self.matrix.mean() * 2
 
     def open_workbook(self) -> None:
-        pass
+        self.window = WorkbookRevWindow(self.demo.to_workbook())
+        self.window.show()
 
     def bright_up(self) -> None:
         if self.luminiosity > 20:

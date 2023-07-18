@@ -86,16 +86,19 @@ class Extrapolation:
 
 
 class Locus:
+    '''
+    Class that represantation Locus in Matrix.
+    '''
     def __init__(self, particle: Nuclei, matrix: np.ndarray, points: list[tuple[int, int]]) -> None:
         self.__particle = particle
-        self.__algo = Extrapolation(matrix, points)
+        self.__projector = Extrapolation(matrix, points)
 
     @property
     def particle(self) -> Nuclei:
         return self.__particle
 
     def to_spectrum(self) -> list[int]:
-        return self.__algo.to_spectrum()
+        return self.__projector.to_spectrum()
 
 
 class Demo:
@@ -114,64 +117,65 @@ class Demo:
     @property
     def misscalculation(self) -> float:
         return self.parser.get_misscalculation()
+    
+    def to_workbook(self) -> str:
+        report = f'Matrix {self.parser.find_out_sizes()} of -> \n'
+        report += f'{self.parser.parse_beam()} + {self.parser.parse_target()} reaction at {self.parser.get_beam_energy()} MeV.\n'
+        report += f"Telescope's angle in lab-system: {self.angle} degrees.\n"
+        report += f"Integrator's count: {self.integrator_counts}, Telescope's efficiency: {self.misscalculation}.\n"
+
+        locuses = self.parser.take_locuses()
+        for nuclei in locuses:
+            report += f'Locus of {nuclei}:\n'
+            for i in locuses[nuclei]:
+                report += f'\tE: {i[0]}; dE: {i[1]}\n'
+
+        return report
 
     def spectrums(self) -> list[list[int]]:
         alls = self.locuses()
         return [self.locus_spectrum(each) for each in alls]
 
     def locus_spectrum(self, points: list[tuple[int, int]]) -> list[int]:
-        matrix = self.matrix()
-        return Extrapolation(matrix, points).to_spectrum()
+        return Extrapolation(self.numbers, points).to_spectrum()
     
     def locuses(self) -> list[list[tuple[int, int]]]:
         alls = self.parser.take_locuses()
         return [alls[each] for each in alls]
-
-
-class Matrix:
-    def __init__(self, parser: USBParser, electronics: Telescope) -> None:
-        self.parser = parser
-        self.electronics = electronics
-
-        self.numbers = self.parser.get_matrix()
-
-    @property
-    def angle(self) -> float:
-        return self.parser.get_angle()
-
-    @property
-    def integrator_counts(self) -> int:
-        return self.parser.get_integrator_counts()
-    
-    @property
-    def misscalculation(self) -> float:
-        return self.parser.get_misscalculation()
-    
-    def spectrum_of(self, particle: Nuclei) -> Spectrum:
-        collected = self.parser.take_locuses()
-        locus = Locus(particle, self.numbers, next(locus for locus in collected if locus == particle))
-        return self.generate_locus_spectrum(locus)
-
-    def generate_locus_spectrum(self, locus: Locus) -> Spectrum:
-        reaction = self.__build_reaction(locus.particle)
-        data = locus.to_spectrum()
-        return Spectrum(reaction, self.angle, self.electronics, data)
-    
-    def __build_reaction(self, fragment: Nuclei) -> Reaction:
-        beam = self.parser.parse_beam()
-        target = self.parser.parse_target()
-        energy = self.parser.get_beam_energy()
-
-        return Reaction(beam, target, fragment, energy)
     
 
 class Matrix:
-    def __init__(self, matrix: np.ndarray, experiment: PhysicalExperiment, electronics: Telescope, lab_angle: float) -> None:
+    def __init__(self, matrix: np.ndarray, experiment: PhysicalExperiment, electronics: Telescope, 
+                 lab_angle: float, integrator: int, misscalculation: float) -> None:
         self.matrix = matrix
 
         self.experiment = experiment
+
         self.electronics = electronics
         self.angle = lab_angle
+
+        self.integrator = integrator
+        self.misscalculation = misscalculation
+
+        self.locuses: list[Locus] = []
+        self.spectrums: list[Spectrum] = []
+
+    def add_locus(self, particle: Nuclei, points: list[tuple[int, int]]) -> None:
+        self.locuses.append(Locus(particle, self.matrix, points))
+
+    def spectrum_of(self, particle: Nuclei) -> Spectrum:
+        if particle not in [locus.particle for locus in self.locuses]:
+            raise ValueError(f'There is no locus of {particle} in matrix.')
+        
+        locus = next(locus for locus in self.locuses if locus.particle == particle)
+        reaction = self.__build_reaction(particle)
+        spectrum_data = locus.to_spectrum()
+
+        self.spectrums.append(Spectrum(reaction, self.angle, self.electronics, spectrum_data))
+        return self.spectrums[-1]
+
+    def __build_reaction(self, fragment: Nuclei) -> Reaction:
+        return self.experiment.create_reaction(fragment)
 
 
 if __name__ == '__main__':

@@ -29,8 +29,8 @@ class Nuclei:
     def __hash__(self) -> int:
         return hash(str(self))
 
-    def __str__(self) -> str:
-        return f'A: {self.nuclons}, Z: {self.charge}'
+    def __repr__(self) -> str:
+        return f'Nuclei(Z: {self.charge}, A: {self.nuclons})'
     
     def __eq__(self, other: Nuclei) -> bool:
         return self.nuclons == other.nuclons and self.charge == other.charge
@@ -275,17 +275,29 @@ class CrossSection:
 
 class PhysicalExperiment:
     def __init__(self, beam: Nuclei, target: Nuclei, beam_energy: float) -> None:
-        self.beam = beam
-        self.target = target
-        self.beam_energy = beam_energy
+        self.__beam = beam
+        self.__target = target
+        self.__beam_energy = beam_energy
+
+    @property
+    def beam(self) -> Nuclei:
+        return self.__beam
+    
+    @property
+    def target(self) -> Nuclei:
+        return self.__target
+    
+    @property
+    def beam_energy(self) -> float:
+        return self.__beam_energy
 
     def create_reaction(self, fragment: Nuclei) -> Reaction:
-        compound = self.beam + self.target
+        compound = self.__beam + self.__target
         if fragment.charge > compound.charge:
             raise ValueError('Ejectile particle greater than reaction components.')
         
-        hypotese = Reaction(self.beam, self.target, fragment, self.beam_energy)
-        if hypotese.reaction_threshold() > self.beam_energy:
+        hypotese = Reaction(self.__beam, self.__target, fragment, self.__beam_energy)
+        if hypotese.reaction_threshold() > self.__beam_energy:
             raise ValueError('Energy of beam is not enough for produce reaction.')
 
         return hypotese
