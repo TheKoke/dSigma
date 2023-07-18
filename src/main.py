@@ -66,7 +66,7 @@ class WelcomeWindow(QDialog, Ui_Welcome):
         if self.path == '':
             return
 
-        self.window = RevWindow(self.path)
+        self.window = MatrixRevWindow(self.path)
         self.window.show()
         self.hide()
 
@@ -119,7 +119,7 @@ class SpectrumRevWindow(QMainWindow, Ui_SpectrumDemo):
         txt.close()
 
 
-class View(QMainWindow):
+class WorkbookRevWindow(QMainWindow):
     def __init__(self, report: str):
         super().__init__()
         self.resize(800, 600)
@@ -144,7 +144,7 @@ class View(QMainWindow):
         self.setCentralWidget(self.centralwidget)
 
 
-class RevWindow(QMainWindow, Ui_MatrixDemo):
+class MatrixRevWindow(QMainWindow, Ui_MatrixDemo):
     def __init__(self, directory: str) -> None:
         # SETUP OF WINDOW
         super().__init__()
@@ -185,31 +185,19 @@ class RevWindow(QMainWindow, Ui_MatrixDemo):
         self.luminiosity = self.matrix.mean() * 2
 
     def open_workbook(self) -> None:
-        if self.demo is None:
-            return
-
-        self.window = View(self.demo.to_workbook())
+        self.window = WorkbookRevWindow(self.demo.to_workbook())
         self.window.show()
 
     def bright_up(self) -> None:
-        if self.demo is None:
-            return
-        
         if self.luminiosity > 20:
             self.luminiosity -= 10
             self.draw_matrix()
 
     def bright_down(self) -> None:
-        if self.demo is None:
-            return
-        
         self.luminiosity += 10
         self.draw_matrix()
 
     def bright_default(self) -> None:
-        if self.demo is None:
-            return
-        
         self.luminiosity = self.matrix.mean() * 2
         self.draw_matrix()
 
@@ -225,17 +213,11 @@ class RevWindow(QMainWindow, Ui_MatrixDemo):
         self.view.draw()
 
     def undraw_locuses(self) -> None:
-        if self.demo is None:
-            return
-        
         self.axes.clear()
         self.draw_matrix()
         self.view.draw()
 
     def open_spectrums(self) -> None:
-        if self.demo is None:
-            return
-        
         locuses = self.demo.locuses()
         spectres = []
         for locus in locuses:
@@ -245,9 +227,6 @@ class RevWindow(QMainWindow, Ui_MatrixDemo):
         self.window.show()
 
     def draw_matrix(self) -> None:
-        if self.demo is None:
-            return
-        
         self.axes.clear()
         self.axes.pcolor(self.matrix, vmin=-self.luminiosity / 2, vmax=self.luminiosity / 2, cmap='bone_r')
         self.view.draw()
