@@ -70,15 +70,18 @@ class USBParser:
     
     def get_angle(self) -> float:
         coordinates = DETECTOR_ANGLE(self.sizes[0], self.sizes[1])
-        return parsing_float(open(self.path, 'rb'), coordinates[0], coordinates[1])
+        return parsing_float(open(self.path, 'rb').read(), coordinates[0], coordinates[1])
 
     def get_integrator_counts(self) -> int:
         buffer = open(self.path, 'rb').read()
         return binary_to_int(buffer, INTEGRATOR[0], INTEGRATOR[1])
 
-    def get_misscalculation(self) -> int:
+    def get_misscalculation(self) -> float:
         buffer = open(self.path, 'rb').read()
-        return binary_to_int(buffer, CONGRUENCE[0], CONGRUENCE[1])
+        congruence_monitor = binary_to_int(buffer, CONGRUENCE[0], CONGRUENCE[1])
+        matrix_sum = self.get_matrix().sum()
+
+        return congruence_monitor / matrix_sum
     
     def parse_beam(self) -> Nuclei:
         return self.__parsing_nucleis(BEAM_NAME)
@@ -88,7 +91,7 @@ class USBParser:
     
     def get_beam_energy(self) -> float:
         coordinates = BEAM_ENERGY(self.sizes[0], self.sizes[1])
-        return parsing_float(open(self.path, 'rb'), coordinates[0], coordinates[1])
+        return parsing_float(open(self.path, 'rb').read(), coordinates[0], coordinates[1])
     
     def __parsing_nucleis(self, position) -> Nuclei:
         buffer = open(self.path, 'rb').read()

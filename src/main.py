@@ -2,6 +2,7 @@ import os
 import sys
 
 from PyQt5.QtWidgets import *
+from PyQt5.QtGui import *
 from matplotlib.figure import Figure
 from matplotlib.backends.backend_qt5agg import FigureCanvasQTAgg, NavigationToolbar2QT
 
@@ -118,6 +119,31 @@ class SpectrumRevWindow(QMainWindow, Ui_SpectrumDemo):
         txt.close()
 
 
+class View(QMainWindow):
+    def __init__(self, report: str):
+        super().__init__()
+        self.resize(800, 600)
+        self.setMinimumSize(800, 600)
+
+        self.setWindowTitle("dSigma — Workbook viewer")
+
+        font = QFont()
+        font.setFamily("Bahnschrift SemiBold")
+        font.setPointSize(15)
+        font.setBold(True)
+        font.setWeight(75)
+        self.setFont(font)
+
+        self.centralwidget = QWidget(self)
+        self.verticalLayout = QVBoxLayout(self.centralwidget)
+        self.plainTextEdit = QPlainTextEdit(self.centralwidget)
+        self.plainTextEdit.setFont(font)
+        self.plainTextEdit.setPlainText(report)
+        self.plainTextEdit.setReadOnly(True)
+        self.verticalLayout.addWidget(self.plainTextEdit)
+        self.setCentralWidget(self.centralwidget)
+
+
 class RevWindow(QMainWindow, Ui_MatrixDemo):
     def __init__(self, directory: str) -> None:
         # SETUP OF WINDOW
@@ -159,18 +185,31 @@ class RevWindow(QMainWindow, Ui_MatrixDemo):
         self.luminiosity = self.matrix.mean() * 2
 
     def open_workbook(self) -> None:
-        pass
+        if self.demo is None:
+            return
+
+        self.window = View(self.demo.to_workbook())
+        self.window.show()
 
     def bright_up(self) -> None:
+        if self.demo is None:
+            return
+        
         if self.luminiosity > 20:
             self.luminiosity -= 10
             self.draw_matrix()
 
     def bright_down(self) -> None:
+        if self.demo is None:
+            return
+        
         self.luminiosity += 10
         self.draw_matrix()
 
     def bright_default(self) -> None:
+        if self.demo is None:
+            return
+        
         self.luminiosity = self.matrix.mean() * 2
         self.draw_matrix()
 
@@ -186,11 +225,17 @@ class RevWindow(QMainWindow, Ui_MatrixDemo):
         self.view.draw()
 
     def undraw_locuses(self) -> None:
+        if self.demo is None:
+            return
+        
         self.axes.clear()
         self.draw_matrix()
         self.view.draw()
 
     def open_spectrums(self) -> None:
+        if self.demo is None:
+            return
+        
         locuses = self.demo.locuses()
         spectres = []
         for locus in locuses:
@@ -200,6 +245,9 @@ class RevWindow(QMainWindow, Ui_MatrixDemo):
         self.window.show()
 
     def draw_matrix(self) -> None:
+        if self.demo is None:
+            return
+        
         self.axes.clear()
         self.axes.pcolor(self.matrix, vmin=-self.luminiosity / 2, vmax=self.luminiosity / 2, cmap='bone_r')
         self.view.draw()

@@ -114,14 +114,27 @@ class Demo:
     @property
     def misscalculation(self) -> float:
         return self.parser.get_misscalculation()
+    
+    def to_workbook(self) -> str:
+        report = f'Matrix {self.parser.find_out_sizes()} of -> \n'
+        report += f'{self.parser.parse_beam()} + {self.parser.parse_target()} reaction at {self.parser.get_beam_energy()} MeV.\n'
+        report += f"Telescope's angle in lab-system: {self.angle} degrees.\n"
+        report += f"Integrator's count: {self.integrator_counts}, Telescope's efficiency: {self.misscalculation}.\n"
+
+        locuses = self.parser.take_locuses()
+        for nuclei in locuses:
+            report += f'Locus of {nuclei}:\n'
+            for i in locuses[nuclei]:
+                report += f'E: {i[0]}; dE: {i[1]}\n'
+
+        return report
 
     def spectrums(self) -> list[list[int]]:
         alls = self.locuses()
         return [self.locus_spectrum(each) for each in alls]
 
     def locus_spectrum(self, points: list[tuple[int, int]]) -> list[int]:
-        matrix = self.matrix()
-        return Extrapolation(matrix, points).to_spectrum()
+        return Extrapolation(self.numbers, points).to_spectrum()
     
     def locuses(self) -> list[list[tuple[int, int]]]:
         alls = self.parser.take_locuses()
@@ -166,12 +179,20 @@ class Matrix:
     
 
 class Matrix:
-    def __init__(self, matrix: np.ndarray, experiment: PhysicalExperiment, electronics: Telescope, lab_angle: float) -> None:
+    def __init__(self, matrix: np.ndarray, experiment: PhysicalExperiment, electronics: Telescope, 
+                 lab_angle: float, integrator: int, misscalculation: float) -> None:
         self.matrix = matrix
 
         self.experiment = experiment
+
         self.electronics = electronics
         self.angle = lab_angle
+
+        self.integrator = integrator
+        self.misscalculation = misscalculation
+
+    def __build_reaction(self, fragment: Nuclei) -> Reaction:
+        return self.experiment.create_reaction(fragment)
 
 
 if __name__ == '__main__':
