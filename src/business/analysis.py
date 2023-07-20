@@ -158,7 +158,7 @@ class Peak:
         return (ydata * xs).sum() / (xs ** 2).sum()
 
 
-class Analyzer:
+class SpectrumAnalyzer:
     def __init__(self, spectrums: list[Spectrum]) -> None:
         self.spectrums = spectrums
 

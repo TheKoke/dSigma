@@ -35,13 +35,12 @@ class Detector:
 
 
 class Telescope:
-    def __init__(self, e_detector: Detector, de_detector: Detector, 
-                 e_binning: int = 256, de_binning: int = 256) -> None:
+    def __init__(self, e_detector: Detector, de_detector: Detector, kollimator_radius: float = 1.0, distance: float = 360) -> None:
         self.__e_detector = e_detector
         self.__de_detector = de_detector
-
-        self.__e_binning = e_binning
-        self.__de_binning = de_binning
+        
+        self.__distance = distance
+        self.__collimator_radius = kollimator_radius
 
     @property
     def e_detector(self) -> Detector:
@@ -52,12 +51,12 @@ class Telescope:
         return self.__de_detector
     
     @property
-    def e_binning(self) -> int:
-        return self.__e_binning
+    def collimator_radius(self) -> float:
+        return self.__collimator_radius
     
     @property
-    def de_binning(self) -> int:
-        return self.__de_binning
+    def distance(self) -> float:
+        return self.__distance
     
 
 if __name__ == '__main__':
