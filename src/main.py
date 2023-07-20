@@ -12,7 +12,6 @@ from pages.spectrograph import Ui_SpectrumDemo
 
 from business.matrix import Demo
 from business.parsing import USBParser
-from business.analysis import Analyzer, Spectrum
 from business.electronics import Telescope, Detector
 
 
@@ -101,7 +100,10 @@ class SpectrumRevWindow(QMainWindow, Ui_SpectrumDemo):
         spectrum = self.spectrums[index]
 
         self.axes.clear()
-        self.axes.plot(list(range(1, len(spectrum) + 1)), spectrum)
+        
+        for i in range(len(spectrum)):
+            self.axes.plot([i + 1, i + 1], [0, spectrum[i]], color='blue')
+            
         self.view.draw()
 
     def save_spectrum(self) -> None:

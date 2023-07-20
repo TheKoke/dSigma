@@ -1,7 +1,7 @@
 import numpy as np
 
 from business.parsing import USBParser
-from business.physics import Nuclei, Reaction, PhysicalExperiment
+from business.physics import Nuclei, Reaction, PhysicalExperiment, CrossSection
 from business.analysis import Spectrum
 from business.electronics import Telescope
 
@@ -119,8 +119,8 @@ class Demo:
         return self.parser.get_misscalculation()
     
     def to_workbook(self) -> str:
-        report = f'Matrix {self.parser.find_out_sizes()} of -> \n'
-        report += f'{self.parser.parse_beam()} + {self.parser.parse_target()} reaction at {self.parser.get_beam_energy()} MeV.\n'
+        report = f'Matrix {self.parser.matrix_sizes} of -> \n'
+        report += f'{self.parser.parse_beam()} + {self.parser.parse_target()} reaction at {self.parser.parse_beam_energy()} MeV.\n'
         report += f"Telescope's angle in lab-system: {self.angle} degrees.\n"
         report += f"Integrator's count: {self.integrator_counts}, Telescope's efficiency: {self.misscalculation}.\n"
 
@@ -176,6 +176,17 @@ class Matrix:
 
     def __build_reaction(self, fragment: Nuclei) -> Reaction:
         return self.experiment.create_reaction(fragment)
+    
+
+class MatrixAnalyzer:
+    def __init__(self, matrixes: list[Matrix]) -> None:
+        self.matrixes = matrixes
+
+    def collect_spectres(self, particle: Nuclei) -> list[Spectrum]:
+        pass
+
+    def cross_section_of(self, particle: Nuclei) -> np.ndarray:
+        pass
 
 
 if __name__ == '__main__':
