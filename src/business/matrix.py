@@ -1,9 +1,10 @@
 import numpy as np
 
 from business.parsing import USBParser
-from business.physics import Nuclei, Reaction, PhysicalExperiment, CrossSection
 from business.analysis import Spectrum
+from business.yard import NucleiConverter
 from business.electronics import Telescope
+from business.physics import Nuclei, Reaction, PhysicalExperiment, CrossSection
 
 
 class Cell:
@@ -119,14 +120,17 @@ class Demo:
         return self.parser.get_misscalculation()
     
     def to_workbook(self) -> str:
+        beam = NucleiConverter.to_string(self.parser.parse_beam())
+        target = NucleiConverter.to_string(self.parser.parse_target())
+
         report = f'Matrix {self.parser.matrix_sizes} of -> \n'
-        report += f'{self.parser.parse_beam()} + {self.parser.parse_target()} reaction at {self.parser.parse_beam_energy()} MeV.\n'
+        report += f'{target} + {beam} reaction at {self.parser.parse_beam_energy()} MeV.\n'
         report += f"Telescope's angle in lab-system: {self.angle} degrees.\n"
         report += f"Integrator's count: {self.integrator_counts}, Telescope's efficiency: {self.misscalculation}.\n"
 
         locuses = self.parser.take_locuses()
         for nuclei in locuses:
-            report += f'Locus of {nuclei}:\n'
+            report += f'Locus of {NucleiConverter.to_string(nuclei)}:\n'
             for i in locuses[nuclei]:
                 report += f'\tE: {i[0]}; dE: {i[1]}\n'
 

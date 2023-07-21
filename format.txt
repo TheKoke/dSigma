@@ -3,38 +3,42 @@ File Description for binary coding of dSigma file-format (.ds).
 /Start of addressing/
 
 1. Physical part of experiment:
-	1.1 unsigned byte (1 byte) Beam_Charge starts from 0x0000 ends on 0x0000
-	1.2 unsigned byte (1 byte) Beam_Nuclon starts from 0x0001 ends on 0x0001
-	1.3 unsigned byte (1 byte) Target_Charge starts from 0x0002 ends on 0x0002
-	1.4 unsigned byte (1 byte) Target_Nuclon starts from 0x0003 ends on 0x0003
-	1.5 float (4 bytes) Beam_Energy starts from 0x0004 ends on 0x0007
-	1.6 float (4 bytes) Detector_Angle starts from 0x0008 ends on  0x000b
+	1.1 unsigned byte (1 byte) Beam_Charge starts from 0x0000 ends on 0x0000.
+	1.2 unsigned byte (1 byte) Beam_Nuclon starts from 0x0001 ends on 0x0001.
+	1.3 unsigned byte (1 byte) Target_Charge starts from 0x0002 ends on 0x0002.
+	1.4 unsigned byte (1 byte) Target_Nuclon starts from 0x0003 ends on 0x0003.
+	1.5 float (4 bytes) Beam_Energy starts from 0x0004 ends on 0x0007.
+	1.6 float (4 bytes) Detector_Angle starts from 0x0008 ends on  0x000b.
 2. Electronics:
-	2.1 unsigned integer (4 bytes) E_detector_thickness starts from 0x000c ends on 0x000f
-	2.2 char[] (4 bytes) E_detector_madeof starts from 0x0010 ends on 0x0013
-	2.3 unsigned integer (4 bytes) dE_detector_thickness starts from 0x0014 ends on 0x0017
-	2.4 char[] (4 bytes) dE_detector_madeof starts from 0x0018 ends on 0x001b
+	2.1 unsigned integer (4 bytes) E_detector_thickness starts from 0x000c ends on 0x000f.
+	2.2 char[] (4 bytes) E_detector_madeof starts from 0x0010 ends on 0x0013.
+	2.3 unsigned integer (4 bytes) dE_detector_thickness starts from 0x0014 ends on 0x0017.
+	2.4 char[] (4 bytes) dE_detector_madeof starts from 0x0018 ends on 0x001b.
 3. Cross-Section:
-	3.1 unsigned integer (4 bytes) integrator_counts starts from 0x001c ends on 0x001f
-	3.2 unsigned integer (4 bytes) congruence starts from 0x0020 ends on 0x0023
-	3.3 float (4 bytes) integrator_constant starts from 0x0024 ends on 0x0027
-	3.4 float (4 bytes) collimator_radius starts from 0x0028 ends on 0x002b
-	3.5 float (4 bytes) target_detector_distance starts from 0x002c ends on 0x002f
+	3.1 unsigned integer (4 bytes) integrator_counts starts from 0x001c ends on 0x001f.
+	3.2 unsigned integer (4 bytes) congruence starts from 0x0020 ends on 0x0023.
+	3.3 float (4 bytes) integrator_constant starts from 0x0024 ends on 0x0027.
+	3.4 float (4 bytes) collimator_radius starts from 0x0028 ends on 0x002b.
+	3.5 float (4 bytes) target_detector_distance starts from 0x002c ends on 0x002f.
 4. Matrix:
-	4.1 unsigned short (2 bytes) E_size starts from 0x0030 ends on 0x0031
-	4.2 unsigned short (2 bytes) dE_size starts from 0x0032 ends on 0x0033
+	4.1 unsigned short (2 bytes) E_size starts from 0x0030 ends on 0x0031.
+	4.2 unsigned short (2 bytes) dE_size starts from 0x0032 ends on 0x0033.
 	4.3 integer[] (4 * E_size * dE_size bytes) EdE_Matrix starts from 0x0034 ends on 0x0034 + 4 * E_size * dE_size.
-	4.(3) integer *Matrix_stop :== 0x0034 + 4 * E_size * dE_size
+	4.(3) integer *Matrix_stop :== 0x0034 + 4 * E_size * dE_size.
 5. Locuses:
-	5.0 Possible locuses: p, d, t, he3, he4
-	5.1 unsigned integer (4 bytes) Current_locus_points_count starts from *Matrix_stop + 0x0001 ends on *Matrix_stop + 0x0004
-	5.2
-	5.3
+	5.0 Possible locuses: p, d, t, he3, he4.
+	5.1 unsigned integer (4 bytes) Current_locus_points_count starts from *Matrix_stop ends on *Matrix_stop + 0x0003.
+	5.2 for i in Current_locus_points_count:
+		5.2.1 unsigned short (2 bytes) Locus_point_i_E_channel starts from *Matrix_stop + 0x0004 + 2 * i * 0x0002 ends on *Matrix_stop + 0x0004 + 2 * i * 0x0002 + 0x0002.
+		5.2.2 unsigned short (2 bytes) Locus_point_i_dE_channel starts from *Matrix_stop + 0x0004 + (2 * i + 1) * 0x0002 ends on *Matrix_stop + 0x0004 + (2 * i + 1) * 0x0002 + 0x0002.
+		5.2.3 unsigned integer (4 bytes) Current_locus_points_count (re-defined) starts from *Matrix_stop + 0x0004 + 2 * Current_locus_points_count * 0x0002 ends on *Matrix_stop + 0x0004 + 2 * Current_locus_points_count * 0x0002 + 0x0004.
+	5.(2) integer *Locuses_stop :== Current_locus_points_count.
 6. Spectres:
-	6.0 Possible Spectres: p, d, t, he3, he4
-	6.1
-	6.2
-	6.3
+	6.0 Possible Spectres: p, d, t, he3, he4.
+	6.1 unsigned integer (4 bytes) Current_specturm_channels_count starts from *Locuses_stop + 0x0001 ends on *Locuses_stop + 0x0004.
+	6.2 for i in Current_specturm_channels_count:
+		6.2.1 unsigned integer (4 bytes) Spectrum_value_channel_i starts from *Locuses_stop + 0x0005 + 2 * i * 0x0004 ends on *Locuses_stop + 0x0005 + 2 * i * 0x0004 + 0x0004.
+		6.2.2 unsigned integer (4 bytes) Current_specturm_channels_count (re-defined) starts from *Locuses_stop + 0x0004 + 2 * Current_specturm_channels_count * 0x0004 ends on *Locuses_stop + 0x0004 + Current_specturm_channels_count * 0x0004 + 0x0004.
 
 /Final of addressing/
 	
