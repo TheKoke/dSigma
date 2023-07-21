@@ -1,8 +1,8 @@
 import struct
 import numpy
 
-from yard import NucleiConverter
-from physics import Nuclei, PhysicalExperiment
+from business.yard import NucleiConverter
+from business.physics import Nuclei, PhysicalExperiment
 
 
 # Binary Coordinates (offsets for struct module)
