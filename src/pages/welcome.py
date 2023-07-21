@@ -9,6 +9,7 @@
 
 
 from PyQt5 import QtCore, QtGui, QtWidgets
+from pages.matrixograph import MatrixRevWindow
 
 
 class Ui_Welcome(object):
@@ -99,6 +100,30 @@ class Ui_Welcome(object):
         self.enter_button.setText(_translate("dSigma", "Enter"))
         self.version_label.setText(_translate("dSigma", "dSigma v0.1.0"))
         self.info_label.setText(_translate("dSigma", "LLENR application for analyzing spectres"))
+
+
+class WelcomeWindow(QtWidgets.QDialog, Ui_Welcome):
+    def __init__(self) -> None:
+        super().__init__()
+        self.setupUi(self)
+
+        self.path = ''
+
+        self.file_button.clicked.connect(self.take_directory)
+        self.enter_button.clicked.connect(self.start)
+
+    def take_directory(self) -> None:
+        paths = QtWidgets.QFileDialog.getExistingDirectory(self)
+        self.input.setText(paths)
+        self.path = paths
+
+    def start(self) -> None:
+        if self.path == '':
+            return
+
+        self.window = MatrixRevWindow(self.path)
+        self.window.show()
+        self.hide()
 
 
 if __name__ == "__main__":

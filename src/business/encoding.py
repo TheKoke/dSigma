@@ -5,12 +5,16 @@ from business.matrix import Matrix, Spectrum, Locus
 
 
 class Encoder:
-    def __init__(self, path: str, matrix: Matrix) -> None:
-        self.path = path
+    def __init__(self, matrix: Matrix, directory: str) -> None:
         self.matrix = matrix
+        self.directory = directory
 
     def write_down(self) -> None:
-        buffer = open(self.path, 'r')
+        path = self.generate_file_name()
+        buffer = open(path, 'wb')
+
+    def generate_file_name(self) -> str:
+        pass
 
 
 class Decoder:
