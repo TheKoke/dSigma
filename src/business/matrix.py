@@ -92,11 +92,16 @@ class Locus:
     '''
     def __init__(self, particle: Nuclei, matrix: np.ndarray, points: list[tuple[int, int]]) -> None:
         self.__particle = particle
+        self.__points = points
         self.__projector = Extrapolation(matrix, points)
 
     @property
     def particle(self) -> Nuclei:
         return self.__particle
+        
+    @property
+    def points(self) -> list[tuple[int, int]]:
+        return self.__points
 
     def to_spectrum(self) -> list[int]:
         return self.__projector.to_spectrum()
@@ -151,7 +156,7 @@ class Demo:
 class Matrix:
     def __init__(self, matrix: np.ndarray, experiment: PhysicalExperiment, electronics: Telescope, 
                  lab_angle: float, integrator: int, misscalculation: float) -> None:
-        self.matrix = matrix
+        self.numbers = matrix
 
         self.experiment = experiment
 
@@ -165,7 +170,7 @@ class Matrix:
         self.spectrums: list[Spectrum] = []
 
     def add_locus(self, particle: Nuclei, points: list[tuple[int, int]]) -> None:
-        self.locuses.append(Locus(particle, self.matrix, points))
+        self.locuses.append(Locus(particle, self.numbers, points))
 
     def spectrum_of(self, particle: Nuclei) -> Spectrum:
         if particle not in [locus.particle for locus in self.locuses]:

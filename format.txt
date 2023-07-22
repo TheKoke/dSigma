@@ -26,19 +26,20 @@ File Description for binary coding of dSigma file-format (.ds).
 	4.3 integer[] (4 * E_size * dE_size bytes) EdE_Matrix starts from 0x0034 ends on 0x0034 + 4 * E_size * dE_size.
 	4.(3) integer *Matrix_stop :== 0x0034 + 4 * E_size * dE_size.
 5. Locuses:
-	5.0 Possible locuses: p, d, t, he3, he4.
+	5.0 Possible locuses and their ordering: p, d, t, he3, he4.
 	5.1 unsigned integer (4 bytes) Current_locus_points_count starts from *Matrix_stop ends on *Matrix_stop + 0x0003.
 	5.2 for i in Current_locus_points_count:
 		5.2.1 unsigned short (2 bytes) Locus_point_i_E_channel starts from *Matrix_stop + 0x0004 + 2 * i * 0x0002 ends on *Matrix_stop + 0x0004 + 2 * i * 0x0002 + 0x0002.
 		5.2.2 unsigned short (2 bytes) Locus_point_i_dE_channel starts from *Matrix_stop + 0x0004 + (2 * i + 1) * 0x0002 ends on *Matrix_stop + 0x0004 + (2 * i + 1) * 0x0002 + 0x0002.
-		5.2.3 unsigned integer (4 bytes) Current_locus_points_count (re-defined) starts from *Matrix_stop + 0x0004 + 2 * Current_locus_points_count * 0x0002 ends on *Matrix_stop + 0x0004 + 2 * Current_locus_points_count * 0x0002 + 0x0004.
 	5.(2) integer *Locuses_stop :== Current_locus_points_count.
 6. Spectres:
-	6.0 Possible Spectres: p, d, t, he3, he4.
-	6.1 unsigned integer (4 bytes) Current_specturm_channels_count starts from *Locuses_stop + 0x0001 ends on *Locuses_stop + 0x0004.
-	6.2 for i in Current_specturm_channels_count:
-		6.2.1 unsigned integer (4 bytes) Spectrum_value_channel_i starts from *Locuses_stop + 0x0005 + 2 * i * 0x0004 ends on *Locuses_stop + 0x0005 + 2 * i * 0x0004 + 0x0004.
-		6.2.2 unsigned integer (4 bytes) Current_specturm_channels_count (re-defined) starts from *Locuses_stop + 0x0004 + 2 * Current_specturm_channels_count * 0x0004 ends on *Locuses_stop + 0x0004 + Current_specturm_channels_count * 0x0004 + 0x0004.
+	6.0 Possible Spectres and their ordering: p, d, t, he3, he4.
+	6.1 unsigned integer (4 bytes) Current_spectrum_peaks_count starts from *Locuses_stop + 0x0001 ends on *Locuses_stop + 0x0004.
+	6.2 for i in Current_spectrum_peaks_count:
+		6.2.1 float (4 bytes) Residual_state
+		6.2.2 unsigned integer (4 bytes) Peak_center_channel
+		6.2.3 float (4 bytes) Peak_fwhm_in_channels
+		6.2.4 float (4 bytes) Peak_under_area
 
 /Final of addressing/
 	
