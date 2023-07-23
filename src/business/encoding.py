@@ -56,21 +56,61 @@ class Encoder:
         return path
 
     def write_physics(self, buffer: bytearray) -> None:
-        pass
+        beam = self.matrix.experiment.beam
+        target = self.matrix.experiment.target
+        energy = self.matrix.experiment.beam_energy
+        angle = self.matrix.angle
+
+        struct.pack_into('B', buffer, BEAM_CHARGE, beam.charge)
+        struct.pack_into('B', buffer, BEAM_NUCLON, beam.nuclons)
+
+        struct.pack_into('B', buffer, TARGET_CHARGE, target.charge)
+        struct.pack_into('B', buffer, TARGET_NUCLON, target.nuclons)
+
+        struct.pack_into('f', buffer, BEAM_ENERGY, energy)
+        struct.pack_into('f', buffer, DETECTOR_ANGLE, angle)
 
     def write_electronics(self, buffer: bytearray) -> None:
-        pass
+        telescope = self.matrix.electronics
+        e_detector = telescope.e_detector
+        de_detector = telescope.de_detector
+
+        struct.pack_into('f', buffer, E_DETECTOR_THICKNESS, e_detector.thickness)
+        struct.pack_into('4s', buffer, E_DETECTOR_MADEOF, e_detector.madeof)
+
+        struct.pack_into('f', buffer, DE_DETECTOR_THICKNESS, de_detector.thickness)
+        struct.pack_into('4s', buffer, DE_DETECTOR_MADEOF, de_detector.madeof)
 
     def write_details(self, buffer: bytearray) -> None:
-        pass
+        integrator_count = self.matrix.integrator
+        integrator_constant = 0
+        congruence = int(self.matrix.misscalculation * self.matrix.numbers.sum())
+        radius = self.matrix.electronics.collimator_radius
+        distance = self.matrix.electronics.distance
+
+        struct.pack_into('I', buffer, INTEGRATOR_COUNTS, integrator_count)
+        struct.pack_into('I', buffer, CONGRUENCE, congruence)
+        struct.pack_into('f', buffer, INTEGRATOR_CONSTANT, integrator_constant)
+
+        struct.pack_into('f', buffer, COLLIMATOR_RADIUS, radius)
+        struct.pack_into('f', buffer, TARGET_DETECTOR_DISTANCE, distance)
 
     def write_matrix(self, buffer: bytearray) -> None:
+        matrix = self.matrix.numbers
+        de_length, e_length = self.matrix.numbers.shape
+
+        struct.pack_into('H', buffer, E_SIZE, e_length)
+        struct.pack_into('H', buffer, DE_SIZE, de_length)
+
+        for i in range(de_length):
+            for j in range(e_length):
+                offset = 4 * (i * de_length + j)
+                struct.pack_into('I', buffer, MATRIX_START + offset, matrix[i, j])
+
+    def write_locuses(self, buffer: bytearray) -> None:
         pass
 
-    def write_locuses(self, buffer: bytearray) -> int:
-        pass
-
-    def write_spectrums(self, buffer: bytearray) -> int:
+    def write_spectrums(self, buffer: bytearray) -> None:
         pass
 
     def generate_file_name(self) -> str:

@@ -88,7 +88,7 @@ class Extrapolation:
 
 class Locus:
     '''
-    Class that represantation Locus in Matrix.
+    Class that represents Locus in Matrix.
     '''
     def __init__(self, particle: Nuclei, matrix: np.ndarray, points: list[tuple[int, int]]) -> None:
         self.__particle = particle
@@ -131,13 +131,14 @@ class Demo:
         report = f'Matrix {self.parser.matrix_sizes} of -> \n'
         report += f'{target} + {beam} reaction at {self.parser.parse_beam_energy()} MeV.\n'
         report += f"Telescope's angle in lab-system: {self.angle} degrees.\n"
-        report += f"Integrator's count: {self.integrator_counts}, Telescope's efficiency: {self.misscalculation}.\n"
+        report += f"Integrator's count: {self.integrator_counts}\n"
+        report += f"Telescope's efficiency: {self.misscalculation}.\n"
 
         locuses = self.parser.take_locuses()
         for nuclei in locuses:
             report += f'Locus of {NucleiConverter.to_string(nuclei)}:\n'
             for i in locuses[nuclei]:
-                report += f'\tE: {i[0]}; dE: {i[1]}\n'
+                report += f'\t(E: {i[0]}; dE: {i[1]})\n'
 
         return report
 

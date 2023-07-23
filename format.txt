@@ -23,7 +23,7 @@ File Description for binary coding of dSigma file-format (.ds).
 4. Matrix:
 	4.1 unsigned short (2 bytes) E_size starts from 0x0030 ends on 0x0031.
 	4.2 unsigned short (2 bytes) dE_size starts from 0x0032 ends on 0x0033.
-	4.3 integer[] (4 * E_size * dE_size bytes) EdE_Matrix starts from 0x0034 ends on 0x0034 + 4 * E_size * dE_size.
+	4.3 unsigned integer[] (4 * E_size * dE_size bytes) EdE_Matrix starts from 0x0034 ends on 0x0034 + 4 * E_size * dE_size.
 	4.(3) integer *Matrix_stop :== 0x0034 + 4 * E_size * dE_size.
 5. Locuses:
 	5.0 Possible locuses and their ordering: p, d, t, he3, he4.

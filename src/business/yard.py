@@ -22,7 +22,11 @@ class NucleiConverter:
 
     @staticmethod
     def to_string(nuclei: Nuclei) -> str:
-        return f'{NucleiConverter.NAMES[nuclei.charge]}{nuclei.nuclons}'
+        if nuclei.charge == 1:
+            isotopes = ['p', 'd', 't']
+            return isotopes[nuclei.nuclons - 1]
+
+        return f'{nuclei.nuclons}{NucleiConverter.NAMES[nuclei.charge]}'
 
     @staticmethod
     def to_nuclei(input: str) -> Nuclei:
