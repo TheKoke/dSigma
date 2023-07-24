@@ -221,7 +221,8 @@ class SpectrumRevWindow(QtWidgets.QMainWindow, Ui_SpectrumDemo):
         
         for i in range(len(spectrum)):
             self.axes.plot([i + 1, i + 1], [0, spectrum[i]], color='blue')
-            
+        
+        self.axes.plot(list(range(1, len(spectrum) + 1)), spectrum, color='blue')
         self.view.draw()
 
     def save_spectrum(self) -> None:
