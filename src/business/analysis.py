@@ -64,71 +64,6 @@ class Lorentzian:
         return constant * brackets
 
 
-class Spectrum:
-    def __init__(self, reaction: Reaction, angle: float, electronics: Telescope, data: list[int]) -> None:
-        self.angle = angle
-        self.reaction = reaction
-        self.electronics = electronics
-
-        self.data = np.array(data)
-
-        self.scale_shift = 0
-        self.scale_value = 0
-
-        self.energy_view = np.array([])
-
-    @property
-    def is_calibrated(self) -> bool:
-        return len(self.energy_view) != 0
-    
-    @property
-    def gamma_widths(self) -> list[float]:
-        self_widths = np.array(self.reaction.residual.wigner_widths)
-
-        detector_resolution = self.electronics.e_detector.resolution
-        beam_energy_emittance = self.reaction.beam_energy * 0.01 # cyclotrone u-150m
-        environment_resolution = np.sqrt(detector_resolution ** 2 + beam_energy_emittance ** 2)
-
-        return np.sqrt(self_widths ** 2 + environment_resolution ** 2).tolist()
-
-    def theory_peaks(self) -> list[float]:
-        piercing = self.electronics.de_detector
-        stopping = self.electronics.e_detector
-
-        de_bete_bloch = Struggling(self.reaction.fragment, piercing.madeof_nuclei)
-        e_bete_bloch = Struggling(self.reaction.fragment, stopping.madeof_nuclei)
-
-        likely_peaks = []
-        for state in self.reaction.residual.states:
-            initial = self.reaction.fragment_energy(state, self.angle)
-
-            de_loss = de_bete_bloch.energy_loss(initial, piercing.thickness, piercing.density)
-            if initial < de_loss:
-                break
-
-            e_loss = e_bete_bloch.energy_loss(initial - de_loss, stopping.thickness, stopping.density)
-            if initial - de_loss < e_loss:
-                likely_peaks.append(initial - de_loss)
-            else:
-                likely_peaks.append(e_loss)
-
-        return likely_peaks
-
-    def calibrate(self, anchors_indexes: list[int]) -> tuple[float, float]:
-        anchors_indexes = sorted(anchors_indexes, reverse=True)
-        theory_peaks = self.theory_peaks()
-
-        matrix = np.array([[anchors_indexes[0], 1], [anchors_indexes[1], 1]])
-        right_side = np.array([theory_peaks[0], theory_peaks[1]])
-
-        solution = np.linalg.solve(matrix, right_side)
-
-        self.scale_value, self.scale_shift = solution[0], solution[1]
-        self.energy_view = np.arange(1, len(self.data)) * self.scale_value + self.scale_shift
-
-        return (self.scale_value, self.scale_shift)
-
-
 class Peak:
     def __init__(self, spectrum: np.ndarray, mu_index: int, fwhm: int) -> None:
         self.spectrum = spectrum
@@ -158,60 +93,161 @@ class Peak:
         return (ydata * xs).sum() / (xs ** 2).sum()
 
 
+class Spectrum:
+    def __init__(self, reaction: Reaction, angle: float, electronics: Telescope, data: list[int]) -> None:
+        self.__angle = angle
+        self.__reaction = reaction
+        self.__electronics = electronics
+
+        self.__data = np.array(data)
+
+        self.__scale_shift = 0
+        self.__scale_value = 0
+
+        self.__peaks: dict[float, Gaussian] = dict()
+
+    @property
+    def is_calibrated(self) -> bool:
+        return len(self.energy_view) != 0
+    
+    @property
+    def gamma_widths(self) -> list[float]:
+        self_widths = np.array(self.__reaction.residual.wigner_widths)
+
+        detector_resolution = self.__electronics.e_detector.resolution
+        beam_energy_emittance = self.__reaction.beam_energy * 0.01 # cyclotrone u-150m
+        environment_resolution = np.sqrt(detector_resolution ** 2 + beam_energy_emittance ** 2)
+
+        return np.sqrt(self_widths ** 2 + environment_resolution ** 2).tolist()
+    
+    @property
+    def angle(self) -> float:
+        return self.__angle
+    
+    @property
+    def reaction(self) -> Reaction:
+        return self.__reaction
+    
+    @property
+    def electronics(self) -> Telescope:
+        return self.__electronics
+    
+    @property
+    def data(self) -> np.ndarray:
+        return self.__data[:]
+    
+    @property
+    def energy_view(self) -> np.ndarray:
+        if self.__scale_shift == 0 and self.__scale_value == 0:
+            return np.array([])
+        
+        return self.__scale_value * np.arange(1, len(self.__data) + 1) + self.__scale_shift
+    
+    @property
+    def scale_shift(self) -> float:
+        return self.__scale_shift
+    
+    @scale_shift.setter
+    def scale_shift(self, val: float) -> None:
+        self.__scale_shift = val
+
+    @property
+    def scale_value(self) -> float:
+        return self.__scale_value
+    
+    @scale_value.setter
+    def scale_value(self, val: float) -> None:
+        if val <= 0:
+            raise ValueError('Scale value of channel can not be negative or equal to 0.')
+        
+        self.__scale_value = val
+
+    @property
+    def peaks(self) -> dict[float, Gaussian]:
+        return self.__peaks.copy()
+    
+    def add_peak(self, state: float, peak: Gaussian) -> None:
+        if not self.is_calibrated:
+            raise ValueError('Spectrum must be calibrated before approximating peaks.')
+        
+        if state not in self.reaction.residual.states:
+            raise ValueError(f'There is no state of residual nuclei of reaction same as {state}')
+        
+        self.__peaks[state] = peak
+
+
 class SpectrumAnalyzer:
     def __init__(self, spectrums: list[Spectrum]) -> None:
         self.spectrums = spectrums
-
-        self.events: list[list[float]] = [0] * len(self.spectrums)
-        self.gaussians: list[list[Gaussian]] = [0] * len(spectrums)
-
-    def to_workbook(self, index: int) -> str:
-        report = f'{self.spectrums[index].angle} degree spectrum analysis.\n'
-
-        report += f'Spectrum was calibrated by:'
-        report += f' E(ch) = {round(self.spectrums[index].scale_value, 3)}*ch + {round(self.spectrums[index].scale_shift)}\n'
-
-        report += 'Peaks analysis info:\n'
-        for peak in self.gaussians[index]:
-            report += '\t' + peak.to_workbook() + '\n'
-
-        report += '\n\n'
-        return report
 
     def approximate(self, index: int) -> None:
         if not self.spectrums[index].is_calibrated:
             raise ValueError('Spectrum must be calibrated before finding peaks')
 
-        self.gaussians[index] = list()
-        self.events[index] = list()
-
-        peaks = self.find_peaks(index)
-        for peak in peaks:
-            curr = peak.approximate()
-            self.gaussians[index].append(curr)
-            self.events[index].append(curr.area)
+        pass
             
     def find_peaks(self, index: int) -> list[Peak]:
-        if not self.spectrums[index].is_calibrated:
+        spectrum = self.spectrums[index]
+        if not spectrum.is_calibrated:
             raise ValueError('Spectrum must be calibrated before finding peaks')
         
-        theories = self.spectrums[index].theory_peaks()
+        theories = self.theory_peaks(index)
         
         collected = []
         for i in range(len(theories)):
-            k, e0 = self.spectrums[index].scale_value, self.spectrums[index].scale_shift
+            k, e0 = spectrum.scale_value, spectrum.scale_shift
 
             pretend_channel = int((theories[i] - e0) / k) - 1
             if pretend_channel <= 0:
                 continue
 
-            fwhm_in_channels = int(self.spectrums[index].gamma_widths[i] / self.spectrums[index].scale_value)
-            collected.append(Peak(self.spectrums[index], pretend_channel, fwhm_in_channels))
+            fwhm_in_channels = int(spectrum.gamma_widths[i] / spectrum.scale_value)
+            collected.append(Peak(spectrum, pretend_channel, fwhm_in_channels))
+
+            state = spectrum.reaction.residual.states[i]
+            spectrum.add_peak(state, collected[-1])
 
         return collected
+    
+    def theory_peaks(self, index: int) -> list[float]:
+        current = self.spectrums[index]
 
-    def calibrate_spectrum(self, index: int, peak_indexes: list[int]) -> tuple[float, float]:
-        return self.spectrums[index].calibrate(peak_indexes)
+        piercing = current.electronics.de_detector
+        stopping = current.electronics.e_detector
+
+        de_bete_bloch = Struggling(current.reaction.fragment, piercing.madeof_nuclei)
+        e_bete_bloch = Struggling(current.reaction.fragment, stopping.madeof_nuclei)
+
+        likely_peaks = []
+        for state in current.reaction.residual.states:
+            initial = current.reaction.fragment_energy(state, current.angle)
+
+            de_loss = de_bete_bloch.energy_loss(initial, piercing.thickness, piercing.density)
+            if initial < de_loss:
+                break
+
+            e_loss = e_bete_bloch.energy_loss(initial - de_loss, stopping.thickness, stopping.density)
+            if initial - de_loss < e_loss:
+                likely_peaks.append(initial - de_loss)
+            else:
+                likely_peaks.append(e_loss)
+
+        return likely_peaks
+    
+    def calibrate(self, index: int, anchors_indexes: tuple[int], states: tuple[float]) -> None:
+        current = self.spectrums[index]
+
+        anchors_indexes = sorted(anchors_indexes, reverse=True)
+        theories = self.theory_peaks(index)
+
+        first_state_index = current.reaction.residual.states.index(states[0])
+        second_state_index = current.reaction.residual.states.index(states[1])
+
+        matrix = np.array([[anchors_indexes[0], 1], [anchors_indexes[1], 1]])
+        right_side = np.array([theories[first_state_index], theories[second_state_index]])
+
+        solution = np.linalg.solve(matrix, right_side)
+        current.scale_value, current.scale_shift = solution[0], solution[1]
 
 
 if __name__ == '__main__':

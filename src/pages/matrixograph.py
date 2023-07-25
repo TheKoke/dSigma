@@ -302,8 +302,11 @@ class MatrixRevWindow(QtWidgets.QMainWindow, Ui_MatrixDemo):
         super().__init__()
         self.setupUi(self)
 
+        self.sleuth = Sleuth(directory)
+
         # COLLECTING DATA AND PREPARING TO SHOW
-        self.usbs = Sleuth(directory).sort()
+        self.usbs = self.sleuth.usb_names()
+        self.parsers = self.sleuth.all_parsers()
         self.demo: Demo = None
         self.matrix = None
         self.luminiosity = 0
@@ -331,8 +334,7 @@ class MatrixRevWindow(QtWidgets.QMainWindow, Ui_MatrixDemo):
         self.report_button.clicked.connect(self.open_workbook)
 
     def open_usb(self) -> None:
-        parser = USBParser(self.angles_box.currentText())
-        self.demo = Demo(parser)
+        self.demo = Demo(self.parsers[self.angles_box.currentIndex()])
         self.matrix = self.demo.numbers
         self.luminiosity = self.matrix.mean() * 2
 
