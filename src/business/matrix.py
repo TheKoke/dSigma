@@ -132,6 +132,7 @@ class Demo:
         report += f'{target} + {beam} reaction at {self.parser.parse_beam_energy()} MeV.\n'
         report += f"Telescope's angle in lab-system: {self.angle} degrees.\n"
         report += f"Integrator's count: {self.integrator_counts}\n"
+        report += f"Integrator's module constant: {self.parser.get_integrator_constant()} Coul/pulse.\n"
         report += f"Telescope's efficiency: {self.misscalculation}.\n"
 
         locuses = self.parser.take_locuses()

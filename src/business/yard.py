@@ -30,6 +30,7 @@ class NucleiConverter:
 
     @staticmethod
     def to_nuclei(input: str) -> Nuclei:
+        input = input.strip()
         charge = NucleiConverter.charge_by_name(input)
         nuclons = NucleiConverter.nuclons_by_name(input)
 
@@ -46,6 +47,8 @@ class NucleiConverter:
         name = name.lower()
         if name in ['p', 'd', 't']:
             return ['p', 'd', 't'].index(name) + 1
+        elif name == 'a':
+            return 4
 
         pretend = ''
         for i in name:
@@ -59,7 +62,7 @@ class NucleiConverter:
         name = ''.join([char.lower() for char in name if char.isalpha()])
         match name:
             case 'h' | 'p' | 'd' | 't': return 1
-            case 'he': return 2
+            case 'he' | 'a': return 2
             case 'li': return 3
             case 'be': return 4
             case 'b': return 5

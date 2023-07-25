@@ -104,11 +104,13 @@ class Ui_Welcome(object):
 
 class WelcomeWindow(QtWidgets.QDialog, Ui_Welcome):
     def __init__(self) -> None:
+        # SETUP OF WINDOW
         super().__init__()
         self.setupUi(self)
 
         self.path = ''
 
+        # EVENT HANDLING
         self.file_button.clicked.connect(self.take_directory)
         self.enter_button.clicked.connect(self.start)
 

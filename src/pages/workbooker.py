@@ -4,6 +4,7 @@ from PyQt5.QtGui import *
 
 class WorkbookRevWindow(QMainWindow):
     def __init__(self, report: str):
+        # SETUP OF WINDOW
         super().__init__()
         self.resize(800, 600)
         self.setMinimumSize(800, 600)

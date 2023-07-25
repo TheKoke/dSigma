@@ -50,6 +50,9 @@ class USBParser:
 
     def get_integrator_counts(self) -> int:
         return struct.unpack_from('i', self.buffer, INTEGRATOR)[0]
+    
+    def get_integrator_constant(self) -> float:
+        return struct.unpack_from('f', self.buffer, INTEGRATOR_CONST(*self.matrix_sizes))[0]
 
     def get_misscalculation(self) -> int:
         matrix_sum = self.get_matrix().sum()

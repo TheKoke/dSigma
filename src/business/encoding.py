@@ -187,13 +187,10 @@ class Decoder:
 
     @property
     def matrix_sizes(self) -> tuple[int, int]:
-        e_size = struct.unpack_from('H', self.buffer, E_SIZE)
-        de_size = struct.unpack_from('H', self.buffer, DE_SIZE)
+        e_size = struct.unpack_from('H', self.buffer, E_SIZE)[0]
+        de_size = struct.unpack_from('H', self.buffer, DE_SIZE)[0]
 
         return (e_size, de_size)
-
-    def gather_matrix(self) -> Matrix:
-        pass
 
     def get_experiment(self) -> PhysicalExperiment:
         beam = self.parse_beam()
@@ -224,8 +221,8 @@ class Decoder:
         de_thick = struct.unpack_from('f', self.buffer, DE_DETECTOR_THICKNESS)[0]
         de_madeof = struct.unpack_from('4s', self.buffer, DE_DETECTOR_MADEOF)[0].decode('ascii')
 
-        collimator = struct.unpack_from('f', self.buffer, COLLIMATOR_RADIUS)
-        distance = struct.unpack_from('f', self.buffer, TARGET_DETECTOR_DISTANCE)
+        collimator = struct.unpack_from('f', self.buffer, COLLIMATOR_RADIUS)[0]
+        distance = struct.unpack_from('f', self.buffer, TARGET_DETECTOR_DISTANCE)[0]
 
         stopping = Detector(e_madeof, e_thick)
         piercing = Detector(de_madeof, de_thick)
@@ -292,14 +289,14 @@ class Decoder:
 
         collected = []
         while offset >= len(self.buffer):
-            current_nuclei_charge = struct.unpack_from('B', self.buffer, offset)
-            current_nuclei_nuclons = struct.unpack_from('B', self.buffer, offset + 1)
+            current_nuclei_charge = struct.unpack_from('B', self.buffer, offset)[0]
+            current_nuclei_nuclons = struct.unpack_from('B', self.buffer, offset + 1)[0]
             offset += 2
 
             current_reaction = experiment.create_reaction(Nuclei(current_nuclei_charge, current_nuclei_nuclons))
             current_spectrum = Spectrum(current_reaction, angle, electronics, [])
 
-            peaks_count = struct.unpack_from('H', self.buffer, offset)
+            peaks_count = struct.unpack_from('H', self.buffer, offset)[0]
             offset += 2
 
             for _ in range(peaks_count):
@@ -312,16 +309,16 @@ class Decoder:
         return collected
     
     def __gather_peak(self, offset: int) -> tuple[float, Gaussian]:
-        state = struct.unpack_from('f', self.buffer, offset)
+        state = struct.unpack_from('f', self.buffer, offset)[0]
         offset += 4
 
-        center = struct.unpack_from('I', self.buffer, offset)
+        center = struct.unpack_from('I', self.buffer, offset)[0]
         offset += 4
 
-        fwhm = struct.unpack_from('f', self.buffer, offset)
+        fwhm = struct.unpack_from('f', self.buffer, offset)[0]
         offset += 4
 
-        area = struct.unpack_from('f', self.buffer, offset)
+        area = struct.unpack_from('f', self.buffer, offset)[0]
         return (state, Gaussian(center, fwhm, area))
 
 
