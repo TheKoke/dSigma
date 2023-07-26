@@ -98,17 +98,19 @@ class Ui_Welcome(object):
         self.input.setPlaceholderText(_translate("dSigma", "Example: C:\\Users\\User\\Directory\\"))
         self.file_button.setText(_translate("dSigma", "..."))
         self.enter_button.setText(_translate("dSigma", "Enter"))
-        self.version_label.setText(_translate("dSigma", "dSigma v0.1.0"))
+        self.version_label.setText(_translate("dSigma", "dSigma v0.1.1"))
         self.info_label.setText(_translate("dSigma", "LLENR application for analyzing spectres"))
 
 
 class WelcomeWindow(QtWidgets.QDialog, Ui_Welcome):
     def __init__(self) -> None:
+        # SETUP OF WINDOW
         super().__init__()
         self.setupUi(self)
 
         self.path = ''
 
+        # EVENT HANDLING
         self.file_button.clicked.connect(self.take_directory)
         self.enter_button.clicked.connect(self.start)
 

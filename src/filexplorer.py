@@ -10,6 +10,11 @@ class Sleuth:
         files = self.sort()
         return [USBParser(file) for file in files]
 
+    def usb_names(self) -> list[str]:
+        directories = os.listdir(self.main)
+        sifted = self.only_files(directories)
+        return [file for file in sifted if '.usb' in file]
+
     def sort(self) -> list[str]:
         directories = os.listdir(self.main)
         return sorted(self.only_usb(directories))
