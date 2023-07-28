@@ -138,15 +138,19 @@ class Decoder:
         angle = self.get_angle()
         electronics = self.get_electronics()
         experiment = self.get_experiment()
+        locuses = self.take_locuses()
 
         collected = []
         while offset >= len(self.buffer):
             current_nuclei_charge = struct.unpack_from('B', self.buffer, offset)[0]
             current_nuclei_nuclons = struct.unpack_from('B', self.buffer, offset + 1)[0]
+            current_nuclei = Nuclei(current_nuclei_charge, current_nuclei_nuclons)
             offset += 2
 
-            current_reaction = experiment.create_reaction(Nuclei(current_nuclei_charge, current_nuclei_nuclons))
-            current_spectrum = Spectrum(current_reaction, angle, electronics, [])
+            current_reaction = experiment.create_reaction(current_nuclei)
+            current_locus = next(i for i in locuses if i.particle == current_nuclei)
+
+            current_spectrum = Spectrum(current_reaction, angle, electronics, current_locus.to_spectrum())
 
             peaks_count = struct.unpack_from('H', self.buffer, offset)[0]
             offset += 2
