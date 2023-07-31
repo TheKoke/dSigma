@@ -30,7 +30,7 @@ E_SIZE       = 48
 DE_SIZE      = 50
 MATRIX_START = 52
 # Dynamic area, locuses and spectres
-LOCUSES_START = lambda height, width: 4 * height * width
+LOCUSES_START = lambda height, width: MATRIX_START + 4 * height * width
 
 
 class Decoder:
@@ -106,7 +106,7 @@ class Decoder:
 
         offset = LOCUSES_START(*self.matrix_sizes)
         count = struct.unpack_from('H', self.buffer, offset)[0]
-        offset += 1
+        offset += 2
 
         collected = []
         for _ in range(count):

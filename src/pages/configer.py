@@ -426,10 +426,7 @@ class Configer(QtWidgets.QDialog, Ui_ExperimentConfig):
         self.setupUi(self)
 
         # EVENT HANDLING
-        self.accept_button.clicked.connect(self.end)
-
-    def end(self) -> None:
-        self.hide()
+        self.accept_button.clicked.connect(self.hide)
 
     def gather_telescope(self) -> Telescope:
         de = self.de_detector()

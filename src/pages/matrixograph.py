@@ -536,7 +536,6 @@ class Ui_Matrixograph(object):
         self.horizontalLayout.addWidget(self.services_layout)
         self.matplotlib_layout = QtWidgets.QFrame(self.centralwidget)
         self.matplotlib_layout.setMinimumSize(QtCore.QSize(880, 880))
-        self.matplotlib_layout.setStyleSheet("")
         self.matplotlib_layout.setFrameShape(QtWidgets.QFrame.StyledPanel)
         self.matplotlib_layout.setFrameShadow(QtWidgets.QFrame.Raised)
         self.matplotlib_layout.setObjectName("matplotlib_layout")
@@ -674,6 +673,31 @@ class MatrixRevWindow(QtWidgets.QMainWindow, Ui_MatrixRev):
         self.view.draw()
 
 
+class DrawDialog(QtWidgets.QWidget):
+    def __init__(self, matrix: Matrix, lum: float) -> None:
+        # SETUP WINDOW
+        super().__init__()
+
+        # DATA
+        self.lum = lum
+        self.matrix = matrix
+        self.current_locus = []
+
+        # MATPLOTLIB INITIZIALING
+        layout = QtWidgets.QVBoxLayout(self)
+        self.view = FigureCanvasQTAgg(Figure(figsize=(16, 9)))
+        self.axes = self.view.figure.subplots()
+        self.toolbar = NavigationToolbar2QT(self.view, self)
+        layout.addWidget(self.toolbar)
+        layout.addWidget(self.view)
+
+        self.axes.pcolor(self.matrix.numbers, vmin=-self.lum / 2, vmax=self.lum / 2, cmap='bone_r')
+        self.view.draw()
+
+    def select_dot(self) -> None:
+        pass
+
+
 class Matrixograph(QtWidgets.QMainWindow, Ui_Matrixograph):
     def __init__(self, directory: str) -> None:
         # SETUP OF WINDOW
@@ -699,6 +723,16 @@ class Matrixograph(QtWidgets.QMainWindow, Ui_Matrixograph):
 
         self.angles_box.currentTextChanged.connect(self.show_matrix)
         self.angles_box.addItems([str(angle) for angle in self.analyzer.angles])
+
+        # EVENT HANDLING
+        self.bright_up_button.clicked.connect(self.bright_up)
+        self.bright_down_button.clicked.connect(self.bright_down)
+        self.bright_def_button.clicked.connect(self.bright_default)
+        self.locus_draw_button.clicked.connect(self.locus_dialog)
+
+    def locus_dialog(self) -> None:
+        self.window = DrawDialog(self.analyzer.matrixes[self.current_index], self.luminiosity)
+        self.window.show()
 
     def show_matrix(self) -> None:
         self.current_index = self.angles_box.currentIndex()

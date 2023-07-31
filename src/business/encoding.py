@@ -28,7 +28,7 @@ E_SIZE       = 48
 DE_SIZE      = 50
 MATRIX_START = 52
 # Dynamic area, locuses and spectres
-LOCUSES_START = lambda height, width: 4 * height * width
+LOCUSES_START = lambda height, width: MATRIX_START + 4 * height * width
 
 
 class Encoder:
