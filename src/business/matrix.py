@@ -47,14 +47,14 @@ class Demo:
                 report += f'\t(E: {i[0]}; dE: {i[1]})\n'
 
         return report
-
-    def spectrums(self) -> list[list[int]]:
-        alls = self.locuses()
-        return [each.to_spectrum() for each in alls]
     
     def locuses(self) -> list[Locus]:
         alls = self.parser.take_locuses()
         return [Locus(each, self.numbers, alls[each]) for each in alls]
+
+    def spectrums(self) -> list[list[int]]:
+        alls = self.locuses()
+        return [each.to_spectrum() for each in alls]
     
 
 class Matrix:
@@ -104,6 +104,10 @@ class Matrix:
 class MatrixAnalyzer:
     def __init__(self, matrixes: list[Matrix]) -> None:
         self.matrixes = matrixes
+
+    @property
+    def angles(self) -> list[float]:
+        return [matrix.angle for matrix in self.matrixes]
 
     def collect_spectres(self, particle: Nuclei) -> list[Spectrum]:
         pass
