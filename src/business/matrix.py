@@ -1,7 +1,8 @@
 import numpy as np
 
-from business.decoding import Decoder
+from business.yard import NucleiConverter
 from business.locus import Locus
+from business.decoding import Decoder
 from business.analysis import Spectrum, SpectrumAnalyzer
 from business.physics import Nuclei, Reaction
 
@@ -31,6 +32,24 @@ class Matrix:
     @property
     def misscalculation(self) -> float:
         return self.decoder.get_misscalculation()
+    
+    def to_workbook(self) -> str:
+        beam = NucleiConverter.to_string(self.experiment.beam)
+        target = NucleiConverter.to_string(self.experiment.target)
+
+        report = f'Matrix {self.decoder.matrix_sizes} of -> \n'
+        report += f'{target} + {beam} reaction at {self.experiment.beam_energy} MeV.\n'
+        report += f"Telescope's angle in lab-system: {self.angle} degrees.\n"
+        report += f"Integrator's count: {self.integrator_counts}\n"
+        report += f"Integrator's module constant: {self.integrator_constant} Coul/pulse.\n"
+        report += f"Telescope's efficiency: {self.misscalculation}.\n"
+
+        for locus in self.locuses:
+            report += f'Locus of {NucleiConverter.to_string(locus.particle)}:\n'
+            for i in locus.points:
+                report += f'\t(E: {i[0]}; dE: {i[1]})\n'
+
+        return report
 
     def add_locus(self, particle: Nuclei, points: list[tuple[int, int]]) -> None:
         if particle in [locus.particle for locus in self.locuses]:

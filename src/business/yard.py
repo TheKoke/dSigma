@@ -74,50 +74,68 @@ class NucleiConverter:
 
 
 class ReactionMaster:
-    def __init__(self, input: str, energy: float) -> None:
+    @staticmethod
+    def to_string(reaction: Reaction, notation: ReactionNotation = ReactionNotation.CHEMIST) -> str:
+        if notation == ReactionNotation.CHEMIST:
+            beam = NucleiConverter.to_string(reaction.beam)
+            target = NucleiConverter.to_string(reaction.target)
+            fragment = NucleiConverter.to_string(reaction.fragment)
+            residual = NucleiConverter.to_string(reaction.residual)
+            quit = round(reaction.reaction_quit(), 3)
+
+            base = f'{beam} + {target} -> {fragment} + {residual}'
+
+            return base + '+' if quit >= 0 else '-' + f'{quit} MeV'
+
+        if notation == ReactionNotation.SOVETIAN:
+            beam = NucleiConverter.to_string(reaction.beam)
+            target = NucleiConverter.to_string(reaction.target)
+            fragment = NucleiConverter.to_string(reaction.fragment)
+            residual = NucleiConverter.to_string(reaction.residual)
+            quit = round(reaction.reaction_quit(), 3)
+
+            base = f'{target}({beam}, {fragment}){residual}'
+
+            return base + '+' if quit >= 0 else '-' + f'{abs(quit)} MeV'
+
+    @staticmethod
+    def to_reaction(input: str, energy: float) -> Reaction:
+        nucleus = ReactionMaster.split_nucleus(input)
+
+        beam = NucleiConverter.to_nuclei(nucleus[0])
+        target = NucleiConverter.to_nuclei(nucleus[1])
+        fragment = NucleiConverter.to_nuclei(nucleus[2])
+
+        return Reaction(beam, target, fragment, energy)
+    
+    @staticmethod
+    def __define_notation(input: str) -> ReactionNotation:
         '''
         Nuclear reactions can wroted in 2 different styles:
         A(B, C)D - sovetian variant.
         A + B -> C + D - chemistry variant.
         '''
-        self.reaction = input
-        self.energy = energy
 
-        self.notation = self.__define_notation()
-
-    def __define_notation(self) -> ReactionNotation:
-        if '(' in self.reaction and ')' in self.reaction:
+        if '(' in input and ')' in input:
             return ReactionNotation.SOVETIAN
         
-        if '->' in self.reaction:
+        if '->' in input:
             return ReactionNotation.CHEMIST
         
         return ReactionNotation.UNDEFINED
 
-    def to_reaction(self) -> Reaction:
-        nucleus = self.split_nucleus()
+    @staticmethod
+    def split_nucleus(input: str) -> list[str]:
+        no_spaces = input.replace(' ', '')
+        notation = ReactionMaster.__define_notation(input)
 
-        beam = self.to_nuclei(nucleus[0])
-        target = self.to_nuclei(nucleus[1])
-        fragment = self.to_nuclei(nucleus[2])
-
-        return Reaction(beam, target, fragment, self.energy)
-
-    def to_nuclei(self, name: str) -> Nuclei:
-        nuclons = NucleiConverter.nuclons_by_name(name)
-        charge = NucleiConverter.charge_by_name(name)
-        return Nuclei(nuclons, charge)
-
-    def split_nucleus(self) -> list[str]:
-        no_spaces = self.reaction.replace(' ', '')
-
-        if self.notation == ReactionNotation.UNDEFINED:
+        if notation == ReactionNotation.UNDEFINED:
             raise ValueError('Reaction was written incorrectly.')
 
-        if self.notation == ReactionNotation.SOVETIAN:
+        if notation == ReactionNotation.SOVETIAN:
             return ReactionMaster.split_sovetian(no_spaces)
 
-        if self.notation == ReactionNotation.CHEMIST:
+        if notation == ReactionNotation.CHEMIST:
             return ReactionMaster.split_chemistry(no_spaces)
     
     @staticmethod
