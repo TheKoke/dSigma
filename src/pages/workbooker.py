@@ -1,8 +1,8 @@
-from PyQt5.QtGui import QFont
+from PyQt5.QtGui import QFont, QIcon
 from PyQt5.QtWidgets import QMainWindow, QWidget, QVBoxLayout, QPlainTextEdit, QApplication
 
 
-class WorkbookRevWindow(QMainWindow):
+class Workbooker(QMainWindow):
     def __init__(self, report: str):
         # SETUP OF WINDOW
         super().__init__()
@@ -10,6 +10,7 @@ class WorkbookRevWindow(QMainWindow):
         self.setMinimumSize(800, 600)
 
         self.setWindowTitle("dSigma — Workbook viewer")
+        self.setWindowIcon(QIcon("./icon.ico"))
 
         font = QFont()
         font.setFamily("Bahnschrift SemiBold")
@@ -30,6 +31,6 @@ class WorkbookRevWindow(QMainWindow):
 
 if __name__ == '__main__':
     app = QApplication()
-    wind = WorkbookRevWindow()
+    wind = Workbooker()
     wind.show()
     app.exec()

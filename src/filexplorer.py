@@ -1,24 +1,15 @@
 import os
-from business.matrix import USBParser, Decoder
+from business.matrix import Decoder
 
 
 class Sleuth:
     def __init__(self, main_directory: str) -> None:
         self.main = main_directory
-
-    def all_parsers(self) -> list[USBParser]:
-        files = self.sort()
-        return [USBParser(file) for file in files]
     
     def all_decoders(self) -> list[Decoder]:
         directories = os.listdir(self.main)
         files = self.only_ds(directories)
         return [Decoder(file) for file in files]
-
-    def usb_names(self) -> list[str]:
-        directories = os.listdir(self.main)
-        sifted = self.only_files(directories)
-        return [file for file in sifted if '.usb' in file]
     
     def ds_names(self) -> list[str]:
         directories = os.listdir(self.main)
@@ -27,11 +18,7 @@ class Sleuth:
 
     def sort(self) -> list[str]:
         directories = os.listdir(self.main)
-        return sorted(self.only_usb(directories))
-    
-    def only_usb(self, dirs: list[str]) -> list[str]:
-        sifted = self.only_files(dirs)
-        return [self.main + '/' + file for file in sifted if '.usb' in file]
+        return sorted(self.only_ds(directories))
     
     def only_ds(self, dirs: list[str]) -> list[str]:
         sifted = self.only_files(dirs)

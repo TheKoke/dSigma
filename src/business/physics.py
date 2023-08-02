@@ -6,6 +6,9 @@ from business.consts import MASS_EXCESSES, STATES, WIGNER_WIDTHS
 
 class Nuclei:
     def __init__(self, charge: int, nuclons: int) -> None:
+        if charge > nuclons:
+            raise ValueError('Charge of nucleus can not be greater than nuclons.')
+
         self.nuclons = nuclons
         self.charge = charge
 

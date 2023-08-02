@@ -127,7 +127,7 @@ class Decoder:
                 current_points.append((e_coordinate, de_coordinate))
                 offset += 4
 
-            collected.append(Locus(Nuclei(a, z), matrix, current_points))
+            collected.append(Locus(Nuclei(z, a), matrix, current_points))
 
         return collected
 
@@ -141,7 +141,7 @@ class Decoder:
         locuses = self.take_locuses()
 
         collected = []
-        while offset >= len(self.buffer):
+        while offset < len(self.buffer):
             current_nuclei_charge = struct.unpack_from('B', self.buffer, offset)[0]
             current_nuclei_nuclons = struct.unpack_from('B', self.buffer, offset + 1)[0]
             current_nuclei = Nuclei(current_nuclei_charge, current_nuclei_nuclons)

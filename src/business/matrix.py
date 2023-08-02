@@ -2,60 +2,9 @@ import numpy as np
 
 from business.decoding import Decoder
 from business.locus import Locus
-from business.usb2ds import USBParser
-from business.analysis import Spectrum
-from business.yard import NucleiConverter
+from business.analysis import Spectrum, SpectrumAnalyzer
 from business.physics import Nuclei, Reaction
 
-
-class Demo:
-    def __init__(self, parser: USBParser) -> None:
-        self.parser = parser
-        self.numbers = self.parser.get_matrix()
-
-    @property
-    def angle(self) -> float:
-        return self.parser.get_angle()
-
-    @property
-    def integrator_counts(self) -> int:
-        return self.parser.get_integrator_counts()
-    
-    @property
-    def integrator_constant(self) -> int:
-        return self.parser.get_integrator_constant()
-    
-    @property
-    def misscalculation(self) -> float:
-        return self.parser.get_misscalculation()
-    
-    def to_workbook(self) -> str:
-        beam = NucleiConverter.to_string(self.parser.parse_beam())
-        target = NucleiConverter.to_string(self.parser.parse_target())
-
-        report = f'Matrix {self.parser.matrix_sizes} of -> \n'
-        report += f'{target} + {beam} reaction at {self.parser.parse_beam_energy()} MeV.\n'
-        report += f"Telescope's angle in lab-system: {self.angle} degrees.\n"
-        report += f"Integrator's count: {self.integrator_counts}\n"
-        report += f"Integrator's module constant: {self.integrator_constant} Coul/pulse.\n"
-        report += f"Telescope's efficiency: {self.misscalculation}.\n"
-
-        locuses = self.parser.take_locuses()
-        for nuclei in locuses:
-            report += f'Locus of {NucleiConverter.to_string(nuclei)}:\n'
-            for i in locuses[nuclei]:
-                report += f'\t(E: {i[0]}; dE: {i[1]})\n'
-
-        return report
-    
-    def locuses(self) -> list[Locus]:
-        alls = self.parser.take_locuses()
-        return [Locus(each, self.numbers, alls[each]) for each in alls]
-
-    def spectrums(self) -> list[list[int]]:
-        alls = self.locuses()
-        return [each.to_spectrum() for each in alls]
-    
 
 class Matrix:
     def __init__(self, decoder: Decoder) -> None:
@@ -64,8 +13,8 @@ class Matrix:
         self.experiment = decoder.get_experiment()
         self.electronics = decoder.get_electronics()
 
-        self.locuses: list[Locus] = []
-        self.spectrums: list[Spectrum] = []
+        self.locuses: list[Locus] = decoder.take_locuses()
+        self.spectrums: list[Spectrum] = decoder.take_spectrums()
 
     @property
     def angle(self) -> float:
@@ -84,7 +33,11 @@ class Matrix:
         return self.decoder.get_misscalculation()
 
     def add_locus(self, particle: Nuclei, points: list[tuple[int, int]]) -> None:
-        self.locuses.append(Locus(particle, self.numbers, points))
+        if particle in [locus.particle for locus in self.locuses]:
+            index = next(i for i in range(len(self.locuses)) if self.locuses[i].particle == particle)
+            self.locuses[index] = Locus(particle, self.numbers, points)
+        else:
+            self.locuses.append(Locus(particle, self.numbers, points))
 
     def spectrum_of(self, particle: Nuclei) -> Spectrum:
         if particle not in [locus.particle for locus in self.locuses]:
@@ -101,6 +54,7 @@ class Matrix:
         return self.experiment.create_reaction(fragment)
     
 
+# TODO: Refactor and implement that class.
 class MatrixAnalyzer:
     def __init__(self, matrixes: list[Matrix]) -> None:
         self.matrixes = matrixes
@@ -108,9 +62,18 @@ class MatrixAnalyzer:
     @property
     def angles(self) -> list[float]:
         return [matrix.angle for matrix in self.matrixes]
+    
+    def all_spectres(self) -> list[SpectrumAnalyzer]:
+        particles = []
+        for m in self.matrixes:
+            for locus in m.locuses:
+                if locus.particle not in particles:
+                    particles.append(locus.particle)
 
-    def collect_spectres(self, particle: Nuclei) -> list[Spectrum]:
-        pass
+        return [self.collect_spectres(p) for p in particles]
+
+    def collect_spectres(self, particle: Nuclei) -> SpectrumAnalyzer:
+        return SpectrumAnalyzer([m.spectrum_of(particle) for m in self.matrixes])
 
     def cross_section_of(self, particle: Nuclei) -> np.ndarray:
         pass
