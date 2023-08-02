@@ -9,7 +9,7 @@ from PyQt5.QtCore import Qt, QSize, QMetaObject, QCoreApplication
 from PyQt5.QtWidgets import (
     QWidget, QMainWindow, QVBoxLayout, 
     QComboBox, QHBoxLayout, QPushButton, 
-    QFrame, QLabel
+    QFrame, QLabel, QFileDialog
 )
 
 
@@ -309,6 +309,233 @@ class Ui_Spectrograph(object):
         self.workbook_button.setText(_translate("MainWindow", "Open Workbook"))
         self.save_button.setText(_translate("MainWindow", "Save Spectrum Analysis"))
         self.ladder_button.setText(_translate("MainWindow", "Build Ladder View"))
+
+
+class Ui_SpectrumDemo(object):
+    def setupUi(self, SpectrumDemo):
+        SpectrumDemo.setObjectName("SpectrumDemo")
+        SpectrumDemo.resize(800, 600)
+        SpectrumDemo.setMinimumSize(QSize(800, 600))
+        SpectrumDemo.setMaximumSize(QSize(16777215, 16777215))
+        font = QFont()
+        font.setFamily("Bahnschrift SemiBold")
+        font.setPointSize(11)
+        font.setBold(True)
+        font.setWeight(75)
+        SpectrumDemo.setFont(font)
+        SpectrumDemo.setStyleSheet("QPushButton{\n\tbackground-color: rgb(85, 85, 127);\n\tcolor: rgb(255, 255, 255);\n}\nQPushButton:pressed{\n\tbackground-color: rgb(55, 55,  97);\n}")
+        self.centralwidget = QWidget(SpectrumDemo)
+        self.centralwidget.setObjectName("centralwidget")
+        self.verticalLayout = QVBoxLayout(self.centralwidget)
+        self.verticalLayout.setObjectName("verticalLayout")
+        self.service_layout = QFrame(self.centralwidget)
+        self.service_layout.setMinimumSize(QSize(0, 50))
+        self.service_layout.setMaximumSize(QSize(16777215, 100))
+        self.service_layout.setFrameShape(QFrame.StyledPanel)
+        self.service_layout.setFrameShadow(QFrame.Raised)
+        self.service_layout.setObjectName("service_layout")
+        self.horizontalLayout = QHBoxLayout(self.service_layout)
+        self.horizontalLayout.setObjectName("horizontalLayout")
+        self.info_label = QLabel(self.service_layout)
+        self.info_label.setMinimumSize(QSize(50, 0))
+        self.info_label.setMaximumSize(QSize(120, 16777215))
+        font = QFont()
+        font.setPointSize(11)
+        self.info_label.setFont(font)
+        self.info_label.setAlignment(Qt.AlignCenter)
+        self.info_label.setWordWrap(True)
+        self.info_label.setObjectName("info_label")
+        self.horizontalLayout.addWidget(self.info_label)
+        self.particle_box = QComboBox(self.service_layout)
+        self.particle_box.setMinimumSize(QSize(100, 60))
+        self.particle_box.setMaximumSize(QSize(200, 16777215))
+        palette = QPalette()
+        brush = QBrush(QColor(255, 255, 255))
+        brush.setStyle(Qt.SolidPattern)
+        palette.setBrush(QPalette.Active, QPalette.WindowText, brush)
+        brush = QBrush(QColor(85, 85, 127))
+        brush.setStyle(Qt.SolidPattern)
+        palette.setBrush(QPalette.Active, QPalette.Button, brush)
+        brush = QBrush(QColor(255, 255, 255))
+        brush.setStyle(Qt.SolidPattern)
+        palette.setBrush(QPalette.Active, QPalette.Text, brush)
+        brush = QBrush(QColor(255, 255, 255))
+        brush.setStyle(Qt.SolidPattern)
+        palette.setBrush(QPalette.Active, QPalette.ButtonText, brush)
+        brush = QBrush(QColor(85, 85, 127))
+        brush.setStyle(Qt.SolidPattern)
+        palette.setBrush(QPalette.Active, QPalette.Base, brush)
+        brush = QBrush(QColor(85, 85, 127))
+        brush.setStyle(Qt.SolidPattern)
+        palette.setBrush(QPalette.Active, QPalette.Window, brush)
+        brush = QBrush(QColor(85, 85, 127))
+        brush.setStyle(Qt.SolidPattern)
+        palette.setBrush(QPalette.Active, QPalette.Highlight, brush)
+        brush = QBrush(QColor(255, 255, 255))
+        brush.setStyle(Qt.SolidPattern)
+        palette.setBrush(QPalette.Inactive, QPalette.WindowText, brush)
+        brush = QBrush(QColor(85, 85, 127))
+        brush.setStyle(Qt.SolidPattern)
+        palette.setBrush(QPalette.Inactive, QPalette.Button, brush)
+        brush = QBrush(QColor(255, 255, 255))
+        brush.setStyle(Qt.SolidPattern)
+        palette.setBrush(QPalette.Inactive, QPalette.Text, brush)
+        brush = QBrush(QColor(255, 255, 255))
+        brush.setStyle(Qt.SolidPattern)
+        palette.setBrush(QPalette.Inactive, QPalette.ButtonText, brush)
+        brush = QBrush(QColor(85, 85, 127))
+        brush.setStyle(Qt.SolidPattern)
+        palette.setBrush(QPalette.Inactive, QPalette.Base, brush)
+        brush = QBrush(QColor(85, 85, 127))
+        brush.setStyle(Qt.SolidPattern)
+        palette.setBrush(QPalette.Inactive, QPalette.Window, brush)
+        brush = QBrush(QColor(85, 85, 127))
+        brush.setStyle(Qt.SolidPattern)
+        palette.setBrush(QPalette.Inactive, QPalette.Highlight, brush)
+        brush = QBrush(QColor(255, 255, 255))
+        brush.setStyle(Qt.SolidPattern)
+        palette.setBrush(QPalette.Disabled, QPalette.WindowText, brush)
+        brush = QBrush(QColor(85, 85, 127))
+        brush.setStyle(Qt.SolidPattern)
+        palette.setBrush(QPalette.Disabled, QPalette.Button, brush)
+        brush = QBrush(QColor(255, 255, 255))
+        brush.setStyle(Qt.SolidPattern)
+        palette.setBrush(QPalette.Disabled, QPalette.Text, brush)
+        brush = QBrush(QColor(255, 255, 255))
+        brush.setStyle(Qt.SolidPattern)
+        palette.setBrush(QPalette.Disabled, QPalette.ButtonText, brush)
+        brush = QBrush(QColor(85, 85, 127))
+        brush.setStyle(Qt.SolidPattern)
+        palette.setBrush(QPalette.Disabled, QPalette.Base, brush)
+        brush = QBrush(QColor(85, 85, 127))
+        brush.setStyle(Qt.SolidPattern)
+        palette.setBrush(QPalette.Disabled, QPalette.Window, brush)
+        brush = QBrush(QColor(0, 120, 215))
+        brush.setStyle(Qt.SolidPattern)
+        palette.setBrush(QPalette.Disabled, QPalette.Highlight, brush)
+        self.particle_box.setPalette(palette)
+        font = QFont()
+        font.setFamily("Bahnschrift SemiBold")
+        font.setPointSize(11)
+        font.setBold(True)
+        font.setWeight(75)
+        self.particle_box.setFont(font)
+        self.particle_box.setStyleSheet("background-color: rgb(85, 85, 127);\ncolor: rgb(255, 255, 255);")
+        self.particle_box.setObjectName("particle_box")
+        self.particle_box.addItem("")
+        self.particle_box.addItem("")
+        self.particle_box.addItem("")
+        self.particle_box.addItem("")
+        self.particle_box.addItem("")
+        self.horizontalLayout.addWidget(self.particle_box)
+        self.txt_button = QPushButton(self.service_layout)
+        self.txt_button.setMinimumSize(QSize(110, 60))
+        self.txt_button.setMaximumSize(QSize(500, 60))
+        font = QFont()
+        font.setFamily("Bahnschrift SemiBold")
+        font.setPointSize(11)
+        font.setBold(True)
+        font.setWeight(75)
+        self.txt_button.setFont(font)
+        self.txt_button.setObjectName("txt_button")
+        self.horizontalLayout.addWidget(self.txt_button)
+        self.calibrate_button = QPushButton(self.service_layout)
+        self.calibrate_button.setMinimumSize(QSize(110, 60))
+        self.calibrate_button.setMaximumSize(QSize(500, 60))
+        font = QFont()
+        font.setFamily("Bahnschrift SemiBold")
+        font.setPointSize(11)
+        font.setBold(True)
+        font.setWeight(75)
+        self.calibrate_button.setFont(font)
+        self.calibrate_button.setObjectName("calibrate_button")
+        self.horizontalLayout.addWidget(self.calibrate_button)
+        self.peaks_button = QPushButton(self.service_layout)
+        self.peaks_button.setMinimumSize(QSize(110, 60))
+        self.peaks_button.setMaximumSize(QSize(500, 60))
+        font = QFont()
+        font.setFamily("Bahnschrift SemiBold")
+        font.setPointSize(11)
+        font.setBold(True)
+        font.setWeight(75)
+        self.peaks_button.setFont(font)
+        self.peaks_button.setObjectName("peaks_button")
+        self.horizontalLayout.addWidget(self.peaks_button)
+        self.verticalLayout.addWidget(self.service_layout)
+        self.matplotlib_layout = QFrame(self.centralwidget)
+        self.matplotlib_layout.setFrameShape(QFrame.StyledPanel)
+        self.matplotlib_layout.setFrameShadow(QFrame.Raised)
+        self.matplotlib_layout.setObjectName("matplotlib_layout")
+        self.verticalLayout.addWidget(self.matplotlib_layout)
+        SpectrumDemo.setCentralWidget(self.centralwidget)
+
+        self.retranslateUi(SpectrumDemo)
+        QMetaObject.connectSlotsByName(SpectrumDemo)
+
+    def retranslateUi(self, SpectrumDemo):
+        _translate = QCoreApplication.translate
+        SpectrumDemo.setWindowTitle(_translate("SpectrumDemo", "dSigma — Spectrum viewer"))
+        self.info_label.setText(_translate("SpectrumDemo", "Choose the particle for showing them spectrum =>"))
+        self.particle_box.setItemText(0, _translate("SpectrumDemo", "proton"))
+        self.particle_box.setItemText(1, _translate("SpectrumDemo", "deuteron"))
+        self.particle_box.setItemText(2, _translate("SpectrumDemo", "triton"))
+        self.particle_box.setItemText(3, _translate("SpectrumDemo", "He-3"))
+        self.particle_box.setItemText(4, _translate("SpectrumDemo", "He-4"))
+        self.txt_button.setText(_translate("SpectrumDemo", "Save as TXT"))
+        self.calibrate_button.setText(_translate("SpectrumDemo", "Calibrate"))
+        self.peaks_button.setText(_translate("SpectrumDemo", "Approximate peaks"))
+
+
+class SpectrumDemo(QMainWindow, Ui_SpectrumDemo):
+    def __init__(self, spectres: list[list[int]]) -> None:
+        # SETUP OF WINDOW
+        super().__init__()
+        self.setupUi(self)
+
+        self.spectrums = spectres
+
+        # MATPLOTLIB INITIALIZING
+        layout = QVBoxLayout(self.matplotlib_layout)
+        self.view = FigureCanvasQTAgg(Figure(figsize=(16, 9)))
+        self.axes = self.view.figure.subplots()
+        self.toolbar = NavigationToolbar2QT(self.view, self.matplotlib_layout)
+        layout.addWidget(self.toolbar)
+        layout.addWidget(self.view)
+
+        self.calibrate_button.setEnabled(False)
+        self.peaks_button.setEnabled(False)
+
+        # EVENT HANDLING
+        self.particle_box.currentIndexChanged.connect(self.draw_spectrum)
+        self.txt_button.clicked.connect(self.save_spectrum)
+
+        self.draw_spectrum()
+
+    def draw_spectrum(self) -> None:
+        index = self.particle_box.currentIndex()
+        spectrum = self.spectrums[index]
+
+        self.axes.clear()
+        
+        for i in range(len(spectrum)):
+            self.axes.plot([i + 1, i + 1], [0, spectrum[i]], color='blue')
+        
+        self.axes.plot(list(range(1, len(spectrum) + 1)), spectrum, color='blue')
+        self.view.draw()
+
+    def save_spectrum(self) -> None:
+        name, _ = QFileDialog.getSaveFileName(self, 'Save File', filter='TXT Documents (*.txt)')
+        if name == '':
+            return
+        
+        index = self.particle_box.currentIndex()
+        spectrum = self.spectrums[index]
+
+        txt = open(name, 'w')
+        for i in range(len(spectrum)):
+            print(f'{i + 1}\t{spectrum[i]}', file=txt)
+
+        txt.close()
 
 
 class Spectrograph(QMainWindow, Ui_Spectrograph):

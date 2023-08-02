@@ -6,7 +6,7 @@ from business.encoding import Encoder, NucleiConverter
 from business.matrix import Matrix, MatrixAnalyzer, Nuclei
 
 from pages.workbooker import Workbooker
-from pages.spectrograph import Spectrograph
+from pages.spectrograph import Spectrograph, SpectrumDemo
 
 from matplotlib.figure import Figure
 from matplotlib.backend_bases import MouseEvent, MouseButton, KeyEvent
@@ -518,7 +518,7 @@ class DrawDialog( QWidget):
         self.selected_dots_y.clear()
 
 
-class Matrixograph( QMainWindow, Ui_Matrixograph):
+class Matrixograph(QMainWindow, Ui_Matrixograph):
     def __init__(self, directory: str) -> None:
         # SETUP OF WINDOW
         super().__init__()
@@ -537,7 +537,7 @@ class Matrixograph( QMainWindow, Ui_Matrixograph):
         self.is_locuses_on = False
 
         # MATPLOTLIB INITIALIZING
-        layout =  QVBoxLayout(self.matplotlib_layout)
+        layout = QVBoxLayout(self.matplotlib_layout)
         self.view = FigureCanvasQTAgg(Figure(figsize=(16, 9)))
         self.axes = self.view.figure.subplots()
         self.toolbar = NavigationToolbar2QT(self.view, self.matplotlib_layout)
@@ -553,25 +553,42 @@ class Matrixograph( QMainWindow, Ui_Matrixograph):
         self.bright_def_button.clicked.connect(self.bright_default)
         self.locus_draw_button.clicked.connect(self.locus_dialog)
         self.locus_button.clicked.connect(self.change_locuses_status)
+        self.spectrum_button.clicked.connect(self.open_spectrum_demo)
+        self.report_button.clicked.connect(self.open_workbook)
         self.spectrograph_button.clicked.connect(self.open_spectrograph)
-
-    def open_spectrograph(self) -> None:
-        self.window = Spectrograph(self.analyzer.all_spectres())
-        self.window.show()
-
-    def locus_dialog(self) -> None:
-        self.window = DrawDialog(self.analyzer.matrixes[self.current_index], self.luminiosity)
-        self.window.show()
 
     def show_matrix(self) -> None:
         self.current_index = self.angles_box.currentIndex()
-        mean = self.analyzer.matrixes[self.current_index].numbers.mean() * 2
-        self.luminiosity = min(mean, 20)
+        self.luminiosity = self.analyzer.matrixes[self.current_index].numbers.mean() * 2
+
         self.draw_e_de()
+
+    def draw_e_de(self) -> None:
+        self.axes.clear()
+        e_de = self.analyzer.matrixes[self.current_index].numbers[:]
+        e_de = e_de + 1
+
+        self.axes.pcolor(numpy.log(e_de), vmin=0, vmax=self.luminiosity)
+
+        if self.is_locuses_on:
+            self.draw_locuses()
+
+        self.view.draw()
 
     def change_locuses_status(self) -> None:
         self.is_locuses_on = not self.is_locuses_on
         self.draw_e_de()
+
+    def draw_locuses(self) -> None:
+        colors = ['blue', 'red', 'green', 'yellow', 'white', 'darkred', 'purple']
+        locuses = self.analyzer.matrixes[self.current_index].locuses
+        for i in range(len(locuses)):
+            xs = [locuses[i].points[j][0] for j in range(len(locuses[i].points))]
+            ys = [locuses[i].points[j][1] for j in range(len(locuses[i].points))]
+
+            self.axes.plot(xs, ys, colors[i])
+
+        self.view.draw()
 
     def bright_up(self) -> None:
         if self.luminiosity > 2:
@@ -587,28 +604,27 @@ class Matrixograph( QMainWindow, Ui_Matrixograph):
         self.luminiosity = min(mean, 20)
         self.draw_e_de()
 
-    def draw_e_de(self) -> None:
-        self.axes.clear()
-        e_de = self.analyzer.matrixes[self.current_index].numbers[:]
-        e_de = e_de + 1
+    def locus_dialog(self) -> None:
+        self.window = DrawDialog(self.analyzer.matrixes[self.current_index], self.luminiosity)
+        self.window.show()
 
-        self.axes.pcolor(numpy.log(e_de), vmin=0, vmax=self.luminiosity)
+    def open_spectrum_demo(self) -> None:
+        current = self.analyzer.matrixes[self.current_index]
+        collected_spectra = []
 
-        if self.is_locuses_on:
-            self.draw_locuses()
+        for locus in current.locuses:
+            collected_spectra.append(locus.to_spectrum())
 
-        self.view.draw()
+        self.window = SpectrumDemo(collected_spectra)
+        self.window.show()
 
-    def draw_locuses(self) -> None:
-        colors = ['blue', 'red', 'green', 'yellow', 'white', 'darkred', 'purple']
-        locuses = self.analyzer.matrixes[self.current_index].locuses
-        for i in range(len(locuses)):
-            xs = [locuses[i].points[j][0] for j in range(len(locuses[i].points))]
-            ys = [locuses[i].points[j][1] for j in range(len(locuses[i].points))]
+    def open_workbook(self) -> None:
+        self.window = Workbooker(self.analyzer.matrixes[self.current_index].to_workbook())
+        self.window.show()
 
-            self.axes.plot(xs, ys, colors[i])
-
-        self.view.draw()
+    def open_spectrograph(self) -> None:
+        self.window = Spectrograph(self.analyzer.all_spectres())
+        self.window.show()
 
 
 if __name__ == "__main__":
