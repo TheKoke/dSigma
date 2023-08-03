@@ -22,6 +22,9 @@ class NucleiConverter:
 
     @staticmethod
     def to_string(nuclei: Nuclei) -> str:
+        if nuclei.charge == 0 and nuclei.nuclons == 1:
+            return 'n'
+        
         if nuclei.charge == 1:
             isotopes = ['p', 'd', 't']
             return isotopes[nuclei.nuclons - 1]
@@ -84,8 +87,9 @@ class ReactionMaster:
             quit = round(reaction.reaction_quit(), 3)
 
             base = f'{beam} + {target} -> {fragment} + {residual}'
+            base += ' + ' if quit >= 0 else ' - '
 
-            return base + '+' if quit >= 0 else '-' + f'{quit} MeV'
+            return base + f'{abs(quit)} MeV'
 
         if notation == ReactionNotation.SOVETIAN:
             beam = NucleiConverter.to_string(reaction.beam)
@@ -95,8 +99,9 @@ class ReactionMaster:
             quit = round(reaction.reaction_quit(), 3)
 
             base = f'{target}({beam}, {fragment}){residual}'
+            base += ' + ' if quit >= 0 else ' - '
 
-            return base + '+' if quit >= 0 else '-' + f'{abs(quit)} MeV'
+            return base + f'{abs(quit)} MeV'
 
     @staticmethod
     def to_reaction(input: str, energy: float) -> Reaction:

@@ -293,6 +293,32 @@ class PhysicalExperiment:
     @property
     def beam_energy(self) -> float:
         return self.__beam_energy
+    
+    def possible_channels(self) -> list[Reaction]:
+        queue = [Nuclei(0, 1), Nuclei(1, 1), Nuclei(1, 2), Nuclei(1, 3), Nuclei(2, 3), Nuclei(2, 4)]
+        if self.beam in queue:
+            queue = queue[:queue.index(self.beam) + 1]
+
+        elastic = Reaction(self.beam, self.target, self.beam, self.beam_energy)
+        current = None
+        
+        pick_up = []
+        for i in queue:
+            try:
+                current = self.create_reaction(self.beam - i)
+                pick_up.append(current)
+            except:
+                continue
+
+        stripped = []
+        for i in queue:
+            try:
+                current = self.create_reaction(self.beam + i)
+                stripped.append(current)
+            except:
+                continue
+
+        return pick_up + [elastic] + stripped
 
     def create_reaction(self, fragment: Nuclei) -> Reaction:
         compound = self.__beam + self.__target

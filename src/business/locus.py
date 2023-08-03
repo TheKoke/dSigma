@@ -35,6 +35,9 @@ class Extrapolation:
         '''
         Method for projecting cutted locus to E-axis and get the spectrum.
         '''
+        if len(self.points) == 0:
+            return np.zeros(256).tolist()
+
         taken = self.select()
         result = []
 
@@ -46,7 +49,10 @@ class Extrapolation:
 
             result.append(self.matrix[de_start:de_stop + 1, e_position].sum())
 
-        return result
+        left_bound = taken[0].e_position
+        right_bound = taken[-1].e_position
+
+        return np.zeros(left_bound).tolist() + result + np.zeros(len(self.matrix) - right_bound - 1).tolist()
 
     def select(self) -> list[Cell]:
         '''

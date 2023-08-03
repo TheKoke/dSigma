@@ -525,11 +525,13 @@ class Matrixograph(QMainWindow, Ui_Matrixograph):
         self.setupUi(self)
         self.setWindowIcon(QIcon("./icon.ico"))
 
-        self.sleuth = Sleuth(directory)
+        self.directory = directory
+        self.sleuth = Sleuth(self.directory)
         decoders = self.sleuth.all_decoders()
 
         # COLLECTING DATA AND PREPARE THEM TO SHOW
         self.analyzer = MatrixAnalyzer([Matrix(d) for d in decoders])
+        self.__matrixes = [Matrix(d) for d in decoders]
 
         self.current_index = 0
         self.luminiosity = 0
@@ -555,6 +557,7 @@ class Matrixograph(QMainWindow, Ui_Matrixograph):
         self.locus_button.clicked.connect(self.change_locuses_status)
         self.spectrum_button.clicked.connect(self.open_spectrum_demo)
         self.report_button.clicked.connect(self.open_workbook)
+        self.save_button.clicked.connect(self.save)
         self.spectrograph_button.clicked.connect(self.open_spectrograph)
 
     def show_matrix(self) -> None:
@@ -600,8 +603,7 @@ class Matrixograph(QMainWindow, Ui_Matrixograph):
         self.draw_e_de()
 
     def bright_default(self) -> None:
-        mean = self.analyzer.matrixes[self.current_index].numbers.mean() * 2
-        self.luminiosity = min(mean, 20)
+        self.luminiosity = self.analyzer.matrixes[self.current_index].numbers.mean() * 2
         self.draw_e_de()
 
     def locus_dialog(self) -> None:
@@ -621,6 +623,34 @@ class Matrixograph(QMainWindow, Ui_Matrixograph):
     def open_workbook(self) -> None:
         self.window = Workbooker(self.analyzer.matrixes[self.current_index].to_workbook())
         self.window.show()
+
+    def save(self) -> None:
+        changed = self.__find_changed_ones()
+
+        for matrix in changed:
+            en = Encoder(matrix, self.directory)
+            en.write_down()
+
+        information = QDialog()
+        information.setFixedSize(300, 100)
+        label = QLabel(text='E-dE matrixes was saved succesfully.')
+        label.setAlignment(Qt.AlignCenter)
+        layout = QVBoxLayout(information)
+        layout.addWidget(label)
+
+        self.window = information
+        self.window.show()
+
+    def __find_changed_ones(self) -> None:
+        found = []
+        for i in range(len(self.analyzer.matrixes)):
+            current = self.analyzer.matrixes[i]
+            ethalon = self.__matrixes[i]
+
+            if current.to_workbook() != ethalon.to_workbook():
+                found.append(self.analyzer.matrixes[i])
+
+        return found
 
     def open_spectrograph(self) -> None:
         self.window = Spectrograph(self.analyzer.all_spectres())

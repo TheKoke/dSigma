@@ -587,9 +587,11 @@ class Spectrograph(QMainWindow, Ui_Spectrograph):
         spectra = self.analitics[self.current_index].spectrums[:]
         spectra = sorted(spectra, key=lambda x: x.angle)
 
+        mean = sum([sp.data.mean() for sp in spectra]) / len(spectra)
+
         self.axes.clear()
         for i in range(len(spectra)):
-            self.axes.plot(list(range(1, len(spectra[i].data) + 1)), spectra[i].data + i * 5000, color='blue')
+            self.axes.plot(list(range(1, len(spectra[i].data) + 1)), spectra[i].data + i * mean, color='blue')
 
         self.view.draw()
 
