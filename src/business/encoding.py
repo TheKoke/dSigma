@@ -128,7 +128,7 @@ class Encoder:
 
     def write_spectrums(self, buffer: bytearray) -> None:
         spectrums_area_size = sum([4 + 16 * len(spectrum.peaks) for spectrum in self.matrix.spectrums])
-        offset = self.calc_byte_size() - spectrums_area_size - 1
+        offset = self.calc_byte_size() - spectrums_area_size
 
         for spectrum in self.matrix.spectrums:
             fragment = spectrum.reaction.fragment

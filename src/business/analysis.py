@@ -166,6 +166,9 @@ class Spectrum:
     def peaks(self) -> dict[float, Gaussian]:
         return self.__peaks.copy()
     
+    def to_workbook(self) -> str:
+        pass
+    
     def add_peak(self, state: float, peak: Gaussian) -> None:
         if not self.is_calibrated:
             raise ValueError('Spectrum must be calibrated before approximating peaks.')

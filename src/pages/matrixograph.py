@@ -632,6 +632,7 @@ class Matrixograph(QMainWindow, Ui_Matrixograph):
             en.write_down()
 
         information = QDialog()
+        information.setWindowTitle("Info About.")
         information.setFixedSize(300, 100)
         label = QLabel(text='E-dE matrixes was saved succesfully.')
         label.setAlignment(Qt.AlignCenter)

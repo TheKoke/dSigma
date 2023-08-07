@@ -1,6 +1,8 @@
 from business.yard import NucleiConverter
 from business.analysis import SpectrumAnalyzer
 
+from pages.workbooker import Workbooker
+
 from matplotlib.figure import Figure
 from matplotlib.backends.backend_qt5agg import FigureCanvasQTAgg, NavigationToolbar2QT
 
@@ -270,17 +272,6 @@ class Ui_Spectrograph(object):
         self.workbook_button.setFont(font)
         self.workbook_button.setObjectName("workbook_button")
         self.verticalLayout.addWidget(self.workbook_button)
-        self.save_button = QPushButton(self.services_layout)
-        self.save_button.setMinimumSize(QSize(0, 90))
-        self.save_button.setMaximumSize(QSize(16777215, 180))
-        font = QFont()
-        font.setFamily("Bahnschrift SemiBold")
-        font.setPointSize(14)
-        font.setBold(True)
-        font.setWeight(75)
-        self.save_button.setFont(font)
-        self.save_button.setObjectName("save_button")
-        self.verticalLayout.addWidget(self.save_button)
         self.ladder_button = QPushButton(self.services_layout)
         self.ladder_button.setMinimumSize(QSize(0, 90))
         self.ladder_button.setMaximumSize(QSize(16777215, 180))
@@ -292,6 +283,17 @@ class Ui_Spectrograph(object):
         self.ladder_button.setFont(font)
         self.ladder_button.setObjectName("ladder_button")
         self.verticalLayout.addWidget(self.ladder_button)
+        self.sigma_button = QPushButton(self.services_layout)
+        self.sigma_button.setMinimumSize(QSize(0, 90))
+        self.sigma_button.setMaximumSize(QSize(16777215, 180))
+        font = QFont()
+        font.setFamily("Bahnschrift SemiBold")
+        font.setPointSize(14)
+        font.setBold(True)
+        font.setWeight(75)
+        self.sigma_button.setFont(font)
+        self.sigma_button.setObjectName("sigma_button")
+        self.verticalLayout.addWidget(self.sigma_button)
         self.horizontalLayout.addWidget(self.services_layout)
         MainWindow.setCentralWidget(self.centralwidget)
 
@@ -307,8 +309,8 @@ class Ui_Spectrograph(object):
         self.peaks_button.setText(_translate("MainWindow", "Show Peaks"))
         self.impurity_button.setText(_translate("MainWindow", "Validate Impurities"))
         self.workbook_button.setText(_translate("MainWindow", "Open Workbook"))
-        self.save_button.setText(_translate("MainWindow", "Save Spectrum Analysis"))
         self.ladder_button.setText(_translate("MainWindow", "Build Ladder View"))
+        self.sigma_button.setText(_translate("MainWindow", "Open Cross Section Window"))
 
 
 class Ui_SpectrumDemo(object):
@@ -561,7 +563,54 @@ class Spectrograph(QMainWindow, Ui_Spectrograph):
         particles = [analyzer.spectrums[0].reaction.fragment for analyzer in self.analitics]
         self.particle_box.addItems([NucleiConverter.to_string(p) for p in particles])
 
+        self.calibrate_button.clicked.connect(self.calibrate)
+        self.peaks_button.clicked.connect(self.show_peaks)
+        self.impurity_button.clicked.connect(self.validate_impurities)
+        self.workbook_button.clicked.connect(self.open_workbook)
         self.ladder_button.clicked.connect(self.build_ladder)
+        self.sigma_button.clicked.connect(self.open_cross_section)
+
+    def calibrate(self) -> None:
+        pass
+
+    def show_peaks(self) -> None:
+        angle_index = self.angle_box.currentIndex()
+        spectrum = self.analitics[self.current_index].spectrums[angle_index]
+
+        if spectrum.is_calibrated and len(spectrum.peaks) == 0:
+            self.analitics[self.current_index].approximate(angle_index)
+
+        self.axes.clear()
+        for peak in spectrum.peaks.values():
+            self.axes.plot(peak.three_sigma(), peak.function(), color='red')
+        
+        self.draw.angle()
+
+    def validate_impurities(self) -> None:
+        pass
+
+    def open_workbook(self) -> None:
+        angle_index = self.angle_box.currentIndex()
+        spectrum = self.analitics[self.current_index].spectrums[angle_index]
+
+        self.window = Workbooker(spectrum.to_workbook())
+        self.window.show()
+
+    # TODO: Fix this method.
+    def build_ladder(self) -> None:
+        spectra = self.analitics[self.current_index].spectrums[:]
+        spectra = sorted(spectra, key=lambda x: x.angle)
+
+        mean = sum([sp.data.mean() for sp in spectra]) / len(spectra)
+
+        self.axes.clear()
+        for i in range(len(spectra)):
+            self.axes.plot(list(range(1, len(spectra[i].data) + 1)), spectra[i].data + spectra[i].angle * mean, color='blue')
+
+        self.view.draw()
+
+    def open_cross_section(self) -> None:
+        pass
 
     def take_current(self) -> None:
         self.current_index = int(self.particle_box.currentIndex())
@@ -580,19 +629,6 @@ class Spectrograph(QMainWindow, Ui_Spectrograph):
             self.axes.plot([i + 1, i + 1], [0, spectrum.data[i]], color='blue')
         
         self.axes.plot(list(range(1, len(spectrum.data) + 1)), spectrum.data, color='blue')
-        self.view.draw()
-
-    # TODO: Fix this method.
-    def build_ladder(self) -> None:
-        spectra = self.analitics[self.current_index].spectrums[:]
-        spectra = sorted(spectra, key=lambda x: x.angle)
-
-        mean = sum([sp.data.mean() for sp in spectra]) / len(spectra)
-
-        self.axes.clear()
-        for i in range(len(spectra)):
-            self.axes.plot(list(range(1, len(spectra[i].data) + 1)), spectra[i].data + i * mean, color='blue')
-
         self.view.draw()
 
 
