@@ -1,6 +1,8 @@
 import numpy as np
-from business.physics import Reaction, Struggling
+
 from business.electronics import Telescope
+from business.physics import Reaction, Struggling
+from business.yard import ReactionMaster, NucleiConverter
 
 
 class Gaussian:
@@ -74,23 +76,15 @@ class Peak:
         self.area = 0
 
     def approximate(self) -> Gaussian:
-        peak_start = self.mu_index - self.width() // 2
-        peak_stop = self.mu_index + self.width() // 2
+        peak_start = self.mu_index - self.width / 2
+        peak_stop = self.mu_index + self.width / 2
 
-        peak_start = peak_start if peak_start >= 0 else 0
-        peak_stop - peak_stop if peak_stop < len(self.spectrum) else len(self.spectrum) - 1
+        peak_start = int(peak_start) if peak_start >= 0 else 0
+        peak_stop = int(peak_stop) if peak_stop < len(self.spectrum) else len(self.spectrum) - 1
 
-        mu = self.mu_index + 1
-        area = self.tuck_up_area(np.arange(peak_start, peak_stop), self.spectrum[peak_start: peak_stop])
+        area = self.spectrum[peak_start: peak_stop].sum()
 
-        return Gaussian(mu, self.fwhm, area)
-
-    def tuck_up_area(self, xdata: np.ndarray, ydata: np.ndarray) -> float:
-        sigma = self.fwhm / (2 * np.sqrt(2 * np.log(2)))
-        mu = self.mu_index + 1
-
-        xs = 1 / np.sqrt(2 * np.pi * sigma ** 2) * np.exp(- (xdata - mu) ** 2 / (2 * sigma ** 2))
-        return (ydata * xs).sum() / (xs ** 2).sum()
+        return Gaussian(self.mu_index + 1, self.fwhm, area)
 
 
 class Spectrum:
@@ -134,7 +128,7 @@ class Spectrum:
     
     @property
     def data(self) -> np.ndarray:
-        return self.__data[:]
+        return self.__data
     
     @property
     def energy_view(self) -> np.ndarray:
@@ -167,7 +161,17 @@ class Spectrum:
         return self.__peaks.copy()
     
     def to_workbook(self) -> str:
-        pass
+        report = "Spectrum of -> \n"
+        report += f"{ReactionMaster.to_string(self.__reaction)} reaction,\n"
+        report += f"With {NucleiConverter.to_string(self.__reaction.beam)} energy = {round(self.__reaction.beam_energy, 3)} MeV.\n"
+        report += f"At laboratory angle = {round(self.__angle, 3)} degrees.\n\n"
+        report += f"Calibrated by: E(ch) = {round(self.__scale_value, 3)}*ch + {round(self.__scale_shift, 3)}.\n\n"
+        report += f"Peaks of spectrum:\n"
+
+        for state in self.peaks:
+            report += self.peaks[state].to_workbook() + '\n'
+
+        return report
     
     def add_peak(self, state: float, peak: Gaussian) -> None:
         if not self.is_calibrated:
@@ -184,10 +188,15 @@ class SpectrumAnalyzer:
         self.spectrums = spectrums
 
     def approximate(self, index: int) -> None:
-        if not self.spectrums[index].is_calibrated:
+        spectrum = self.spectrums[index]
+        if not spectrum.is_calibrated:
             raise ValueError('Spectrum must be calibrated before finding peaks')
 
-        pass
+        states = spectrum.reaction.residual.states
+
+        found = self.find_peaks(index)
+        for i in range(len(found)):
+            spectrum.add_peak(states[i], found[i].approximate())
             
     def find_peaks(self, index: int) -> list[Peak]:
         spectrum = self.spectrums[index]
@@ -205,10 +214,7 @@ class SpectrumAnalyzer:
                 continue
 
             fwhm_in_channels = int(spectrum.gamma_widths[i] / spectrum.scale_value)
-            collected.append(Peak(spectrum, pretend_channel, fwhm_in_channels))
-
-            state = spectrum.reaction.residual.states[i]
-            spectrum.add_peak(state, collected[-1])
+            collected.append(Peak(spectrum.data, pretend_channel, fwhm_in_channels))
 
         return collected
     
@@ -225,11 +231,11 @@ class SpectrumAnalyzer:
         for state in current.reaction.residual.states:
             initial = current.reaction.fragment_energy(state, current.angle)
 
-            de_loss = de_bete_bloch.energy_loss(initial, piercing.thickness, piercing.density)
+            de_loss = de_bete_bloch.energy_loss(initial, piercing.thickness * 1e-4, piercing.density)
             if initial < de_loss:
                 break
 
-            e_loss = e_bete_bloch.energy_loss(initial - de_loss, stopping.thickness, stopping.density)
+            e_loss = e_bete_bloch.energy_loss(initial - de_loss, stopping.thickness * 1e-4, stopping.density)
             if initial - de_loss < e_loss:
                 likely_peaks.append(initial - de_loss)
             else:

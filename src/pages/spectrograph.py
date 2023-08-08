@@ -2,6 +2,7 @@ from business.yard import NucleiConverter
 from business.analysis import SpectrumAnalyzer
 
 from pages.workbooker import Workbooker
+from pages.calibration import CalibrationWindow
 
 from matplotlib.figure import Figure
 from matplotlib.backends.backend_qt5agg import FigureCanvasQTAgg, NavigationToolbar2QT
@@ -558,20 +559,25 @@ class Spectrograph(QMainWindow, Ui_Spectrograph):
         layout.addWidget(self.toolbar)
         layout.addWidget(self.view)
 
+        # EVENT HANDLING
         self.angle_box.currentTextChanged.connect(self.draw_angle)
         self.particle_box.currentTextChanged.connect(self.take_current)
         particles = [analyzer.spectrums[0].reaction.fragment for analyzer in self.analitics]
         self.particle_box.addItems([NucleiConverter.to_string(p) for p in particles])
 
-        self.calibrate_button.clicked.connect(self.calibrate)
+        self.calibrate_button.clicked.connect(self.open_calibration)
         self.peaks_button.clicked.connect(self.show_peaks)
         self.impurity_button.clicked.connect(self.validate_impurities)
         self.workbook_button.clicked.connect(self.open_workbook)
         self.ladder_button.clicked.connect(self.build_ladder)
         self.sigma_button.clicked.connect(self.open_cross_section)
 
-    def calibrate(self) -> None:
-        pass
+    def open_calibration(self) -> None:
+        angle = self.angle_box.currentIndex()
+        analitics = self.analitics[self.current_index]
+
+        self.window = CalibrationWindow(analitics, angle)
+        self.window.show()
 
     def show_peaks(self) -> None:
         angle_index = self.angle_box.currentIndex()
@@ -580,11 +586,7 @@ class Spectrograph(QMainWindow, Ui_Spectrograph):
         if spectrum.is_calibrated and len(spectrum.peaks) == 0:
             self.analitics[self.current_index].approximate(angle_index)
 
-        self.axes.clear()
-        for peak in spectrum.peaks.values():
-            self.axes.plot(peak.three_sigma(), peak.function(), color='red')
-        
-        self.draw.angle()
+        self.draw_angle()
 
     def validate_impurities(self) -> None:
         pass
@@ -627,6 +629,9 @@ class Spectrograph(QMainWindow, Ui_Spectrograph):
         
         for i in range(len(spectrum.data)):
             self.axes.plot([i + 1, i + 1], [0, spectrum.data[i]], color='blue')
+
+        for peak in spectrum.peaks.values():
+            self.axes.plot(peak.three_sigma(), peak.function(), color='red')
         
         self.axes.plot(list(range(1, len(spectrum.data) + 1)), spectrum.data, color='blue')
         self.view.draw()

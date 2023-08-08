@@ -1,10 +1,14 @@
-import typing
-from PyQt5 import QtCore
+from business.analysis import Spectrum, SpectrumAnalyzer
+
+from matplotlib.figure import Figure
+from matplotlib.backend_bases import MouseEvent, MouseButton
+from matplotlib.backends.backend_qt5agg import FigureCanvasQTAgg, NavigationToolbar2QT
+
 from PyQt5.QtGui import QFont, QIcon, QPalette, QBrush, QColor
 from PyQt5.QtCore import Qt, QSize, QMetaObject, QCoreApplication
 from PyQt5.QtWidgets import (
-    QWidget, QVBoxLayout, QDoubleSpinBox, 
-    QHBoxLayout, QPushButton, QFrame, QLabel
+    QMainWindow, QVBoxLayout, QDoubleSpinBox, 
+    QHBoxLayout, QPushButton, QFrame, QLabel, QWidget
 )
 
 
@@ -266,9 +270,78 @@ class Ui_Calibration(object):
         self.output_label.setText(_translate("SpectrumDemo", "TextLabel"))
 
 
-class CalibrationWindow(QWidget, Ui_Calibration):
-    def __init__(self) -> None:
+class CalibrationWindow(QMainWindow, Ui_Calibration):
+    def __init__(self, analyzer: SpectrumAnalyzer, angle_index: int) -> None:
+        # WINDOW SETUP
         super().__init__()
+        self.setupUi(self)
+        self.setWindowIcon(QIcon("./icon.ico"))
+
+        # DATA
+        self.analyzer = analyzer
+        self.index = angle_index
+
+        self.selected_dots_x = []
+        self.selected_dots_y = []
+
+        # MATPLOTLIB INITIALIZING
+        layout = QVBoxLayout(self.matplotlib_layout)
+        self.view = FigureCanvasQTAgg(Figure(figsize=(16, 9)))
+        self.view.setFocusPolicy( Qt.FocusPolicy.ClickFocus)
+        self.view.setFocus()
+        self.view.mpl_connect('button_press_event', self.pick)
+        
+        self.axes = self.view.figure.subplots()
+        self.toolbar = NavigationToolbar2QT(self.view, self)
+
+        layout.addWidget(self.toolbar)
+        layout.addWidget(self.view)
+
+        self.calibrate_button.clicked.connect(self.apply)
+        self.draw()
+
+    def pick(self, event: MouseEvent) -> None:
+        if event.button == MouseButton.LEFT:
+            self.selected_dots_x.append(int(round(event.xdata)))
+            self.selected_dots_y.append(int(round(event.ydata)))
+
+        if event.button == MouseButton.RIGHT and len(self.selected_dots_x) != 0:
+            self.selected_dots_x.pop()
+            self.selected_dots_y.pop()
+
+        self.show_picked()
+
+    def show_picked(self) -> None:
+        if len(self.selected_dots_x) < 2:
+            return
+
+        first_point = (self.selected_dots_x[-2], self.selected_dots_y[-2])
+        second_point = (self.selected_dots_x[-1], self.selected_dots_y[-1])
+
+        self.first_point.setText(f'{first_point[0]}; {first_point[1]}')
+        self.second_point.setText(f'{second_point[0]}; {second_point[1]}')
+
+    def apply(self) -> None:
+        first_dot = self.selected_dots_x[-2]
+        second_dot = self.selected_dots_x[-1]
+
+        first_state = self.first_state.value()
+        second_state = self.second_state.value()
+
+        self.analyzer.calibrate(self.index, (first_dot, second_dot), (first_state, second_state))
+
+        shift = self.analyzer.spectrums[self.index].scale_shift
+        channel_value = self.analyzer.spectrums[self.index].scale_value
+        self.output_label.setText(f"E(ch) = {round(channel_value, 3)} + {round(shift, 3)}")
+
+    def draw(self) -> None:
+        spectrum = self.analyzer.spectrums[self.index]
+
+        for i in range(len(spectrum.data)):
+            self.axes.plot([i + 1, i + 1], [0, spectrum.data[i]], color='blue')
+        
+        self.axes.plot(list(range(1, len(spectrum.data) + 1)), spectrum.data, color='blue')
+        self.view.draw()
 
 
 if __name__ == '__main__':

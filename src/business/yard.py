@@ -86,7 +86,7 @@ class ReactionMaster:
             residual = NucleiConverter.to_string(reaction.residual)
             quit = round(reaction.reaction_quit(), 3)
 
-            base = f'{beam} + {target} -> {fragment} + {residual}'
+            base = f'{target} + {beam} -> {residual} + {fragment}'
             base += ' + ' if quit >= 0 else ' - '
 
             return base + f'{abs(quit)} MeV'
@@ -107,9 +107,9 @@ class ReactionMaster:
     def to_reaction(input: str, energy: float) -> Reaction:
         nucleus = ReactionMaster.split_nucleus(input)
 
-        beam = NucleiConverter.to_nuclei(nucleus[0])
-        target = NucleiConverter.to_nuclei(nucleus[1])
-        fragment = NucleiConverter.to_nuclei(nucleus[2])
+        beam = NucleiConverter.to_nuclei(nucleus[1])
+        target = NucleiConverter.to_nuclei(nucleus[0])
+        fragment = NucleiConverter.to_nuclei(nucleus[4])
 
         return Reaction(beam, target, fragment, energy)
     

@@ -43,6 +43,8 @@ class Matrix:
         report += f"Integrator's count: {self.integrator_counts}\n"
         report += f"Integrator's module constant: {self.integrator_constant} Coul/pulse.\n"
         report += f"Telescope's efficiency: {self.misscalculation}.\n"
+        report += f"dE detector thickness: {self.electronics.de_detector.thickness} micron.\n"
+        report += f"E detector thickness: {self.electronics.e_detector.thickness} micron.\n"
 
         for locus in self.locuses:
             report += f'Locus of {NucleiConverter.to_string(locus.particle)}:\n'
