@@ -1,10 +1,12 @@
 from business.yard import NucleiConverter
 from business.analysis import SpectrumAnalyzer
 
+from pages.cswindow import CSWindow
 from pages.workbooker import Workbooker
 from pages.calibration import CalibrationWindow
 
 from matplotlib.figure import Figure
+from matplotlib.backend_bases import MouseEvent, MouseButton
 from matplotlib.backends.backend_qt5agg import FigureCanvasQTAgg, NavigationToolbar2QT
 
 from PyQt5.QtGui import QFont, QIcon, QPalette, QBrush, QColor
@@ -541,6 +543,37 @@ class SpectrumDemo(QMainWindow, Ui_SpectrumDemo):
         txt.close()
 
 
+class LadderViewer(QWidget):
+    def __init__(self, spectra: SpectrumAnalyzer) -> None:
+        # SETUP OF WINDOW
+        super().__init__()
+        self.setWindowTitle('dSigma — Ladder/Kinematics viewer')
+        self.setWindowIcon(QIcon("./icon.ico"))
+
+        # DATA
+        self.spectra = spectra
+
+        # MATPLOTLIB INITIALIZING
+        layout = QVBoxLayout(self)
+        self.view = FigureCanvasQTAgg(Figure(figsize=(16, 9)))
+        self.axes = self.view.figure.subplots()
+        self.toolbar = NavigationToolbar2QT(self.view, self)
+        layout.addWidget(self.toolbar)
+        layout.addWidget(self.view)
+
+        self.draw()
+
+    def draw(self) -> None:
+        allrange = self.spectra.spectrums[:]
+        mean = sum([sp.data.mean() for sp in allrange]) / len(allrange)
+
+        self.axes.clear()
+        for i in range(len(allrange)):
+            self.axes.plot(list(range(1, len(allrange[i].data) + 1)), allrange[i].data + allrange[i].angle * mean, color='blue')
+
+        self.view.draw()
+
+
 class Spectrograph(QMainWindow, Ui_Spectrograph):
     def __init__(self, analitics: list[SpectrumAnalyzer]) -> None:
         # WINDOW SETUP
@@ -550,10 +583,13 @@ class Spectrograph(QMainWindow, Ui_Spectrograph):
 
         self.analitics = analitics
         self.current_index = 0
+        
+        self.pointers = []
 
         # MATPLOTLIB INITIALIZING
         layout = QVBoxLayout(self.matplotlib_layout)
         self.view = FigureCanvasQTAgg(Figure(figsize=(16, 9)))
+        self.view.mpl_connect('button_press_event', self.add_pointer)
         self.axes = self.view.figure.subplots()
         self.toolbar = NavigationToolbar2QT(self.view, self.matplotlib_layout)
         layout.addWidget(self.toolbar)
@@ -571,6 +607,27 @@ class Spectrograph(QMainWindow, Ui_Spectrograph):
         self.workbook_button.clicked.connect(self.open_workbook)
         self.ladder_button.clicked.connect(self.build_ladder)
         self.sigma_button.clicked.connect(self.open_cross_section)
+
+    def add_pointer(self, event: MouseEvent) -> None:
+        if event.button == MouseButton.LEFT and event.dblclick:
+            if len(self.pointers) < 2:
+                self.pointers.append(int(event.xdata))
+            else:
+                self.pointers.pop(0)
+                self.pointers.append(int(event.xdata))
+
+            self.draw_pointers()
+
+    def draw_pointers(self) -> None:
+        angle = self.angle_box.currentIndex()
+        analitics = self.analitics[self.current_index]
+        maximum = analitics.spectrums[angle].data.max()
+        
+        self.draw_angle()
+        for i in range(len(self.pointers)):
+            self.axes.plot([self.pointers[i], self.pointers[i]], [0, maximum], color='red')
+
+        self.view.draw()
 
     def open_calibration(self) -> None:
         angle = self.angle_box.currentIndex()
@@ -598,21 +655,13 @@ class Spectrograph(QMainWindow, Ui_Spectrograph):
         self.window = Workbooker(spectrum.to_workbook())
         self.window.show()
 
-    # TODO: Fix this method.
     def build_ladder(self) -> None:
-        spectra = self.analitics[self.current_index].spectrums[:]
-        spectra = sorted(spectra, key=lambda x: x.angle)
-
-        mean = sum([sp.data.mean() for sp in spectra]) / len(spectra)
-
-        self.axes.clear()
-        for i in range(len(spectra)):
-            self.axes.plot(list(range(1, len(spectra[i].data) + 1)), spectra[i].data + spectra[i].angle * mean, color='blue')
-
-        self.view.draw()
+        self.window = LadderViewer(self.analitics[self.current_index])
+        self.window.show()
 
     def open_cross_section(self) -> None:
-        pass
+        self.window = CSWindow()
+        self.window.show()
 
     def take_current(self) -> None:
         self.current_index = int(self.particle_box.currentIndex())

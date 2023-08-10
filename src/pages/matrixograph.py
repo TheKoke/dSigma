@@ -433,7 +433,7 @@ class ConfirmWindow(QDialog, Ui_ConfirmWindow):
             self.nuclei_name.setText("Doesn't exist!")
 
 
-class DrawDialog( QWidget):
+class DrawDialog(QWidget):
     def __init__(self, matrix: Matrix, lum: float) -> None:
         # SETUP WINDOW
         super().__init__()
@@ -450,7 +450,7 @@ class DrawDialog( QWidget):
         self.selected_dots_y = []
 
         # MATPLOTLIB INITIZIALING
-        layout =  QVBoxLayout(self)
+        layout = QVBoxLayout(self)
         self.view = FigureCanvasQTAgg(Figure(figsize=(16, 9)))
 
         self.view.setFocusPolicy( Qt.FocusPolicy.ClickFocus)
