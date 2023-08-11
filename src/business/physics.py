@@ -219,50 +219,36 @@ class Struggling:
 
 
 class CrossSection:
-    def __init__(self, reaction: Reaction) -> None:
+    def __init__(self, reaction: Reaction, angle_range: np.ndarray) -> None:
         '''
-        Diff. cross section for reaction A(a, b)B
+        Differential cross section for reaction.
         '''
-        self.A = reaction.target.nuclons; self.a = reaction.beam.nuclons
-        self.B = reaction.residual.nuclons; self.b = reaction.fragment.nuclons
+        self.reaction = reaction
+        self.angle_range = angle_range
 
-        self.integrator_const = 1e-6
-        self.norm = 1
+        self.__values: dict[float, np.ndarray] = {
+            state: np.zeros_like(self.angle_range) for state in self.reaction.residual.states
+        }
 
-        self.distance = 200
-        self.collimator_radius = 1.6
-
-        self.reaction_q = reaction.reaction_quit()
-        self.beam_energy = reaction.beam_energy
-
-    def set_geometrical_parameters(self, distance: float, collimator_radius: float) -> None:
-        self.distance = distance
-        self.collimator_radius = collimator_radius
-
-    def set_electronics(self, integrator_const: float, norm: float) -> None:
-        self.integrator_const = integrator_const
-        self.norm = norm
+    @property
+    def values(self) -> dict[float, np.ndarray]:
+        return self.__values.copy()
     
-    def formula(self, events: np.ndarray, angles: np.ndarray, integrator: np.ndarray, misscalculation: np.ndarray) -> np.ndarray:
-        numerator = self.A * events * misscalculation * self.norm
-        denumerator = integrator * self.integrator_const * self.solid_angle()
-
-        return self.g_constant(angles) * numerator / denumerator
-
-    def angle_to_cm(self, angles: np.ndarray) -> np.ndarray:
+    def angle_to_cm(self) -> np.ndarray:
         x2 = np.sqrt(self.x_square())
-        angles_in_rad = angles * np.pi / 180
+        angles_in_rad = self.angle_range * np.pi / 180
 
         multiplier = (x2 * np.sin(angles_in_rad)) ** 2
 
-        return np.arctan(np.sqrt(multiplier) / np.sqrt(1 - multiplier)) * 180 / np.pi + angles
-
-    def solid_angle(self) -> float:
-        return 2 * np.pi * (self.collimator_radius ** 2) / (self.distance ** 2)
-
-    def g_constant(self, angles: np.ndarray) -> np.ndarray:
+        return np.arctan(np.sqrt(multiplier) / np.sqrt(1 - multiplier)) * 180 / np.pi + self.angle_range
+    
+    def cm_cross_section_of(self, state: float) -> np.ndarray:
+        lab_dsigma = self.lab_cross_section_of(state)
+        return lab_dsigma * self.g_constant()
+    
+    def g_constant(self) -> np.ndarray:
         x2 = self.x_square()
-        angles_in_rad = angles * np.pi / 180
+        angles_in_rad = self.angle_range * np.pi / 180
 
         numerator = np.sqrt(1 - x2 * (np.sin(angles_in_rad) ** 2))
         denumerator = (np.sqrt(x2) * np.cos(angles_in_rad) + numerator) ** 2
@@ -270,10 +256,27 @@ class CrossSection:
         return numerator / denumerator
 
     def x_square(self) -> float:
-        const = (self.a * self.b) / (self.A * self.B)
-        brackets = 1 + (1 + self.a / self.A) * self.reaction_q / self.beam_energy
+        a = self.reaction.beam.nuclons
+        b = self.reaction.fragment.nuclons
+        A = self.reaction.target.nuclons
+        B = self.reaction.residual.nuclons
+
+        const = (a * b) / (A * B)
+        brackets = 1 + (1 + a / A) * self.reaction.reaction_quit() / self.reaction.beam_energy
 
         return const / brackets
+
+    def lab_cross_section_of(self, state: float) -> np.ndarray:
+        if state not in self.reaction.residual.states:
+            raise ValueError(f'Residual nuclei does not have state with excited energy: {state} MeV.')
+        
+        return self.__values[state]
+        
+    def add_cross_section_for(self, state: float, sigmas: np.ndarray) -> None:
+        if state not in self.reaction.residual.states:
+            raise ValueError(f'Residual nuclei does not have state with excited energy: {state} MeV.')
+        
+        self.__values[state] = sigmas
 
 
 class PhysicalExperiment:

@@ -1,8 +1,8 @@
 import numpy as np
 
 from business.electronics import Telescope
-from business.physics import Reaction, Struggling
 from business.yard import ReactionMaster, NucleiConverter
+from business.physics import Reaction, Struggling, CrossSection
 
 
 class Gaussian:
@@ -186,6 +186,11 @@ class Spectrum:
 class SpectrumAnalyzer:
     def __init__(self, spectrums: list[Spectrum]) -> None:
         self.spectrums = spectrums
+        self.dsigma = self.__create_cross_section()
+
+    def __create_cross_section(self) -> CrossSection:
+        angles = np.array([sp.angle for sp in self.spectrums])
+        return CrossSection(self.spectrums[0].reaction, angles)
 
     def approximate(self, index: int) -> None:
         spectrum = self.spectrums[index]
@@ -257,6 +262,25 @@ class SpectrumAnalyzer:
 
         solution = np.linalg.solve(matrix, right_side)
         current.scale_value, current.scale_shift = solution[0], solution[1]
+
+
+'''
+    def __init__(self, reaction: Reaction, telescope: Telescope) -> None:
+        self.reaction = reaction
+        self.telescope = telescope
+
+        self.reaction_q = reaction.reaction_quit()
+        self.beam_energy = reaction.beam_energy
+    
+    def formula(self, events: np.ndarray, angles: np.ndarray, integrator: np.ndarray, misscalculation: np.ndarray) -> np.ndarray:
+        numerator = self.reaction.fragment.nuclons * events * misscalculation
+        denumerator = integrator * self.telescope.integrator_const * self.solid_angle()
+
+        return self.g_constant(angles) * numerator / denumerator
+
+    def solid_angle(self) -> float:
+        return 2 * np.pi * (self.telescope.collimator_radius ** 2) / (self.telescope.distance ** 2)
+'''
 
 
 if __name__ == '__main__':

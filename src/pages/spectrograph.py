@@ -597,6 +597,7 @@ class Spectrograph(QMainWindow, Ui_Spectrograph):
 
         # EVENT HANDLING
         self.angle_box.currentTextChanged.connect(self.draw_angle)
+        self.angle_box.currentTextChanged.connect(self.pointers.clear)
         self.particle_box.currentTextChanged.connect(self.take_current)
         particles = [analyzer.spectrums[0].reaction.fragment for analyzer in self.analitics]
         self.particle_box.addItems([NucleiConverter.to_string(p) for p in particles])
