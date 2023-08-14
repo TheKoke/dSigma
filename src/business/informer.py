@@ -1,4 +1,5 @@
 from business.ameparse import mass_excess_of
+from business.ensdf import excitation_energies, gammas
 
 
 CHARGE2NAME = {
@@ -58,11 +59,11 @@ class Informator:
 
     @staticmethod
     def states(z: int, a: int) -> list[float]:
-        return [0] * 5
+        return excitation_energies(z, a)
 
     @staticmethod
     def wigner_widths(z: int, a: int) -> list[float]:
-        return [0] * 5
+        return gammas(z, a)
 
 
 if __name__ == '__main__':
