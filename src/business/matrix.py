@@ -1,6 +1,5 @@
 import numpy as np
 
-from business.yard import NucleiConverter
 from business.locus import Locus
 from business.decoding import Decoder
 from business.analysis import Spectrum, SpectrumAnalyzer
@@ -34,8 +33,8 @@ class Matrix:
         return self.decoder.get_misscalculation()
     
     def to_workbook(self) -> str:
-        beam = NucleiConverter.to_string(self.experiment.beam)
-        target = NucleiConverter.to_string(self.experiment.target)
+        beam = self.experiment.beam
+        target = self.experiment.target
 
         report = f'Matrix {self.decoder.matrix_sizes} of -> \n'
         report += f'{target} + {beam} reaction at {self.experiment.beam_energy} MeV.\n'
@@ -47,7 +46,7 @@ class Matrix:
         report += f"E detector thickness: {self.electronics.e_detector.thickness} micron.\n"
 
         for locus in self.locuses:
-            report += f'Locus of {NucleiConverter.to_string(locus.particle)}:\n'
+            report += f'Locus of {locus.particle.name}:\n'
             for i in locus.points:
                 report += f'\t(E: {i[0]}; dE: {i[1]})\n'
 

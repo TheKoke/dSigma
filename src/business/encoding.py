@@ -1,6 +1,5 @@
 import struct
 
-from business.yard import NucleiConverter
 from business.matrix import Matrix
 
 
@@ -156,12 +155,12 @@ class Encoder:
                 offset += 4
 
     def generate_file_name(self) -> str:
-        beam_name = NucleiConverter.to_string(self.matrix.experiment.beam)
-        target_name = NucleiConverter.to_string(self.matrix.experiment.target)
+        beam = self.matrix.experiment.beam
+        target = self.matrix.experiment.target
         energy = self.matrix.experiment.beam_energy
         angle = self.matrix.angle
 
-        return self.directory + f'/{target_name}+{beam_name}_{round(energy)}MeV_{round(angle)}.ds'
+        return self.directory + f'/{target}+{beam}_{round(energy)}MeV_{round(angle)}.ds'
     
     def calc_byte_size(self) -> int:
         physical_area_size = 12

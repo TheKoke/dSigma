@@ -2,7 +2,7 @@ import numpy
 
 from filexplorer import Sleuth
 from business.decoding import Decoder
-from business.encoding import Encoder, NucleiConverter
+from business.encoding import Encoder
 from business.matrix import Matrix, MatrixAnalyzer, Nuclei
 
 from pages.workbooker import Workbooker
@@ -427,8 +427,8 @@ class ConfirmWindow(QDialog, Ui_ConfirmWindow):
         nuclon = self.nuclon_box.value()
 
         try:
-            name = NucleiConverter.to_string(Nuclei(charge, nuclon))
-            self.nuclei_name.setText(name)
+            nuclei = Nuclei(charge, nuclon)
+            self.nuclei_name.setText(nuclei.name)
         except:
             self.nuclei_name.setText("Doesn't exist!")
 

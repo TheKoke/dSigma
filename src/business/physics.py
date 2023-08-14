@@ -1,7 +1,7 @@
 from __future__ import annotations
 
 import numpy as np
-from business.consts import MASS_EXCESSES, STATES, WIGNER_WIDTHS
+from business.informer import Informator
 
 
 class Nuclei:
@@ -11,18 +11,19 @@ class Nuclei:
 
         self.nuclons = nuclons
         self.charge = charge
+        self.name = Informator.name(self.charge, self.nuclons)
 
     @property
     def mass_excess(self) -> float:
-        return MASS_EXCESSES[(self.charge, self.nuclons)]
+        return Informator.mass_excess(self.charge, self.nuclons)
     
     @property
     def states(self) -> list[float]:
-        return STATES[(self.charge, self.nuclons)]
+        return Informator.states(self.charge, self.nuclons)
     
     @property
     def wigner_widths(self) -> list[float]:
-        return WIGNER_WIDTHS[(self.charge, self.nuclons)]
+        return Informator.wigner_widths(self.charge, self.nuclons)
     
     @property
     def radius(self) -> float:
@@ -30,10 +31,13 @@ class Nuclei:
         return fermi * np.cbrt(self.nuclons) # cm
     
     def __hash__(self) -> int:
-        return hash(str(self))
+        return hash(self.name)
 
     def __repr__(self) -> str:
-        return f'Nuclei(Z: {self.charge}, A: {self.nuclons})'
+        return self.name
+    
+    def __str__(self) -> str:
+        return self.name
     
     def __eq__(self, other: Nuclei) -> bool:
         return self.nuclons == other.nuclons and self.charge == other.charge
@@ -74,6 +78,12 @@ class Reaction:
             and self.target == other.target \
             and self.fragment == other.fragment \
             and self.beam_energy == other.beam_energy
+    
+    def __repr__(self) -> str:
+        return f'{self.target}({self.beam}, {self.fragment}){self.residual}'
+    
+    def __str__(self) -> str:
+        return f'{self.target}({self.beam}, {self.fragment}){self.residual}'
 
     def __residual_nuclei(self) -> Nuclei:
         return self.beam + self.target - self.fragment
@@ -226,9 +236,7 @@ class CrossSection:
         self.reaction = reaction
         self.angle_range = angle_range
 
-        self.__values: dict[float, np.ndarray] = {
-            state: np.zeros_like(self.angle_range) for state in self.reaction.residual.states
-        }
+        self.__values = {state: np.zeros_like(self.angle_range) for state in self.reaction.residual.states}
 
     @property
     def values(self) -> dict[float, np.ndarray]:

@@ -1,4 +1,3 @@
-from business.yard import NucleiConverter
 from business.analysis import SpectrumAnalyzer
 
 from pages.cswindow import CSWindow
@@ -496,6 +495,7 @@ class SpectrumDemo(QMainWindow, Ui_SpectrumDemo):
         # SETUP OF WINDOW
         super().__init__()
         self.setupUi(self)
+        self.setWindowIcon(QIcon("./icon.ico"))
 
         self.spectrums = spectres
 
@@ -600,7 +600,7 @@ class Spectrograph(QMainWindow, Ui_Spectrograph):
         self.angle_box.currentTextChanged.connect(self.pointers.clear)
         self.particle_box.currentTextChanged.connect(self.take_current)
         particles = [analyzer.spectrums[0].reaction.fragment for analyzer in self.analitics]
-        self.particle_box.addItems([NucleiConverter.to_string(p) for p in particles])
+        self.particle_box.addItems([str(p) for p in particles])
 
         self.calibrate_button.clicked.connect(self.open_calibration)
         self.peaks_button.clicked.connect(self.show_peaks)

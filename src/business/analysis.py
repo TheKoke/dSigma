@@ -1,7 +1,6 @@
 import numpy as np
 
 from business.electronics import Telescope
-from business.yard import ReactionMaster, NucleiConverter
 from business.physics import Reaction, Struggling, CrossSection
 
 
@@ -162,8 +161,8 @@ class Spectrum:
     
     def to_workbook(self) -> str:
         report = "Spectrum of -> \n"
-        report += f"{ReactionMaster.to_string(self.__reaction)} reaction,\n"
-        report += f"With {NucleiConverter.to_string(self.__reaction.beam)} energy = {round(self.__reaction.beam_energy, 3)} MeV.\n"
+        report += f"{self.__reaction} reaction,\n"
+        report += f"With {self.__reaction.beam} energy = {round(self.__reaction.beam_energy, 3)} MeV.\n"
         report += f"At laboratory angle = {round(self.__angle, 3)} degrees.\n\n"
         report += f"Calibrated by: E(ch) = {round(self.__scale_value, 3)}*ch + {round(self.__scale_shift, 3)}.\n\n"
         report += f"Peaks of spectrum:\n"
