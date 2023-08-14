@@ -1,3 +1,5 @@
+from business.physics import CrossSection
+
 from pages.workbooker import Workbooker
 
 from matplotlib.figure import Figure
@@ -291,10 +293,15 @@ class Ui_CSWindow(object):
 
 
 class CSWindow(QMainWindow, Ui_CSWindow):
-    def __init__(self) -> None:
+    def __init__(self, sigmas: list[CrossSection]) -> None:
         # SETUP OF WINDOW
         super().__init__()
         self.setupUi(self)
+        self.setWindowIcon(QIcon("./icon.ico"))
+
+        # DATA
+        self.sigmas = sigmas
+        self.current_index = 0
 
         # MATPLOTLIB INITIALIZING
         layout = QVBoxLayout(self.matplotlib_layout)
@@ -306,6 +313,7 @@ class CSWindow(QMainWindow, Ui_CSWindow):
 
         # EVENT HANDLING
         self.reaction_box.currentTextChanged.connect(self.take_reaction)
+        self.reaction_box.addItems([str(ds.reaction) for ds in sigmas])
         self.state_box.currentTextChanged.connect(self.take_state)
         self.txt_button.clicked.connect(self.save_txt)
         self.excel_button.clicked.connect(self.save_excel)
@@ -328,7 +336,7 @@ class CSWindow(QMainWindow, Ui_CSWindow):
         pass
 
     def open_workbook(self) -> None:
-        self.window = Workbooker()
+        self.window = Workbooker("")
         self.window.show()
 
 

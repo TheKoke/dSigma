@@ -661,7 +661,7 @@ class Spectrograph(QMainWindow, Ui_Spectrograph):
         self.window.show()
 
     def open_cross_section(self) -> None:
-        self.window = CSWindow()
+        self.window = CSWindow([a.dsigma for a in self.analitics])
         self.window.show()
 
     def take_current(self) -> None:
