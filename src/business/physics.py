@@ -1,7 +1,7 @@
 from __future__ import annotations
 
 import numpy as np
-from business.informer import Informator
+from business.informer import Informator, NAME2CHARGE
 
 
 class Nuclei:
@@ -58,6 +58,16 @@ class Nuclei:
                 return self.charge * 1.672e-24 + (self.nuclons - self.charge) * 1.675e-24
             case _:
                 return self.nuclons
+            
+    @staticmethod
+    def from_string(input: str) -> Nuclei:
+        only_name = [i.lower() for i in input if i.isalpha()]
+        only_nuclons = [i for i in input if i .isdigit()]
+
+        charge = NAME2CHARGE[only_name]
+        nuclon = float(only_nuclons)
+
+        return Nuclei(charge, nuclon)
 
 
 class Reaction:
