@@ -4,35 +4,54 @@ from business.electronics import Telescope
 from business.physics import Reaction, Struggling, CrossSection
 
 
-class Gaussian:
-    def __init__(self, mu: float, fwhm: float, area: float) -> None:
-        self.mu = mu
-        self.fwhm = fwhm
-        self.area = area
 
+class Gaussian:
+    def __init__(self, mu: float, sigma: float, area: float) -> None:
+        self.__mu = mu
+        self.__dispersion = sigma
+        self.__area = area
+
+    @property
+    def mu(self) -> float:
+        return self.__mu
+    
+    @property
+    def dispersion(self) -> float:
+        return self.__dispersion
+    
+    @property
+    def area(self) -> float:
+        return self.__area
+    
+    @property
+    def fwhm(self) -> float:
+        return self.__dispersion / (2 * np.sqrt(2 * np.log(2)))
+    
     def to_workbook(self) -> str:
         return f'Peak on mu=({self.mu}) with fwhm=({self.fwhm}) and area under peak=({self.area})'
 
     def __str__(self) -> str:
         func = 'G(x) = '
-        func += f'{np.round(self.area, 3)} / (sqrt(2pi * {np.round(self.dispersion(), 3)}) * '
-        func += f'exp(-(x - {np.round(self.mu, 3)})^2 / 2{np.round(self.dispersion(), 3)})'
+        func += f'{np.round(self.area, 3)} / (sqrt(2pi * {np.round(self.dispersion, 3)}) * '
+        func += f'exp(-(x - {np.round(self.mu, 3)})^2 / 2{np.round(self.dispersion, 3)})'
 
         return func
+
 
     def dispersion(self) -> np.float64:
         return self.fwhm / (2 * np.sqrt(2 * np.log(2)))
 
+    
+    def dispersion(self) -> np.float64:
+        return self.fwhm / (2 * np.sqrt(2 * np.log(2)))
+
     def three_sigma(self) -> np.ndarray:
-        sigma = self.dispersion()
-        return np.linspace(-3 * sigma + self.mu, 3 * sigma + self.mu, 50)
-
+        return np.linspace(-3 * self.__dispersion + self.__mu, 3 * self.__dispersion + self.__mu, 100)
+    
     def function(self) -> np.ndarray:
-        constant = self.area / (self.fwhm * np.sqrt(np.pi / (4 * np.log(2))))
-        exp_constant = -1 * (4 * np.log(2)) / (self.fwhm ** 2)
-
-        array_part = (self.three_sigma() - self.mu) ** 2
-        return constant * np.exp(exp_constant * array_part)
+        constant = self.__area / np.sqrt(2 * np.pi * np.power(self.__dispersion, 2))
+        array = np.exp(-np.power(self.three_sigma() - self.__mu, 2) / (2 * np.power(self.__dispersion, 2)))
+        return constant * array
     
 
 class Lorentzian:
@@ -69,9 +88,8 @@ class Peak:
     def __init__(self, spectrum: np.ndarray, mu_index: int, fwhm: int) -> None:
         self.spectrum = spectrum
         self.mu_index = mu_index
-        self.width = fwhm / np.log10(2)
 
-        self.fwhm = fwhm
+        self.width = fwhm / np.log10(2)
         self.area = 0
 
     def approximate(self) -> Gaussian:
@@ -80,10 +98,30 @@ class Peak:
 
         peak_start = int(peak_start) if peak_start >= 0 else 0
         peak_stop = int(peak_stop) if peak_stop < len(self.spectrum) else len(self.spectrum) - 1
+        center_index = self.mu_index - peak_stop
 
-        area = self.spectrum[peak_start: peak_stop].sum()
+        return Peak.describe(np.arange(peak_start, peak_stop), self.spectrum[peak_start: peak_stop], center_index)
 
-        return Gaussian(self.mu_index + 1, self.fwhm, area)
+    @staticmethod
+    def describe(x: np.ndarray, y: np.ndarray, center: int) -> Gaussian:
+        new_x = np.power(x - x[center], 2)
+        y[y == 0] = 1
+        new_y = np.log(y)
+
+        coeffs = Peak.least_squares(new_x, new_y)
+
+        sigma = np.sqrt(-1 / (2 * coeffs[0]))
+        area = np.exp(coeffs[1]) * np.sqrt(2 * np.pi * sigma ** 2)
+
+        return Gaussian(x[center], sigma, area)
+
+    @staticmethod
+    def least_squares(x: np.ndarray, y: np.ndarray) -> tuple[float, float]:
+        system = np.array([[len(x), x.sum()], [x.sum(), np.power(x, 2).sum()]])
+        righthand = np.array([y.sum(), (x * y).sum()])
+
+        solutions = np.linalg.solve(system, righthand)
+        return (solutions[1], solutions[0])
 
 
 class Spectrum:
@@ -106,12 +144,8 @@ class Spectrum:
     @property
     def gamma_widths(self) -> list[float]:
         self_widths = np.array(self.__reaction.residual.wigner_widths)
-
         detector_resolution = self.__electronics.e_detector.resolution
-        beam_energy_emittance = self.__reaction.beam_energy * 0.01 # cyclotrone u-150m
-        environment_resolution = np.sqrt(detector_resolution ** 2 + beam_energy_emittance ** 2)
-
-        return np.sqrt(self_widths ** 2 + environment_resolution ** 2).tolist()
+        return np.sqrt(self_widths ** 2 + detector_resolution ** 2).tolist()
     
     @property
     def angle(self) -> float:

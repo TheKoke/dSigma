@@ -313,15 +313,19 @@ class CSWindow(QMainWindow, Ui_CSWindow):
 
         # EVENT HANDLING
         self.reaction_box.currentTextChanged.connect(self.take_reaction)
-        self.reaction_box.addItems([str(ds.reaction) for ds in sigmas])
         self.state_box.currentTextChanged.connect(self.take_state)
+        self.reaction_box.addItems([str(ds.reaction) for ds in sigmas])
         self.txt_button.clicked.connect(self.save_txt)
         self.excel_button.clicked.connect(self.save_excel)
         self.compare_button.clicked.connect(self.compare_all_states)
         self.workbook_button.clicked.connect(self.open_workbook)
 
     def take_reaction(self) -> None:
-        pass
+        index = self.reaction_box.currentIndex()
+        sigma = self.sigmas[index]
+
+        self.state_box.clear()
+        self.state_box.addItems([f'{lvl} MeV' for lvl in sigma.reaction.residual.states])
 
     def take_state(self) -> None:
         pass
