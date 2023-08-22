@@ -17,18 +17,20 @@ DETECTOR_ANGLE = 8
 # Electronics area
 E_DETECTOR_THICKNESS  = 12
 E_DETECTOR_MADEOF     = 16
-DE_DETECTOR_THICKNESS = 20
-DE_DETECTOR_MADEOF    = 24
+E_DETECTOR_RESOLUTION = 20
+DE_DETECTOR_THICKNESS = 24
+DE_DETECTOR_MADEOF    = 28
+DE_DETECTOR_RESOLUTION = 32
 # Cross-section valuable, details area
-INTEGRATOR_COUNTS        = 28
-CONGRUENCE               = 32
-INTEGRATOR_CONSTANT      = 36
-COLLIMATOR_RADIUS        = 40
-TARGET_DETECTOR_DISTANCE = 44
+INTEGRATOR_COUNTS        = 36
+CONGRUENCE               = 40
+INTEGRATOR_CONSTANT      = 44
+COLLIMATOR_RADIUS        = 48
+TARGET_DETECTOR_DISTANCE = 52
 # Matrix area
-E_SIZE       = 48
-DE_SIZE      = 50
-MATRIX_START = 52
+E_SIZE       = 56
+DE_SIZE      = 58
+MATRIX_START = 60
 # Dynamic area, locuses and spectres
 LOCUSES_START = lambda height, width: MATRIX_START + 4 * height * width
 
@@ -69,15 +71,17 @@ class Decoder:
     def get_electronics(self) -> Telescope:
         e_thick = struct.unpack_from('f', self.buffer, E_DETECTOR_THICKNESS)[0]
         e_madeof = struct.unpack_from('4s', self.buffer, E_DETECTOR_MADEOF)[0].decode('ascii')
+        e_res = struct.unpack_from('f', self.buffer, E_DETECTOR_RESOLUTION)[0]
 
         de_thick = struct.unpack_from('f', self.buffer, DE_DETECTOR_THICKNESS)[0]
         de_madeof = struct.unpack_from('4s', self.buffer, DE_DETECTOR_MADEOF)[0].decode('ascii')
+        de_res = struct.unpack_from('f', self.buffer, DE_DETECTOR_RESOLUTION)[0]
 
         collimator = struct.unpack_from('f', self.buffer, COLLIMATOR_RADIUS)[0]
         distance = struct.unpack_from('f', self.buffer, TARGET_DETECTOR_DISTANCE)[0]
 
-        stopping = Detector(e_madeof, e_thick)
-        piercing = Detector(de_madeof, de_thick)
+        stopping = Detector(e_madeof, e_thick, e_res * 1e-3)
+        piercing = Detector(de_madeof, de_thick, de_res * 1e-3)
 
         return Telescope(stopping, piercing, collimator, distance)
 
@@ -152,14 +156,21 @@ class Decoder:
 
             current_spectrum = Spectrum(current_reaction, angle, electronics, current_locus.to_spectrum())
 
+            calib_e0 = struct.unpack_from('f', self.buffer, offset)[0]
+            calib_k = struct.unpack_from('f', self.buffer, offset + 4)[0]
+            offset += 8
+
+            current_spectrum.scale_shift = calib_e0
+            current_spectrum.scale_value = calib_k
+
             peaks_count = struct.unpack_from('H', self.buffer, offset)[0]
             offset += 2
 
             for _ in range(peaks_count):
                 gathered = self.__gather_peak(offset)
                 current_spectrum.add_peak(gathered[0], gathered[1])
-
-            offset += 16
+                offset += 16
+            
             collected.append(current_spectrum)
 
         return collected
@@ -171,11 +182,11 @@ class Decoder:
         center = struct.unpack_from('I', self.buffer, offset)[0]
         offset += 4
 
-        fwhm = struct.unpack_from('f', self.buffer, offset)[0]
+        dispersion = struct.unpack_from('f', self.buffer, offset)[0]
         offset += 4
 
         area = struct.unpack_from('f', self.buffer, offset)[0]
-        return (state, Gaussian(center, fwhm, area))
+        return (round(state, 3), Gaussian(center, dispersion, area))
     
 
 if __name__ == '__main__':

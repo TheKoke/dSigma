@@ -35,12 +35,15 @@ class Detector:
 
 
 class Telescope:
-    def __init__(self, e_detector: Detector, de_detector: Detector, kollimator_radius: float = 1.0, distance: float = 360) -> None:
+    def __init__(self, e_detector: Detector, de_detector: Detector, 
+                 kollimator_radius: float = 1.0, distance: float = 360,
+                 integrator_constant: float = 1e-10) -> None:
         self.__e_detector = e_detector
         self.__de_detector = de_detector
         
         self.__distance = distance
         self.__collimator_radius = kollimator_radius
+        self.__integrator_constant = integrator_constant
 
     @property
     def e_detector(self) -> Detector:
@@ -57,6 +60,10 @@ class Telescope:
     @property
     def distance(self) -> float:
         return self.__distance
+    
+    @property
+    def integrator_constant(self) -> float:
+        return self.__integrator_constant
     
 
 if __name__ == '__main__':
