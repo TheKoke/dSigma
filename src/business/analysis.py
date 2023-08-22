@@ -37,14 +37,6 @@ class Gaussian:
 
         return func
 
-
-    def dispersion(self) -> np.float64:
-        return self.fwhm / (2 * np.sqrt(2 * np.log(2)))
-
-    
-    def dispersion(self) -> np.float64:
-        return self.fwhm / (2 * np.sqrt(2 * np.log(2)))
-
     def three_sigma(self) -> np.ndarray:
         return np.linspace(-3 * self.__dispersion + self.__mu, 3 * self.__dispersion + self.__mu, 100)
     
@@ -177,6 +169,7 @@ class Spectrum:
     @scale_shift.setter
     def scale_shift(self, val: float) -> None:
         self.__scale_shift = val
+        self.__peaks.clear()
 
     @property
     def scale_value(self) -> float:
@@ -184,10 +177,11 @@ class Spectrum:
     
     @scale_value.setter
     def scale_value(self, val: float) -> None:
-        if val <= 0:
+        if val < 0:
             raise ValueError('Scale value of channel can not be negative or equal to 0.')
         
         self.__scale_value = val
+        self.__peaks.clear()
 
     @property
     def peaks(self) -> dict[float, Gaussian]:
@@ -295,25 +289,6 @@ class SpectrumAnalyzer:
 
         solution = np.linalg.solve(matrix, right_side)
         current.scale_value, current.scale_shift = solution[0], solution[1]
-
-
-'''
-    def __init__(self, reaction: Reaction, telescope: Telescope) -> None:
-        self.reaction = reaction
-        self.telescope = telescope
-
-        self.reaction_q = reaction.reaction_quit()
-        self.beam_energy = reaction.beam_energy
-    
-    def formula(self, events: np.ndarray, angles: np.ndarray, integrator: np.ndarray, misscalculation: np.ndarray) -> np.ndarray:
-        numerator = self.reaction.fragment.nuclons * events * misscalculation
-        denumerator = integrator * self.telescope.integrator_const * self.solid_angle()
-
-        return self.g_constant(angles) * numerator / denumerator
-
-    def solid_angle(self) -> float:
-        return 2 * np.pi * (self.telescope.collimator_radius ** 2) / (self.telescope.distance ** 2)
-'''
 
 
 if __name__ == '__main__':

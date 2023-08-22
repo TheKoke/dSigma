@@ -6,6 +6,7 @@ from business.encoding import Encoder
 from business.matrix import Matrix, MatrixAnalyzer, Nuclei
 
 from pages.workbooker import Workbooker
+from pages.information import InformWindow
 from pages.spectrograph import Spectrograph, SpectrumDemo
 
 from matplotlib.figure import Figure
@@ -631,15 +632,7 @@ class Matrixograph(QMainWindow, Ui_Matrixograph):
             en = Encoder(matrix, self.directory)
             en.write_down()
 
-        information = QDialog()
-        information.setWindowTitle("Info About.")
-        information.setWindowIcon(QIcon('./icon.ico'))
-        information.setFixedSize(300, 100)
-        label = QLabel(text='E-dE matrixes was saved succesfully.')
-        label.setAlignment(Qt.AlignCenter)
-        layout = QVBoxLayout(information)
-        layout.addWidget(label)
-
+        information = InformWindow('E-dE matrixes was saved succesfully.')
         self.window = information
         self.window.show()
 
@@ -655,7 +648,7 @@ class Matrixograph(QMainWindow, Ui_Matrixograph):
         return found
 
     def open_spectrograph(self) -> None:
-        self.window = Spectrograph(self.analyzer.all_spectres())
+        self.window = Spectrograph(self.analyzer.spectrums)
         self.window.show()
 
 

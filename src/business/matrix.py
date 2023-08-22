@@ -2,8 +2,9 @@ import numpy as np
 
 from business.locus import Locus
 from business.decoding import Decoder
+from business.electronics import Telescope
 from business.analysis import Spectrum, SpectrumAnalyzer
-from business.physics import Nuclei, Reaction
+from business.physics import Nuclei, Reaction, CrossSection
 
 
 class Matrix:
@@ -45,10 +46,17 @@ class Matrix:
         report += f"dE detector thickness: {self.electronics.de_detector.thickness} micron.\n"
         report += f"E detector thickness: {self.electronics.e_detector.thickness} micron.\n"
 
+        report += '\n\n'
         for locus in self.locuses:
             report += f'Locus of {locus.particle.name}:\n'
             for i in locus.points:
                 report += f'\t(E: {i[0]}; dE: {i[1]})\n'
+            report += '--\n'
+
+        report += '\nSpectrum area\n'
+        for spectrum in self.spectrums:
+            report += spectrum.to_workbook()
+            report += '--\n'
 
         return report
 
@@ -60,43 +68,66 @@ class Matrix:
             self.locuses.append(Locus(particle, self.numbers, points))
 
     def spectrum_of(self, particle: Nuclei) -> Spectrum:
-        if particle not in [locus.particle for locus in self.locuses]:
-            raise ValueError(f'There is no locus of {particle} in matrix.')
-        
-        locus = next(locus for locus in self.locuses if locus.particle == particle)
-        reaction = self.__build_reaction(particle)
-        spectrum_data = locus.to_spectrum()
+        if particle in [s.reaction.fragment for s in self.spectrums]:
+            return next(spectrum for spectrum in self.spectrums if spectrum.reaction.fragment == particle)
 
-        self.spectrums.append(Spectrum(reaction, self.angle, self.electronics, spectrum_data))
-        return self.spectrums[-1]
+        if particle in [locus.particle for locus in self.locuses]:
+            locus = next(locus for locus in self.locuses if locus.particle == particle)
+            reaction = self.__build_reaction(particle)
+            spectrum_data = locus.to_spectrum()
+
+            self.spectrums.append(Spectrum(reaction, self.angle, self.electronics, spectrum_data))
+            return self.spectrums[-1]
+        
+        raise ValueError(f'There is no spectrum of {particle} fragment.')
 
     def __build_reaction(self, fragment: Nuclei) -> Reaction:
         return self.experiment.create_reaction(fragment)
-    
+
 
 # TODO: Refactor and implement that class.
 class MatrixAnalyzer:
     def __init__(self, matrixes: list[Matrix]) -> None:
         self.matrixes = matrixes
+        self.spectrums = self.__all_spectres()
 
     @property
     def angles(self) -> list[float]:
         return [matrix.angle for matrix in self.matrixes]
     
-    def all_spectres(self) -> list[SpectrumAnalyzer]:
-        particles = []
+    def __all_spectres(self) -> list[SpectrumAnalyzer]:
+        particles = self.__particles()
+        return [self.__collect_spectres(p) for p in particles]
+
+    def __collect_spectres(self, particle: Nuclei) -> SpectrumAnalyzer:
+        return SpectrumAnalyzer([m.spectrum_of(particle) for m in self.matrixes])
+    
+    def __particles(self) -> list[Nuclei]:
+        found = []
         for m in self.matrixes:
             for locus in m.locuses:
-                if locus.particle not in particles:
-                    particles.append(locus.particle)
+                if locus.particle not in found:
+                    found.append(locus.particle)
 
-        return [self.collect_spectres(p) for p in particles]
-
-    def collect_spectres(self, particle: Nuclei) -> SpectrumAnalyzer:
-        return SpectrumAnalyzer([m.spectrum_of(particle) for m in self.matrixes])
+        return found
 
     def cross_section_of(self, particle: Nuclei) -> np.ndarray:
-        pass
+        fragments = self.__particles()
+        if particle not in fragments:
+            raise ValueError(f'{particle} fragment does not exist.')
+        
+        reviewed_analyzer = self.spectrums[fragments.index(particle)]
+
+    @staticmethod
+    def __formula(events: np.ndarray, integrator: np.ndarray, misscalculation: np.ndarray, telescope: Telescope) -> np.ndarray:
+        numerator =  events * misscalculation
+        denumerator = integrator * telescope.integrator_constant * MatrixAnalyzer.__solid_angle(telescope)
+
+        return numerator / denumerator
+
+    @staticmethod
+    def __solid_angle(telescope: Telescope) -> Telescope:
+        return 2 * np.pi * (telescope.collimator_radius ** 2) / (telescope.distance ** 2)
 
 
 if __name__ == '__main__':

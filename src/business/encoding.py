@@ -13,18 +13,20 @@ DETECTOR_ANGLE = 8
 # Electronics area
 E_DETECTOR_THICKNESS  = 12
 E_DETECTOR_MADEOF     = 16
-DE_DETECTOR_THICKNESS = 20
-DE_DETECTOR_MADEOF    = 24
+E_DETECTOR_RESOLUTION = 20
+DE_DETECTOR_THICKNESS = 24
+DE_DETECTOR_MADEOF    = 28
+DE_DETECTOR_RESOLUTION = 32
 # Cross-section valuable, details area
-INTEGRATOR_COUNTS        = 28
-CONGRUENCE               = 32
-INTEGRATOR_CONSTANT      = 36
-COLLIMATOR_RADIUS        = 40
-TARGET_DETECTOR_DISTANCE = 44
+INTEGRATOR_COUNTS        = 36
+CONGRUENCE               = 40
+INTEGRATOR_CONSTANT      = 44
+COLLIMATOR_RADIUS        = 48
+TARGET_DETECTOR_DISTANCE = 52
 # Matrix area
-E_SIZE       = 48
-DE_SIZE      = 50
-MATRIX_START = 52
+E_SIZE       = 56
+DE_SIZE      = 58
+MATRIX_START = 60
 # Dynamic area, locuses and spectres
 LOCUSES_START = lambda height, width: MATRIX_START + 4 * height * width
 
@@ -73,9 +75,11 @@ class Encoder:
 
         struct.pack_into('f', buffer, E_DETECTOR_THICKNESS, e_detector.thickness)
         struct.pack_into('4s', buffer, E_DETECTOR_MADEOF, e_detector.madeof.encode('ascii'))
+        struct.pack_into('f', buffer, E_DETECTOR_RESOLUTION, e_detector.resolution * 1e3)
 
         struct.pack_into('f', buffer, DE_DETECTOR_THICKNESS, de_detector.thickness)
         struct.pack_into('4s', buffer, DE_DETECTOR_MADEOF, de_detector.madeof.encode('ascii'))
+        struct.pack_into('f', buffer, DE_DETECTOR_RESOLUTION, de_detector.resolution * 1e3)
 
     def write_details(self, buffer: bytearray) -> None:
         integrator_count = self.matrix.integrator_counts
@@ -126,7 +130,7 @@ class Encoder:
                 offset += 4
 
     def write_spectrums(self, buffer: bytearray) -> None:
-        spectrums_area_size = sum([4 + 16 * len(spectrum.peaks) for spectrum in self.matrix.spectrums])
+        spectrums_area_size = sum([12 + 16 * len(spectrum.peaks) for spectrum in self.matrix.spectrums])
         offset = self.calc_byte_size() - spectrums_area_size
 
         for spectrum in self.matrix.spectrums:
@@ -136,6 +140,12 @@ class Encoder:
 
             struct.pack_into('B', buffer, offset, fragment.nuclons)
             offset += 1
+
+            struct.pack_into('f', buffer, offset, spectrum.scale_shift)
+            offset += 4
+
+            struct.pack_into('f', buffer, offset, spectrum.scale_value)
+            offset += 4
 
             peaks_count = len(spectrum.peaks)
             struct.pack_into('H', buffer, offset, peaks_count)
@@ -148,7 +158,7 @@ class Encoder:
                 struct.pack_into('I', buffer, offset, spectrum.peaks[state].mu)
                 offset += 4
 
-                struct.pack_into('f', buffer, offset, spectrum.peaks[state].fwhm)
+                struct.pack_into('f', buffer, offset, spectrum.peaks[state].dispersion)
                 offset += 4
 
                 struct.pack_into('f', buffer, offset, spectrum.peaks[state].area)
@@ -164,12 +174,12 @@ class Encoder:
     
     def calc_byte_size(self) -> int:
         physical_area_size = 12
-        electronics_area_size = 16
+        electronics_area_size = 24
         details_area_size = 20
         matrix_area_size = 4 + 4 * len(self.matrix.numbers.flat)
 
         locuses_area_size = sum([6 + 4 * len(locus.points) for locus in self.matrix.locuses]) + 2
-        spectrums_area_size = sum([4 + 16 * len(spectrum.peaks) for spectrum in self.matrix.spectrums])
+        spectrums_area_size = sum([12 + 16 * len(spectrum.peaks) for spectrum in self.matrix.spectrums])
 
         return physical_area_size + electronics_area_size + \
                 details_area_size + matrix_area_size + \
