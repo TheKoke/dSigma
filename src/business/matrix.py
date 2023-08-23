@@ -15,7 +15,7 @@ class Matrix:
         self.electronics = decoder.get_electronics()
 
         self.locuses: list[Locus] = decoder.take_locuses()
-        self.spectrums: list[Spectrum] = decoder.take_spectrums()
+        self.spectrums: dict[Nuclei, Spectrum] = decoder.take_spectrums()
 
     @property
     def angle(self) -> float:
@@ -54,8 +54,8 @@ class Matrix:
             report += '--\n'
 
         report += '\nSpectrum area\n'
-        for spectrum in self.spectrums:
-            report += spectrum.to_workbook()
+        for nuclei in self.spectrums:
+            report += self.spectrums[nuclei].to_workbook()
             report += '--\n'
 
         return report
@@ -64,20 +64,22 @@ class Matrix:
         if particle in [locus.particle for locus in self.locuses]:
             index = next(i for i in range(len(self.locuses)) if self.locuses[i].particle == particle)
             self.locuses[index] = Locus(particle, self.numbers, points)
+
+            self.spectrums.pop(particle)
         else:
             self.locuses.append(Locus(particle, self.numbers, points))
 
     def spectrum_of(self, particle: Nuclei) -> Spectrum:
-        if particle in [s.reaction.fragment for s in self.spectrums]:
-            return next(spectrum for spectrum in self.spectrums if spectrum.reaction.fragment == particle)
+        if particle in [self.spectrums[n].reaction.fragment for n in self.spectrums]:
+            return next(self.spectrums[n] for n in self.spectrums if self.spectrums[n].reaction.fragment == particle)
 
         if particle in [locus.particle for locus in self.locuses]:
             locus = next(locus for locus in self.locuses if locus.particle == particle)
             reaction = self.__build_reaction(particle)
             spectrum_data = locus.to_spectrum()
 
-            self.spectrums.append(Spectrum(reaction, self.angle, self.electronics, spectrum_data))
-            return self.spectrums[-1]
+            self.spectrums[particle] = Spectrum(reaction, self.angle, self.electronics, spectrum_data)
+            return self.spectrums[particle]
         
         raise ValueError(f'There is no spectrum of {particle} fragment.')
 
@@ -89,13 +91,12 @@ class Matrix:
 class MatrixAnalyzer:
     def __init__(self, matrixes: list[Matrix]) -> None:
         self.matrixes = matrixes
-        self.spectrums = self.__all_spectres()
 
     @property
     def angles(self) -> list[float]:
         return [matrix.angle for matrix in self.matrixes]
     
-    def __all_spectres(self) -> list[SpectrumAnalyzer]:
+    def all_spectres(self) -> list[SpectrumAnalyzer]:
         particles = self.__particles()
         return [self.__collect_spectres(p) for p in particles]
 
@@ -115,8 +116,6 @@ class MatrixAnalyzer:
         fragments = self.__particles()
         if particle not in fragments:
             raise ValueError(f'{particle} fragment does not exist.')
-        
-        reviewed_analyzer = self.spectrums[fragments.index(particle)]
 
     @staticmethod
     def __formula(events: np.ndarray, integrator: np.ndarray, misscalculation: np.ndarray, telescope: Telescope) -> np.ndarray:

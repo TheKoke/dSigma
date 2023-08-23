@@ -5,9 +5,10 @@ from business.decoding import Decoder
 from business.encoding import Encoder
 from business.matrix import Matrix, MatrixAnalyzer, Nuclei
 
+from pages.cswindow import CSWindow
 from pages.workbooker import Workbooker
 from pages.information import InformWindow
-from pages.spectrograph import Spectrograph, SpectrumDemo
+from pages.spectrograph import Spectrograph
 
 from matplotlib.figure import Figure
 from matplotlib.backend_bases import MouseEvent, MouseButton, KeyEvent
@@ -212,17 +213,6 @@ class Ui_Matrixograph(object):
         self.locus_button.setFont(font)
         self.locus_button.setObjectName("locus_button")
         self.verticalLayout_2.addWidget(self.locus_button)
-        self.spectrum_button = QPushButton(self.services_layout)
-        self.spectrum_button.setMinimumSize( QSize(50, 80))
-        self.spectrum_button.setMaximumSize( QSize(16777215, 160))
-        font =  QFont()
-        font.setFamily("Bahnschrift SemiBold")
-        font.setPointSize(11)
-        font.setBold(True)
-        font.setWeight(75)
-        self.spectrum_button.setFont(font)
-        self.spectrum_button.setObjectName("spectrum_button")
-        self.verticalLayout_2.addWidget(self.spectrum_button)
         self.report_button = QPushButton(self.services_layout)
         self.report_button.setMinimumSize( QSize(50, 80))
         self.report_button.setMaximumSize( QSize(16777215, 160))
@@ -245,6 +235,17 @@ class Ui_Matrixograph(object):
         self.save_button.setFont(font)
         self.save_button.setObjectName("save_button")
         self.verticalLayout_2.addWidget(self.save_button)
+        self.cross_section_button = QPushButton(self.services_layout)
+        self.cross_section_button.setMinimumSize( QSize(50, 80))
+        self.cross_section_button.setMaximumSize( QSize(16777215, 160))
+        font =  QFont()
+        font.setFamily("Bahnschrift SemiBold")
+        font.setPointSize(11)
+        font.setBold(True)
+        font.setWeight(75)
+        self.cross_section_button.setFont(font)
+        self.cross_section_button.setObjectName("cross_section_button")
+        self.verticalLayout_2.addWidget(self.cross_section_button)
         self.spectrograph_button =  QPushButton(self.services_layout)
         self.spectrograph_button.setMinimumSize( QSize(50, 80))
         self.spectrograph_button.setMaximumSize( QSize(16777215, 160))
@@ -290,7 +291,7 @@ class Ui_Matrixograph(object):
         self.bright_def_button.setText(_translate("dSigma", "Default"))
         self.locus_draw_button.setText(_translate("dSigma", "Draw Locuses Dialog"))
         self.locus_button.setText(_translate("dSigma", "Locuses On/Off"))
-        self.spectrum_button.setText(_translate("dSigma", "Spectrums of locuses"))
+        self.cross_section_button.setText(_translate("dSigma", "Open Cross Section Window"))
         self.report_button.setText(_translate("dSigma", "Workbook of experiment file"))
         self.save_button.setText(_translate("dSigma", "Save Analysis"))
         self.spectrograph_button.setText(_translate("dSigma", "Open Spectres Window"))
@@ -556,9 +557,9 @@ class Matrixograph(QMainWindow, Ui_Matrixograph):
         self.bright_def_button.clicked.connect(self.bright_default)
         self.locus_draw_button.clicked.connect(self.locus_dialog)
         self.locus_button.clicked.connect(self.change_locuses_status)
-        self.spectrum_button.clicked.connect(self.open_spectrum_demo)
         self.report_button.clicked.connect(self.open_workbook)
         self.save_button.clicked.connect(self.save)
+        self.cross_section_button.clicked.connect(self.open_dsigma)
         self.spectrograph_button.clicked.connect(self.open_spectrograph)
 
     def show_matrix(self) -> None:
@@ -611,15 +612,15 @@ class Matrixograph(QMainWindow, Ui_Matrixograph):
         self.window = DrawDialog(self.analyzer.matrixes[self.current_index], self.luminiosity)
         self.window.show()
 
-    def open_spectrum_demo(self) -> None:
-        current = self.analyzer.matrixes[self.current_index]
-        collected_spectra = []
+    # def open_spectrum_demo(self) -> None:
+        # current = self.analyzer.matrixes[self.current_index]
+        # collected_spectra = []
 
-        for locus in current.locuses:
-            collected_spectra.append(locus.to_spectrum())
+        # for locus in current.locuses:
+        #     collected_spectra.append(locus.to_spectrum())
 
-        self.window = SpectrumDemo(collected_spectra)
-        self.window.show()
+        # self.window = SpectrumDemo(collected_spectra)
+        # self.window.show()
 
     def open_workbook(self) -> None:
         self.window = Workbooker(self.analyzer.matrixes[self.current_index].to_workbook())
@@ -646,9 +647,14 @@ class Matrixograph(QMainWindow, Ui_Matrixograph):
                 found.append(self.analyzer.matrixes[i])
 
         return found
+    
+    def open_dsigma(self) -> None:
+        cs_analytics = [s.dsigma for s in self.analyzer.all_spectres()]
+        self.window = CSWindow(cs_analytics)
+        self.window.show()
 
     def open_spectrograph(self) -> None:
-        self.window = Spectrograph(self.analyzer.spectrums)
+        self.window = Spectrograph(self.analyzer.all_spectres())
         self.window.show()
 
 

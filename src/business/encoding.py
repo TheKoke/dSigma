@@ -130,38 +130,40 @@ class Encoder:
                 offset += 4
 
     def write_spectrums(self, buffer: bytearray) -> None:
-        spectrums_area_size = sum([12 + 16 * len(spectrum.peaks) for spectrum in self.matrix.spectrums])
+        spectrums_area_size = sum([12 + 16 * len(self.matrix.spectrums[n].peaks) for n in self.matrix.spectrums])
         offset = self.calc_byte_size() - spectrums_area_size
 
-        for spectrum in self.matrix.spectrums:
-            fragment = spectrum.reaction.fragment
+        spectres = self.matrix.spectrums
+
+        for nuclei in spectres:
+            fragment = spectres[nuclei].reaction.fragment
             struct.pack_into('B', buffer, offset, fragment.charge)
             offset += 1
 
             struct.pack_into('B', buffer, offset, fragment.nuclons)
             offset += 1
 
-            struct.pack_into('f', buffer, offset, spectrum.scale_shift)
+            struct.pack_into('f', buffer, offset, spectres[nuclei].scale_shift)
             offset += 4
 
-            struct.pack_into('f', buffer, offset, spectrum.scale_value)
+            struct.pack_into('f', buffer, offset, spectres[nuclei].scale_value)
             offset += 4
 
-            peaks_count = len(spectrum.peaks)
+            peaks_count = len(spectres[nuclei].peaks)
             struct.pack_into('H', buffer, offset, peaks_count)
             offset += 2
 
-            for state in spectrum.peaks:
+            for state in spectres[nuclei].peaks:
                 struct.pack_into('f', buffer, offset, state)
                 offset += 4
 
-                struct.pack_into('I', buffer, offset, spectrum.peaks[state].mu)
+                struct.pack_into('I', buffer, offset, spectres[nuclei].peaks[state].mu)
                 offset += 4
 
-                struct.pack_into('f', buffer, offset, spectrum.peaks[state].dispersion)
+                struct.pack_into('f', buffer, offset, spectres[nuclei].peaks[state].dispersion)
                 offset += 4
 
-                struct.pack_into('f', buffer, offset, spectrum.peaks[state].area)
+                struct.pack_into('f', buffer, offset, spectres[nuclei].peaks[state].area)
                 offset += 4
 
     def generate_file_name(self) -> str:
@@ -179,7 +181,7 @@ class Encoder:
         matrix_area_size = 4 + 4 * len(self.matrix.numbers.flat)
 
         locuses_area_size = sum([6 + 4 * len(locus.points) for locus in self.matrix.locuses]) + 2
-        spectrums_area_size = sum([12 + 16 * len(spectrum.peaks) for spectrum in self.matrix.spectrums])
+        spectrums_area_size = sum([12 + 16 * len(self.matrix.spectrums[n].peaks) for n in self.matrix.spectrums])
 
         return physical_area_size + electronics_area_size + \
                 details_area_size + matrix_area_size + \
