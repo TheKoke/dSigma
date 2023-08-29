@@ -135,7 +135,7 @@ class Decoder:
 
         return collected
 
-    def take_spectrums(self) -> list[Spectrum]:
+    def take_spectrums(self) -> dict[Nuclei, Spectrum]:
         locuses_size = sum([6 + 4 * len(locus.points) for locus in self.take_locuses()]) + 2
         offset = LOCUSES_START(*self.matrix_sizes) + locuses_size
 
@@ -144,7 +144,7 @@ class Decoder:
         experiment = self.get_experiment()
         locuses = self.take_locuses()
 
-        collected = []
+        collected = dict()
         while offset < len(self.buffer):
             current_nuclei_charge = struct.unpack_from('B', self.buffer, offset)[0]
             current_nuclei_nuclons = struct.unpack_from('B', self.buffer, offset + 1)[0]
@@ -171,7 +171,7 @@ class Decoder:
                 current_spectrum.add_peak(gathered[0], gathered[1])
                 offset += 16
             
-            collected.append(current_spectrum)
+            collected[current_nuclei] = current_spectrum
 
         return collected
     
