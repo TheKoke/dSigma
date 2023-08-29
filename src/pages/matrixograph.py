@@ -612,16 +612,6 @@ class Matrixograph(QMainWindow, Ui_Matrixograph):
         self.window = DrawDialog(self.analyzer.matrixes[self.current_index], self.luminiosity)
         self.window.show()
 
-    # def open_spectrum_demo(self) -> None:
-        # current = self.analyzer.matrixes[self.current_index]
-        # collected_spectra = []
-
-        # for locus in current.locuses:
-        #     collected_spectra.append(locus.to_spectrum())
-
-        # self.window = SpectrumDemo(collected_spectra)
-        # self.window.show()
-
     def open_workbook(self) -> None:
         self.window = Workbooker(self.analyzer.matrixes[self.current_index].to_workbook())
         self.window.show()
@@ -649,12 +639,11 @@ class Matrixograph(QMainWindow, Ui_Matrixograph):
         return found
     
     def open_dsigma(self) -> None:
-        cs_analytics = [s.dsigma for s in self.analyzer.all_spectres()]
-        self.window = CSWindow(cs_analytics)
+        self.window = CSWindow(self.analyzer.all_dsigmas())
         self.window.show()
 
     def open_spectrograph(self) -> None:
-        self.window = Spectrograph(self.analyzer.all_spectres())
+        self.window = Spectrograph(self.analyzer.analyzers)
         self.window.show()
 
 

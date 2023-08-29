@@ -87,16 +87,16 @@ class Matrix:
         return self.experiment.create_reaction(fragment)
 
 
-# TODO: Refactor and implement that class.
 class MatrixAnalyzer:
     def __init__(self, matrixes: list[Matrix]) -> None:
         self.matrixes = matrixes
+        self.analyzers = self.__all_analyzers()
 
     @property
     def angles(self) -> list[float]:
         return [matrix.angle for matrix in self.matrixes]
     
-    def all_spectres(self) -> list[SpectrumAnalyzer]:
+    def __all_analyzers(self) -> list[SpectrumAnalyzer]:
         particles = self.__particles()
         return [self.__collect_spectres(p) for p in particles]
 
@@ -111,11 +111,62 @@ class MatrixAnalyzer:
                     found.append(locus.particle)
 
         return found
+    
+    def all_dsigmas(self) -> list[CrossSection]:
+        voids = [sp.dsigma for sp in self.analyzers]
 
-    def cross_section_of(self, particle: Nuclei) -> np.ndarray:
+        for ds in voids:
+            current_particle = ds.reaction.fragment
+            current_residual_states = ds.reaction.residual.states
+
+            for state in current_residual_states:
+                ds.add_cross_section_for(state, self.cross_section_of(current_particle, state))
+
+        return voids
+
+    def cross_section_of(self, particle: Nuclei, state: float) -> np.ndarray:
         fragments = self.__particles()
         if particle not in fragments:
             raise ValueError(f'{particle} fragment does not exist.')
+        
+        splitted = self.__split_by_telescope()
+
+        cs = []
+        for bunch in splitted:
+            events = []
+            integrator = []
+            misscalc = []
+
+            for matrix in bunch:
+                if state in matrix.spectrums[particle].peaks:
+                    integrator.append(matrix.integrator_counts)
+                    misscalc.append(matrix.misscalculation)
+                    events.append(matrix.spectrums[particle].peaks[state].area)
+
+            events = np.array(events)
+            integrator = np.array(integrator)
+            misscalc = np.array(misscalc)
+
+            cs.append(self.__formula(events, integrator, misscalc, bunch[0].electronics))
+
+        return cs
+        
+    def __split_by_telescope(self) -> list[list[Matrix]]:
+        collected = []
+        current = None
+
+        for matrix in self.matrixes:
+            if current is None:
+                current = matrix.electronics
+                collected.append([matrix])
+                continue
+
+            if matrix.electronics == current:
+                collected[-1].append(matrix)
+            else:
+                current = None
+
+        return collected
 
     @staticmethod
     def __formula(events: np.ndarray, integrator: np.ndarray, misscalculation: np.ndarray, telescope: Telescope) -> np.ndarray:
@@ -125,7 +176,7 @@ class MatrixAnalyzer:
         return numerator / denumerator
 
     @staticmethod
-    def __solid_angle(telescope: Telescope) -> Telescope:
+    def __solid_angle(telescope: Telescope) -> float:
         return 2 * np.pi * (telescope.collimator_radius ** 2) / (telescope.distance ** 2)
 
 

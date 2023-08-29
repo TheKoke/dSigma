@@ -1,6 +1,5 @@
 from business.analysis import SpectrumAnalyzer
 
-from pages.cswindow import CSWindow
 from pages.workbooker import Workbooker
 from pages.calibration import CalibrationWindow
 

@@ -63,7 +63,7 @@ def mass_excess_of(z: int, a: int) -> float:
     file = open(find_file(z), 'r').read().split('\n')
     start, _ = find_nuclei_area(z, a, file)
 
-    return get_mass_excess(file[start]) * 1E-3
+    return get_mass_excess(file[start])
 
 def excitation_energies(z: int, a: int) -> list[float]:
     file = open(find_file(z), 'r').read().split('\n')

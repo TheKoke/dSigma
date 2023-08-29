@@ -1,3 +1,4 @@
+from __future__ import annotations
 from business.physics import Nuclei
 
 
@@ -33,6 +34,11 @@ class Detector:
             case 'si': return 2.330
             case _: return 1.000
 
+    def __eq__(self, other: Detector) -> bool:
+        return self.madeof_nuclei == other.madeof_nuclei and \
+               self.thickness == other.thickness and \
+               self.resolution == other.resolution
+
 
 class Telescope:
     def __init__(self, e_detector: Detector, de_detector: Detector, 
@@ -64,6 +70,10 @@ class Telescope:
     @property
     def integrator_constant(self) -> float:
         return self.__integrator_constant
+    
+    def __eq__(self, other: Telescope) -> bool:
+        return self.e_detector == other.e_detector and \
+        self.integrator_constant == other.integrator_constant
     
 
 if __name__ == '__main__':
