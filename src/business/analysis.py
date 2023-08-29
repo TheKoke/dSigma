@@ -135,7 +135,7 @@ class Spectrum:
     
     @property
     def gamma_widths(self) -> list[float]:
-        self_widths = np.array(self.__reaction.residual.wigner_widths)
+        self_widths = np.array(self.__reaction.residual.wigner_widths[:len(self.__reaction.residual_states)])
         detector_resolution = self.__electronics.e_detector.resolution
         return np.sqrt(self_widths ** 2 + detector_resolution ** 2).tolist()
     
@@ -204,7 +204,7 @@ class Spectrum:
         if not self.is_calibrated:
             raise ValueError('Spectrum must be calibrated before approximating peaks.')
         
-        if state not in self.reaction.residual.states:
+        if state not in self.reaction.residual_states:
             raise ValueError(f'There is no state of residual nuclei of reaction same as {state}')
         
         self.__peaks[state] = peak
@@ -260,7 +260,7 @@ class SpectrumAnalyzer:
         e_bete_bloch = Struggling(current.reaction.fragment, stopping.madeof_nuclei)
 
         likely_peaks = []
-        for state in current.reaction.residual.states:
+        for state in current.reaction.residual_states:
             initial = current.reaction.fragment_energy(state, current.angle)
 
             de_loss = de_bete_bloch.energy_loss(initial, piercing.thickness * 1e-4, piercing.density)

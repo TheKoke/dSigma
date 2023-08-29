@@ -65,7 +65,8 @@ class Matrix:
             index = next(i for i in range(len(self.locuses)) if self.locuses[i].particle == particle)
             self.locuses[index] = Locus(particle, self.numbers, points)
 
-            self.spectrums.pop(particle)
+            if particle in self.spectrums:
+                self.spectrums.pop(particle)
         else:
             self.locuses.append(Locus(particle, self.numbers, points))
 
@@ -90,7 +91,10 @@ class Matrix:
 class MatrixAnalyzer:
     def __init__(self, matrixes: list[Matrix]) -> None:
         self.matrixes = matrixes
-        self.analyzers = self.__all_analyzers()
+
+    @property
+    def analyzers(self) -> list[SpectrumAnalyzer]:
+        return self.__all_analyzers()
 
     @property
     def angles(self) -> list[float]:
@@ -117,7 +121,7 @@ class MatrixAnalyzer:
 
         for ds in voids:
             current_particle = ds.reaction.fragment
-            current_residual_states = ds.reaction.residual.states
+            current_residual_states = ds.reaction.residual_states
 
             for state in current_residual_states:
                 ds.add_cross_section_for(state, self.cross_section_of(current_particle, state))
@@ -147,7 +151,7 @@ class MatrixAnalyzer:
             integrator = np.array(integrator)
             misscalc = np.array(misscalc)
 
-            cs.append(self.__formula(events, integrator, misscalc, bunch[0].electronics))
+            cs.extend(self.__formula(events, integrator, misscalc, bunch[0].electronics))
 
         return cs
         

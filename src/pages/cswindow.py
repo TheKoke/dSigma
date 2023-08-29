@@ -325,10 +325,22 @@ class CSWindow(QMainWindow, Ui_CSWindow):
         sigma = self.sigmas[index]
 
         self.state_box.clear()
-        self.state_box.addItems([f'{lvl} MeV' for lvl in sigma.reaction.residual.states])
+        self.state_box.addItems([f'{lvl} MeV' for lvl in sigma.reaction.residual_states])
 
     def take_state(self) -> None:
-        pass
+        index = self.reaction_box.currentIndex()
+        sigma = self.sigmas[index]
+
+        state = sigma.reaction.residual.states[self.state_box.currentIndex()]
+
+        values = sigma.cm_cross_section_of(state)
+        angles = sigma.angle_to_cm()[:len(values)]
+
+        self.axes.clear()
+        self.axes.plot(angles, values, color='green')
+        self.axes.scatter(angles, values, color='green')
+
+        self.view.draw()
 
     def save_txt(self) -> None:
         pass
@@ -340,7 +352,7 @@ class CSWindow(QMainWindow, Ui_CSWindow):
         pass
 
     def open_workbook(self) -> None:
-        self.window = Workbooker("")
+        self.window = Workbooker(self.sigmas[self.reaction_box.currentIndex()].to_workbook())
         self.window.show()
 
 
