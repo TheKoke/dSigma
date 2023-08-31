@@ -3,7 +3,6 @@ from business.physics import CrossSection
 from pages.workbooker import Workbooker
 
 from matplotlib.figure import Figure
-from matplotlib.backend_bases import MouseEvent, MouseButton
 from matplotlib.backends.backend_qt5agg import FigureCanvasQTAgg, NavigationToolbar2QT
 
 from PyQt5.QtGui import QFont, QIcon, QPalette, QBrush, QColor
@@ -343,7 +342,15 @@ class CSWindow(QMainWindow, Ui_CSWindow):
         self.view.draw()
 
     def save_txt(self) -> None:
-        pass
+        name, _ = QFileDialog.getSaveFileName(self, 'Save File', filter='TXT Documents (*.txt)')
+        if name == '':
+            return
+        
+        report = self.sigmas[self.reaction_box.currentIndex()].to_workbook()
+
+        txt = open(name, 'w')
+        txt.write(report)
+        txt.close()
 
     def save_excel(self) -> None:
         pass

@@ -362,8 +362,28 @@ class Spectrograph(QMainWindow, Ui_Spectrograph):
         self.view = FigureCanvasQTAgg(Figure(figsize=(16, 9)))
         self.view.mpl_connect('button_press_event', self.add_pointer)
         self.axes = self.view.figure.subplots()
-        self.toolbar = NavigationToolbar2QT(self.view, self.matplotlib_layout)
-        layout.addWidget(self.toolbar)
+
+        tab = QFrame(self.matplotlib_layout)
+        tab.setFrameShape(QFrame.StyledPanel)
+        tab.setFrameShadow(QFrame.Raised)
+        tab.setMaximumHeight(50)
+
+        horizont = QHBoxLayout(tab)
+
+        self.toolbar = NavigationToolbar2QT(self.view, tab)
+        horizont.addWidget(self.toolbar)
+
+        font = QFont()
+        font.setFamily("Bahnschrift SemiBold")
+        font.setPointSize(12)
+        font.setBold(True)
+        font.setWeight(75)
+        self.linear_sum = QLabel('SUM=', tab)
+        self.linear_sum.setMinimumSize(100, 30)
+        self.linear_sum.setFont(font)
+        horizont.addWidget(self.linear_sum)
+
+        layout.addWidget(tab)
         layout.addWidget(self.view)
 
         # EVENT HANDLING
@@ -398,8 +418,22 @@ class Spectrograph(QMainWindow, Ui_Spectrograph):
         self.draw_angle()
         for i in range(len(self.pointers)):
             self.axes.plot([self.pointers[i], self.pointers[i]], [0, maximum], color='red')
-
+        
+        self.show_linear_sum()
         self.view.draw()
+
+    def show_linear_sum(self) -> None:
+        if len(self.pointers) < 2:
+            return
+
+        angle = self.angle_box.currentIndex()
+        analitics = self.analitics[self.current_index]
+
+        first = self.pointers[0]
+        second = self.pointers[1]
+
+        channels_sum = analitics.spectrums[angle].data[min(first, second): max(first, second)].sum()
+        self.linear_sum.setText(f'SUM={channels_sum}')
 
     def open_calibration(self) -> None:
         angle = self.angle_box.currentIndex()
@@ -450,6 +484,7 @@ class Spectrograph(QMainWindow, Ui_Spectrograph):
         self.current_index = int(self.particle_box.currentIndex())
         angles = [spectrum.angle for spectrum in self.analitics[self.current_index].spectrums]
 
+        self.linear_sum.setText('SUM=')
         self.angle_box.clear()
         self.angle_box.addItems([str(a) for a in angles])
 
