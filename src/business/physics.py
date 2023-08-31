@@ -83,6 +83,19 @@ class Reaction:
     def is_elastic(self) -> bool:
         return self.beam == self.fragment
     
+    @property
+    def residual_states(self) -> list[float]:
+        all_states = self.residual.states
+
+        possible = []
+        for state in all_states:
+            if self.reaction_threshold(state) > self.beam_energy:
+                break
+            
+            possible.append(state)
+
+        return possible
+    
     def __eq__(self, other: Reaction) -> bool:
         return self.beam == other.beam \
             and self.target == other.target \
@@ -252,6 +265,20 @@ class CrossSection:
     def values(self) -> dict[float, np.ndarray]:
         return self.__values.copy()
     
+    def to_workbook(self) -> str:
+        angles = self.angle_to_cm()
+        report = f'Differential cross-section of {self.reaction} reaction at {self.reaction.beam_energy} MeV energy.\n\n'
+        
+        for state in self.__values:
+            report += f'Values for {state} MeV excitation state of {self.reaction.residual}->\n'
+            report += 'c.m. angle, deg.'.center(30) + '\t|\t' + 'd\u03c3/d\u03c9, mb/sr'.center(30) + '\n'
+            for i in range(len(self.__values[state])):
+                report += str(round(angles[i], 3)).center(30) + '\t|\t' + str(round(self.__values[state][i], 3)).center(30) + '\n'
+
+            report += '\n\n'
+
+        return report
+    
     def angle_to_cm(self) -> np.ndarray:
         x2 = np.sqrt(self.x_square())
         angles_in_rad = self.angle_range * np.pi / 180
@@ -262,7 +289,7 @@ class CrossSection:
     
     def cm_cross_section_of(self, state: float) -> np.ndarray:
         lab_dsigma = self.lab_cross_section_of(state)
-        return lab_dsigma * self.g_constant()
+        return lab_dsigma * self.g_constant()[:len(lab_dsigma)]
     
     def g_constant(self) -> np.ndarray:
         x2 = self.x_square()
