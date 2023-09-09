@@ -1,10 +1,11 @@
+from PyQt5 import QtGui
 from business.analysis import Spectrum, SpectrumAnalyzer
 
 from matplotlib.figure import Figure
 from matplotlib.backend_bases import MouseEvent, MouseButton
 from matplotlib.backends.backend_qt5agg import FigureCanvasQTAgg, NavigationToolbar2QT
 
-from PyQt5.QtGui import QFont, QIcon, QPalette, QBrush, QColor
+from PyQt5.QtGui import QFont, QIcon, QPalette, QBrush, QColor, QKeyEvent
 from PyQt5.QtCore import Qt, QSize, QMetaObject, QCoreApplication
 from PyQt5.QtWidgets import (
     QMainWindow, QVBoxLayout, QDoubleSpinBox, 
@@ -121,11 +122,6 @@ class Ui_Calibration(object):
         brush.setStyle(Qt.SolidPattern)
         palette.setBrush(QPalette.Disabled, QPalette.Window, brush)
         self.first_state.setPalette(palette)
-        font = QFont()
-        font.setFamily("Bahnschrift SemiBold")
-        font.setPointSize(11)
-        font.setBold(True)
-        font.setWeight(75)
         self.first_state.setFont(font)
         self.first_state.setStyleSheet("background-color: rgb(85, 85, 127);\ncolor: rgb(255, 255, 255);")
         self.first_state.setDecimals(3)
@@ -150,61 +146,6 @@ class Ui_Calibration(object):
         self.second_state = QDoubleSpinBox(self.service_layout)
         self.second_state.setMinimumSize(QSize(50, 20))
         self.second_state.setMaximumSize(QSize(100, 100))
-        palette = QPalette()
-        brush = QBrush(QColor(255, 255, 255))
-        brush.setStyle(Qt.SolidPattern)
-        palette.setBrush(QPalette.Active, QPalette.WindowText, brush)
-        brush = QBrush(QColor(85, 85, 127))
-        brush.setStyle(Qt.SolidPattern)
-        palette.setBrush(QPalette.Active, QPalette.Button, brush)
-        brush = QBrush(QColor(255, 255, 255))
-        brush.setStyle(Qt.SolidPattern)
-        palette.setBrush(QPalette.Active, QPalette.Text, brush)
-        brush = QBrush(QColor(255, 255, 255))
-        brush.setStyle(Qt.SolidPattern)
-        palette.setBrush(QPalette.Active, QPalette.ButtonText, brush)
-        brush = QBrush(QColor(85, 85, 127))
-        brush.setStyle(Qt.SolidPattern)
-        palette.setBrush(QPalette.Active, QPalette.Base, brush)
-        brush = QBrush(QColor(85, 85, 127))
-        brush.setStyle(Qt.SolidPattern)
-        palette.setBrush(QPalette.Active, QPalette.Window, brush)
-        brush = QBrush(QColor(255, 255, 255))
-        brush.setStyle(Qt.SolidPattern)
-        palette.setBrush(QPalette.Inactive, QPalette.WindowText, brush)
-        brush = QBrush(QColor(85, 85, 127))
-        brush.setStyle(Qt.SolidPattern)
-        palette.setBrush(QPalette.Inactive, QPalette.Button, brush)
-        brush = QBrush(QColor(255, 255, 255))
-        brush.setStyle(Qt.SolidPattern)
-        palette.setBrush(QPalette.Inactive, QPalette.Text, brush)
-        brush = QBrush(QColor(255, 255, 255))
-        brush.setStyle(Qt.SolidPattern)
-        palette.setBrush(QPalette.Inactive, QPalette.ButtonText, brush)
-        brush = QBrush(QColor(85, 85, 127))
-        brush.setStyle(Qt.SolidPattern)
-        palette.setBrush(QPalette.Inactive, QPalette.Base, brush)
-        brush = QBrush(QColor(85, 85, 127))
-        brush.setStyle(Qt.SolidPattern)
-        palette.setBrush(QPalette.Inactive, QPalette.Window, brush)
-        brush = QBrush(QColor(255, 255, 255))
-        brush.setStyle(Qt.SolidPattern)
-        palette.setBrush(QPalette.Disabled, QPalette.WindowText, brush)
-        brush = QBrush(QColor(85, 85, 127))
-        brush.setStyle(Qt.SolidPattern)
-        palette.setBrush(QPalette.Disabled, QPalette.Button, brush)
-        brush = QBrush(QColor(255, 255, 255))
-        brush.setStyle(Qt.SolidPattern)
-        palette.setBrush(QPalette.Disabled, QPalette.Text, brush)
-        brush = QBrush(QColor(255, 255, 255))
-        brush.setStyle(Qt.SolidPattern)
-        palette.setBrush(QPalette.Disabled, QPalette.ButtonText, brush)
-        brush = QBrush(QColor(85, 85, 127))
-        brush.setStyle(Qt.SolidPattern)
-        palette.setBrush(QPalette.Disabled, QPalette.Base, brush)
-        brush = QBrush(QColor(85, 85, 127))
-        brush.setStyle(Qt.SolidPattern)
-        palette.setBrush(QPalette.Disabled, QPalette.Window, brush)
         self.second_state.setPalette(palette)
         font = QFont()
         font.setFamily("Bahnschrift SemiBold")
@@ -223,11 +164,6 @@ class Ui_Calibration(object):
         self.calibrate_button = QPushButton(self.service_layout)
         self.calibrate_button.setMinimumSize(QSize(110, 80))
         self.calibrate_button.setMaximumSize(QSize(500, 80))
-        font = QFont()
-        font.setFamily("Bahnschrift SemiBold")
-        font.setPointSize(11)
-        font.setBold(True)
-        font.setWeight(75)
         self.calibrate_button.setFont(font)
         self.calibrate_button.setObjectName("calibrate_button")
         self.horizontalLayout.addWidget(self.calibrate_button)
@@ -300,6 +236,12 @@ class CalibrationWindow(QMainWindow, Ui_Calibration):
         self.calibrate_button.clicked.connect(self.apply)
         self.draw()
 
+    def keyPressEvent(self, a0: QKeyEvent) -> None:
+        if a0.key() == Qt.EnterKeyType:
+            self.apply()
+
+        return super().keyPressEvent(a0)
+
     def pick(self, event: MouseEvent) -> None:
         if event.button == MouseButton.LEFT:
             self.selected_dots_x.append(int(round(event.xdata)))
@@ -322,6 +264,9 @@ class CalibrationWindow(QMainWindow, Ui_Calibration):
         self.second_point.setText(f'{second_point[0]}; {second_point[1]}')
 
     def apply(self) -> None:
+        if len(self.selected_dots_x) < 2:
+            return
+
         first_dot = self.selected_dots_x[-2]
         second_dot = self.selected_dots_x[-1]
 
