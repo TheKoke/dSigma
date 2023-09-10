@@ -1,11 +1,11 @@
 import numpy
 
 from filexplorer import Sleuth
-from business.decoding import Decoder
 from business.encoding import Encoder
 from business.matrix import Matrix, MatrixAnalyzer, Nuclei
 
 from pages.cswindow import CSWindow
+from pages.fileconfig import FileEditor
 from pages.workbooker import Workbooker
 from pages.information import InformWindow
 from pages.spectrograph import Spectrograph
@@ -199,27 +199,33 @@ class Ui_Matrixograph(object):
         self.report_button.setFont(font)
         self.report_button.setObjectName("report_button")
         self.verticalLayout_2.addWidget(self.report_button)
-        self.save_button = QPushButton(self.services_layout)
-        self.save_button.setMinimumSize(QSize(50, 80))
-        self.save_button.setMaximumSize(QSize(16777215, 160))
-        self.save_button.setFont(font)
-        self.save_button.setObjectName("save_button")
-        self.verticalLayout_2.addWidget(self.save_button)
-        self.cross_section_button = QPushButton(self.services_layout)
-        self.cross_section_button.setMinimumSize(QSize(50, 80))
-        self.cross_section_button.setMaximumSize(QSize(16777215, 160))
-        self.cross_section_button.setFont(font)
-        self.cross_section_button.setObjectName("cross_section_button")
-        self.verticalLayout_2.addWidget(self.cross_section_button)
         self.spectrograph_button = QPushButton(self.services_layout)
         self.spectrograph_button.setMinimumSize(QSize(50, 80))
         self.spectrograph_button.setMaximumSize(QSize(16777215, 160))
         self.spectrograph_button.setFont(font)
         self.spectrograph_button.setObjectName("spectrograph_button")
         self.verticalLayout_2.addWidget(self.spectrograph_button)
+        self.cross_section_button = QPushButton(self.services_layout)
+        self.cross_section_button.setMinimumSize(QSize(50, 80))
+        self.cross_section_button.setMaximumSize(QSize(16777215, 160))
+        self.cross_section_button.setFont(font)
+        self.cross_section_button.setObjectName("cross_section_button")
+        self.verticalLayout_2.addWidget(self.cross_section_button)
+        self.filedit_button = QPushButton(self.services_layout)
+        self.filedit_button.setMinimumSize(QSize(50, 80))
+        self.filedit_button.setMaximumSize(QSize(16777215, 160))
+        self.filedit_button.setFont(font)
+        self.filedit_button.setObjectName("filedit_button")
+        self.verticalLayout_2.addWidget(self.filedit_button)
+        self.save_button = QPushButton(self.services_layout)
+        self.save_button.setMinimumSize(QSize(50, 80))
+        self.save_button.setMaximumSize(QSize(16777215, 160))
+        self.save_button.setFont(font)
+        self.save_button.setObjectName("save_button")
+        self.verticalLayout_2.addWidget(self.save_button)
         self.label = QLabel(self.services_layout)
-        self.label.setMinimumSize( QSize(0, 10))
-        self.label.setMaximumSize( QSize(16777215, 20))
+        self.label.setMinimumSize(QSize(0, 10))
+        self.label.setMaximumSize(QSize(16777215, 20))
         font = QFont()
         font.setFamily("Bahnschrift SemiBold")
         font.setPointSize(9)
@@ -251,10 +257,11 @@ class Ui_Matrixograph(object):
         self.bright_def_button.setText(_translate("dSigma", "Default"))
         self.locus_draw_button.setText(_translate("dSigma", "Draw Locuses Dialog"))
         self.locus_button.setText(_translate("dSigma", "Locuses On/Off"))
-        self.cross_section_button.setText(_translate("dSigma", "Open Cross Section Window"))
         self.report_button.setText(_translate("dSigma", "Workbook of experiment file"))
-        self.save_button.setText(_translate("dSigma", "Save Analysis"))
         self.spectrograph_button.setText(_translate("dSigma", "Open Spectres Window"))
+        self.cross_section_button.setText(_translate("dSigma", "Open Cross Section Window"))
+        self.filedit_button.setText(_translate("dSigma", "Experiment File Editor"))
+        self.save_button.setText(_translate("dSigma", "Save Analysis"))
         self.label.setText(_translate("dSigma", "dSigma — LLENR app for analyzing E-dE matrices."))
 
 
@@ -518,9 +525,10 @@ class Matrixograph(QMainWindow, Ui_Matrixograph):
         self.locus_draw_button.clicked.connect(self.locus_dialog)
         self.locus_button.clicked.connect(self.change_locuses_status)
         self.report_button.clicked.connect(self.open_workbook)
-        self.save_button.clicked.connect(self.save)
-        self.cross_section_button.clicked.connect(self.open_dsigma)
         self.spectrograph_button.clicked.connect(self.open_spectrograph)
+        self.cross_section_button.clicked.connect(self.open_dsigma)
+        self.filedit_button.clicked.connect(self.open_file_editor)
+        self.save_button.clicked.connect(self.save)
 
     def show_matrix(self) -> None:
         self.current_index = self.angles_box.currentIndex()
@@ -576,6 +584,18 @@ class Matrixograph(QMainWindow, Ui_Matrixograph):
         self.window = Workbooker(self.analyzer.matrixes[self.current_index].to_workbook())
         self.window.show()
 
+    def open_spectrograph(self) -> None:
+        self.window = Spectrograph(self.analyzer.analyzers)
+        self.window.show()
+
+    def open_dsigma(self) -> None:
+        self.window = CSWindow(self.analyzer.all_dsigmas())
+        self.window.show()
+
+    def open_file_editor(self) -> None:
+        self.window = FileEditor(self.analyzer.matrixes[self.current_index])
+        self.window.show()
+
     def save(self) -> None:
         changed = self.__find_changed_ones()
 
@@ -597,14 +617,6 @@ class Matrixograph(QMainWindow, Ui_Matrixograph):
                 found.append(self.analyzer.matrixes[i])
 
         return found
-    
-    def open_dsigma(self) -> None:
-        self.window = CSWindow(self.analyzer.all_dsigmas())
-        self.window.show()
-
-    def open_spectrograph(self) -> None:
-        self.window = Spectrograph(self.analyzer.analyzers)
-        self.window.show()
 
 
 if __name__ == "__main__":

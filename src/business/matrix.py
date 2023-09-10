@@ -14,24 +14,13 @@ class Matrix:
         self.experiment = decoder.get_experiment()
         self.electronics = decoder.get_electronics()
 
+        self.angle = decoder.get_angle()
+        self.integrator_counts = decoder.get_integrator_counts()
+        self.integrator_constant = decoder.get_integrator_constant()
+        self.misscalculation = decoder.get_misscalculation()
+
         self.locuses: list[Locus] = decoder.take_locuses()
         self.spectrums: dict[Nuclei, Spectrum] = decoder.take_spectrums()
-
-    @property
-    def angle(self) -> float:
-        return self.decoder.get_angle()
-    
-    @property
-    def integrator_counts(self) -> int:
-        return self.decoder.get_integrator_counts()
-    
-    @property
-    def integrator_constant(self) -> float:
-        return self.decoder.get_integrator_constant()
-    
-    @property
-    def misscalculation(self) -> float:
-        return self.decoder.get_misscalculation()
     
     def to_workbook(self) -> str:
         beam = self.experiment.beam
@@ -173,9 +162,11 @@ class MatrixAnalyzer:
         return collected
 
     @staticmethod
-    def __formula(events: np.ndarray, integrator: np.ndarray, misscalculation: np.ndarray, telescope: Telescope) -> np.ndarray:
+    def __formula(events: np.ndarray, integrator: np.ndarray, 
+                  misscalculation: np.ndarray, telescope: Telescope,
+                  intconstant: float) -> np.ndarray:
         numerator =  events * misscalculation
-        denumerator = integrator * telescope.integrator_constant * MatrixAnalyzer.__solid_angle(telescope)
+        denumerator = integrator * intconstant * MatrixAnalyzer.__solid_angle(telescope)
 
         return numerator / denumerator
 
