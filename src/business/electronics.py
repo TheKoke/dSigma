@@ -12,6 +12,12 @@ class Detector:
     def madeof(self) -> str:
         return self.__madeof
     
+    @madeof.setter
+    def madeof(self, val: str) -> None:
+        if val.lower() not in ['ge', 'si', 'c3h6']:
+            return
+        self.__madeof = val
+    
     @property
     def madeof_nuclei(self) -> Nuclei:
         match self.__madeof.lower():
@@ -23,9 +29,21 @@ class Detector:
     def thickness(self) -> float:
         return self.__thickness
     
+    @thickness.setter
+    def thickness(self, val: float) -> None:
+        if val <= 0:
+            return
+        self.__thickness = val
+    
     @property
     def resolution(self) -> float:
         return self.__resolution
+    
+    @resolution.setter
+    def resolution(self, val: float) -> None:
+        if val < 0:
+            return
+        self.__resolution = val
     
     @property
     def density(self) -> float:
@@ -61,9 +79,21 @@ class Telescope:
     def collimator_radius(self) -> float:
         return self.__collimator_radius
     
+    @collimator_radius.setter
+    def collimator_radius(self, val: float) -> None:
+        if val >= 0:
+            return
+        self.__collimator_radius = val
+    
     @property
     def distance(self) -> float:
         return self.__distance
+    
+    @distance.setter
+    def distance(self, val: float) -> None:
+        if val <= 0:
+            return
+        self.__distance = val
     
     def __eq__(self, other: Telescope) -> bool:
         return self.e_detector == other.e_detector
