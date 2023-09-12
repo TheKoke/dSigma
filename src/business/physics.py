@@ -61,13 +61,26 @@ class Nuclei:
             
     @staticmethod
     def from_string(input: str) -> Nuclei:
-        only_name = [i.lower() for i in input if i.isalpha()]
-        only_nuclons = [i for i in input if i .isdigit()]
+        if Nuclei.handle_human_namings(input) is not None:
+            return Nuclei.handle_human_namings(input)
+
+        only_name = ''.join([i.lower() for i in input if i.isalpha()])
+        only_nuclons = ''.join([i for i in input if i.isdigit()])
 
         charge = NAME2CHARGE[only_name]
-        nuclon = float(only_nuclons)
-
+        nuclon = int(only_nuclons)
+        
         return Nuclei(charge, nuclon)
+    
+    @staticmethod
+    def handle_human_namings(input: str) -> Nuclei:
+        if input in ['p', 'd', 't']:
+            return Nuclei(1, ['p', 'd', 't'].index(input) + 1)
+        
+        if input == 'alpha' or input == 'α' or input == 'a':
+            return Nuclei(2, 4)
+        
+        return None
 
 
 class Reaction:
@@ -326,22 +339,10 @@ class CrossSection:
 
 class PhysicalExperiment:
     def __init__(self, beam: Nuclei, target: Nuclei, beam_energy: float) -> None:
-        self.__beam = beam
-        self.__target = target
-        self.__beam_energy = beam_energy
+        self.beam = beam
+        self.target = target
+        self.beam_energy = beam_energy
 
-    @property
-    def beam(self) -> Nuclei:
-        return self.__beam
-    
-    @property
-    def target(self) -> Nuclei:
-        return self.__target
-    
-    @property
-    def beam_energy(self) -> float:
-        return self.__beam_energy
-    
     def possible_channels(self) -> list[Reaction]:
         queue = [Nuclei(0, 1), Nuclei(1, 1), Nuclei(1, 2), Nuclei(1, 3), Nuclei(2, 3), Nuclei(2, 4)]
         if self.beam in queue:
@@ -369,12 +370,12 @@ class PhysicalExperiment:
         return pick_up + [elastic] + stripped
 
     def create_reaction(self, fragment: Nuclei) -> Reaction:
-        compound = self.__beam + self.__target
+        compound = self.beam + self.target
         if fragment.charge > compound.charge:
             raise ValueError('Ejectile particle greater than reaction components.')
         
-        hypotese = Reaction(self.__beam, self.__target, fragment, self.__beam_energy)
-        if hypotese.reaction_threshold() > self.__beam_energy:
+        hypotese = Reaction(self.beam, self.target, fragment, self.beam_energy)
+        if hypotese.reaction_threshold() > self.beam_energy:
             raise ValueError('Energy of beam is not enough for produce reaction.')
 
         return hypotese
