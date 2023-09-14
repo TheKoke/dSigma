@@ -649,11 +649,11 @@ class FileEditor(QMainWindow, Ui_FileConfigWindow):
             self.integrator_correct_label.setText(NOT_OKAY_INFO)
 
         self.handle_changes(
-            str(self.misscalc), self.congruence_line.text(),
-            self.congruence_label, MISSCALC_INFO
+            str(self.misscalc), self.misscalc_line.text(),
+            self.misscalc_label, MISSCALC_INFO
         )
         try:
-            pretend = float(self.congruence_line.text())
+            pretend = float(self.misscalc_line.text())
             self.misscalc_correct_label.setText(OKAY_INFO)
         except:
             self.misscalc_correct_label.setText(NOT_OKAY_INFO)

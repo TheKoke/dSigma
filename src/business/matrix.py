@@ -140,7 +140,7 @@ class MatrixAnalyzer:
             integrator = np.array(integrator)
             misscalc = np.array(misscalc)
 
-            cs.extend(self.__formula(events, integrator, misscalc, bunch[0].electronics))
+            cs.extend(self.__formula(events, integrator, misscalc, bunch[0].electronics, bunch[0].integrator_constant))
 
         return cs
         

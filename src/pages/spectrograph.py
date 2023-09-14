@@ -3,6 +3,7 @@ import numpy
 from business.analysis import SpectrumAnalyzer
 
 from pages.workbooker import Workbooker
+from pages.gaussograph import Gaussograph
 from pages.calibration import CalibrationWindow
 
 from matplotlib.figure import Figure
@@ -152,6 +153,12 @@ class Ui_Spectrograph(object):
         self.angle_box.setObjectName("angle_box")
         self.angle_layout.addWidget(self.angle_box)
         self.verticalLayout.addLayout(self.angle_layout)
+        self.gaussian_button = QPushButton(self.services_layout)
+        self.gaussian_button.setMinimumSize(QSize(0, 90))
+        self.gaussian_button.setMaximumSize(QSize(16777215, 180))
+        self.gaussian_button.setFont(font)
+        self.gaussian_button.setObjectName("gaussian_button")
+        self.verticalLayout.addWidget(self.gaussian_button)
         self.calibrate_button = QPushButton(self.services_layout)
         self.calibrate_button.setMinimumSize(QSize(0, 90))
         self.calibrate_button.setMaximumSize(QSize(16777215, 180))
@@ -199,6 +206,7 @@ class Ui_Spectrograph(object):
         MainWindow.setWindowTitle(_translate("MainWindow", "dSigma — Spectra Window"))
         self.particle_label.setText(_translate("MainWindow", "Particle:"))
         self.angle_label.setText(_translate("MainWindow", "Angle:"))
+        self.gaussian_button.setText(_translate("MainWindow", "Approximate by Gaussian"))
         self.calibrate_button.setText(_translate("MainWindow", "Calibrate"))
         self.peaks_button.setText(_translate("MainWindow", "Show Peaks"))
         self.impurity_button.setText(_translate("MainWindow", "Validate Impurities"))
@@ -310,6 +318,7 @@ class Spectrograph(QMainWindow, Ui_Spectrograph):
         self.setupUi(self)
         self.setWindowIcon(QIcon("./icon.ico"))
 
+        # DATA
         self.analitics = analitics
         self.current_index = 0
         
@@ -351,6 +360,7 @@ class Spectrograph(QMainWindow, Ui_Spectrograph):
         particles = [analyzer.spectrums[0].reaction.fragment for analyzer in self.analitics]
         self.particle_box.addItems([str(p) for p in particles])
 
+        self.gaussian_button.clicked.connect(self.open_gaussograph)
         self.calibrate_button.clicked.connect(self.open_calibration)
         self.peaks_button.clicked.connect(self.show_peaks)
         self.impurity_button.clicked.connect(self.validate_impurities)
@@ -392,6 +402,16 @@ class Spectrograph(QMainWindow, Ui_Spectrograph):
 
         channels_sum = analitics.spectrums[angle].data[min(first, second): max(first, second)].sum()
         self.linear_sum.setText(f'SUM={channels_sum}')
+
+    def open_gaussograph(self) -> None:
+        if len(self.pointers) < 2:
+            return
+        
+        angle = self.angle_box.currentIndex()
+        analitics = self.analitics[self.current_index]
+
+        self.window = Gaussograph(analitics.spectrums[angle], tuple(self.pointers))
+        self.window.show()
 
     def open_calibration(self) -> None:
         angle = self.angle_box.currentIndex()
