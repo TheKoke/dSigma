@@ -43,7 +43,7 @@ File Description for binary coding of dSigma file-format (.ds).
 		6.1.5 unsigned short (2 bytes) Peaks_count.
 		6.1.6 for i in Peaks_count:
 			6.1.6.1 float (4 bytes) Residual_state.
-			6.1.6.2 unsigned integer (4 bytes) Peak_center_channel.
+			6.1.6.2 float (4 bytes) Peak_center_channel.
 			6.1.6.3 float (4 bytes) Peak_fwhm_in_channels.
 			6.1.6.4 float (4 bytes) Peak_under_area.
 

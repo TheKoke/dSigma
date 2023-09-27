@@ -157,7 +157,7 @@ class Encoder:
                 struct.pack_into('f', buffer, offset, state)
                 offset += 4
 
-                struct.pack_into('I', buffer, offset, spectres[nuclei].peaks[state].mu)
+                struct.pack_into('f', buffer, offset, spectres[nuclei].peaks[state].mu)
                 offset += 4
 
                 struct.pack_into('f', buffer, offset, spectres[nuclei].peaks[state].dispersion)
