@@ -67,7 +67,7 @@ class Ui_Gaussograph(object):
 
 
 class Gaussograph(QMainWindow, Ui_Gaussograph):
-    def __init__(self, spectrum: Spectrum, pointers: tuple[int, int]) -> None:
+    def __init__(self, spectrum: Spectrum, pointers: list[int]) -> None:
         # SETUP OF WINDOW
         super().__init__()
         self.setupUi(self)
@@ -81,6 +81,8 @@ class Gaussograph(QMainWindow, Ui_Gaussograph):
         # MATPLOTLIB INITIALIZING
         layout = QVBoxLayout(self.matplotlib_layout)
         self.view = FigureCanvasQTAgg(Figure(figsize=(16, 9)))
+        self.view.mpl_connect('button_press_event', self.add_pointer)
+
         self.axes = self.view.figure.subplots()
         self.toolbar = NavigationToolbar2QT(self.view, self.matplotlib_layout)
         layout.addWidget(self.toolbar)
@@ -92,16 +94,42 @@ class Gaussograph(QMainWindow, Ui_Gaussograph):
 
         self.draw()
 
-    def approximate(self) -> None:
-        if self.gauss is None:
-            start = min(self.pointers)
-            stop = max(self.pointers)
+    def add_pointer(self, event: MouseEvent) -> None:
+        if event.button == MouseButton.LEFT and event.dblclick:
+            if len(self.pointers) < 2:
+                self.pointers.append(int(event.xdata))
+            else:
+                self.pointers.pop(0)
+                self.pointers.append(int(event.xdata))
 
-            xs = numpy.arange(start + 1, stop + 1)
-            ys = self.spectrum.data[start: stop]
-
-            self.gauss = Peak.describe(xs, ys, ys.argmax())
             self.draw()
+
+    def approximate(self) -> None:
+        start = min(self.pointers)
+        stop = max(self.pointers)
+
+        xs = numpy.arange(start + 1, stop + 1)
+        ys = self.spectrum.data[start: stop]
+
+        self.gauss = Peak.describe(xs, ys, (stop + start) / 2)
+        self.show_info()
+        self.draw()
+
+    def show_info(self) -> None:
+        info = 'Gaussian information\n'
+        if self.gauss == None:
+            self.info_label.setText(info)
+            return
+
+        info += f'Center at: {round(self.gauss.mu, 3)}\n'
+        info += f'Area under peak: {round(self.gauss.area, 3)}\n'
+        info += f'Linear sum: {self.spectrum.data[min(self.pointers): max(self.pointers)].sum()}\n'
+        info += f'FWHM in channels: {round(self.gauss.fwhm, 3)}\n'
+
+        if self.spectrum.is_calibrated:
+            info += f'FWHM in energy view: {round(self.gauss.fwhm / self.spectrum.scale_value, 3)}\n'
+
+        self.info_label.setText(info)
 
     def draw(self) -> None:
         start = min(self.pointers) - int(len(self.spectrum.data) * 0.05)
@@ -116,7 +144,7 @@ class Gaussograph(QMainWindow, Ui_Gaussograph):
             self.axes.plot([self.pointers[i], self.pointers[i]], [0, height], color='red')
 
         if self.gauss is not None:
-            self.axes.plot(self.gauss.three_sigma(), self.gauss.function(), color='green')
+            self.axes.plot(self.gauss.three_sigma(), self.gauss.function(), color='black')
 
         self.axes.plot(numpy.arange(start + 1, stop + 1), self.spectrum.data[start: stop], color='blue')
         self.view.draw()

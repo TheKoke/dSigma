@@ -5,6 +5,21 @@ from business.ensdf import mass_excess_of, excitation_energies, gammas
 class Informator:
 
     @staticmethod
+    def is_exist(z: int, a: int) -> bool:
+        '''
+        Method for checking the existing of with
+        z protons and (a - z) neutrons.
+        '''
+        if z > a:
+            return False
+
+        try:
+            delta_m = mass_excess_of(z, a)
+            return True
+        except:
+            return False
+
+    @staticmethod
     def all_information(z: int, a: int) -> list:
         '''
         Method for take all database information for nuclei.\n

@@ -19,7 +19,7 @@ from PyQt5.QtCore import Qt, QSize, QMetaObject, QCoreApplication
 from PyQt5.QtWidgets import (
     QWidget, QMainWindow, QDialog,
     QVBoxLayout, QHBoxLayout, QComboBox, 
-    QPushButton, QFrame, QLabel, 
+    QPushButton, QFrame, QLabel,
     QSpinBox, QLineEdit
 )
 

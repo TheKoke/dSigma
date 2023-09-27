@@ -25,7 +25,7 @@ class Gaussian:
     
     @property
     def fwhm(self) -> float:
-        return self.__dispersion / (2 * np.sqrt(2 * np.log(2)))
+        return self.__dispersion * (2 * np.sqrt(2 * np.log(2)))
     
     def to_workbook(self) -> str:
         return f'Peak on mu=({self.mu}) with fwhm=({self.fwhm}) and area under peak=({self.area})'
@@ -90,13 +90,13 @@ class Peak:
 
         peak_start = int(peak_start) if peak_start >= 0 else 0
         peak_stop = int(peak_stop) if peak_stop < len(self.spectrum) else len(self.spectrum) - 1
-        center_index = self.mu_index - peak_stop
+        center = (peak_stop + peak_start) / 2
 
-        return Peak.describe(np.arange(peak_start, peak_stop), self.spectrum[peak_start: peak_stop], center_index)
+        return Peak.describe(np.arange(peak_start, peak_stop), self.spectrum[peak_start: peak_stop], center)
 
     @staticmethod
-    def describe(x: np.ndarray, y: np.ndarray, center: int) -> Gaussian:
-        new_x = np.power(x - x[center], 2)
+    def describe(x: np.ndarray, y: np.ndarray, center: float) -> Gaussian:
+        new_x = np.power(x - center, 2)
         y[y == 0] = 1
         new_y = np.log(y)
 
@@ -105,7 +105,7 @@ class Peak:
         sigma = np.sqrt(-1 / (2 * coeffs[0]))
         area = np.exp(coeffs[1]) * np.sqrt(2 * np.pi * sigma ** 2)
 
-        return Gaussian(x[center], sigma, area)
+        return Gaussian(center, sigma, area)
 
     @staticmethod
     def least_squares(x: np.ndarray, y: np.ndarray) -> tuple[float, float]:
@@ -224,7 +224,7 @@ class SpectrumAnalyzer:
         if not spectrum.is_calibrated:
             raise ValueError('Spectrum must be calibrated before finding peaks')
 
-        states = spectrum.reaction.residual.states
+        states = spectrum.reaction.residual_states
 
         found = self.find_peaks(index)
         for i in range(len(found)):
@@ -241,7 +241,7 @@ class SpectrumAnalyzer:
         for i in range(len(theories)):
             k, e0 = spectrum.scale_value, spectrum.scale_shift
 
-            pretend_channel = int((theories[i] - e0) / k) - 1
+            pretend_channel = int((theories[i] - e0) / k)
             if pretend_channel <= 0:
                 continue
 

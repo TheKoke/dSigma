@@ -122,9 +122,10 @@ def find_nuclei_area(z: int, a: int, buffer: list[str]) -> tuple[int, int]:
 
         if looking_line not in buffer[i] and is_opened:
             stop = i
-            break
+            return (start, stop)
 
-    return (start, stop)
+    if not is_opened:
+        raise ValueError(f'Cannot find nuclei with z: {z} and a: {a}')
 
 def get_mass_excess(line: str) -> float:
     mass_excess_flag = 'deltaM='
@@ -134,7 +135,7 @@ def get_mass_excess(line: str) -> float:
     start_index = line.index(mass_excess_flag) + len(mass_excess_flag)
     visible = ''
     for i in range(start_index, len(line)):
-        if line[i].isdigit() or line[i] == '.':
+        if line[i].isdigit() or line[i] == '.' or line[i] == '-':
             visible += line[i]
         else:
             break

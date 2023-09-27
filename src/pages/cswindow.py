@@ -231,7 +231,7 @@ class CSWindow(QMainWindow, Ui_CSWindow):
         index = self.reaction_box.currentIndex()
         sigma = self.sigmas[index]
 
-        state = sigma.reaction.residual.states[self.state_box.currentIndex()]
+        state = sigma.reaction.residual_states[self.state_box.currentIndex()]
 
         values = sigma.cm_cross_section_of(state)
         angles = sigma.angle_to_cm()[:len(values)]

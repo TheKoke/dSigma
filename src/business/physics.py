@@ -6,8 +6,8 @@ from business.informer import Informator, NAME2CHARGE
 
 class Nuclei:
     def __init__(self, charge: int, nuclons: int) -> None:
-        if charge > nuclons:
-            raise ValueError('Charge of nucleus can not be greater than nuclons.')
+        if not Informator.is_exist(charge, nuclons):
+            raise ValueError(f'Not such a nuclei with z={charge} and a={nuclons}')
 
         self.nuclons = nuclons
         self.charge = charge
@@ -88,26 +88,14 @@ class Reaction:
         self.beam = beam
         self.target = target
         self.fragment = fragment
-        self.residual = self.__residual_nuclei()
-
         self.beam_energy = beam_energy
+
+        self.residual = self.__residual_nuclei()
+        self.residual_states = self.__residual_states()
 
     @property
     def is_elastic(self) -> bool:
         return self.beam == self.fragment
-    
-    @property
-    def residual_states(self) -> list[float]:
-        all_states = self.residual.states
-
-        possible = []
-        for state in all_states:
-            if self.reaction_threshold(state) > self.beam_energy:
-                break
-            
-            possible.append(state)
-
-        return possible
     
     def __eq__(self, other: Reaction) -> bool:
         return self.beam == other.beam \
@@ -123,6 +111,18 @@ class Reaction:
 
     def __residual_nuclei(self) -> Nuclei:
         return self.beam + self.target - self.fragment
+    
+    def __residual_states(self) -> list[float]:
+        all_states = self.residual.states
+
+        possible = []
+        for state in all_states:
+            if self.reaction_threshold(state) > self.beam_energy:
+                break
+            
+            possible.append(state)
+
+        return possible
 
     def reaction_quit(self, residual_state: float = 0) -> float:
         q0 = (self.beam.mass_excess + self.target.mass_excess) - (self.fragment.mass_excess + self.residual.mass_excess)
@@ -272,7 +272,7 @@ class CrossSection:
         self.reaction = reaction
         self.angle_range = angle_range
 
-        self.__values = {state: np.zeros_like(self.angle_range) for state in self.reaction.residual.states}
+        self.__values = {state: np.zeros_like(self.angle_range) for state in self.reaction.residual_states}
 
     @property
     def values(self) -> dict[float, np.ndarray]:
@@ -325,13 +325,13 @@ class CrossSection:
         return const / brackets
 
     def lab_cross_section_of(self, state: float) -> np.ndarray:
-        if state not in self.reaction.residual.states:
+        if state not in self.reaction.residual_states:
             raise ValueError(f'Residual nuclei does not have state with excited energy: {state} MeV.')
         
         return self.__values[state]
         
     def add_cross_section_for(self, state: float, sigmas: np.ndarray) -> None:
-        if state not in self.reaction.residual.states:
+        if state not in self.reaction.residual_states:
             raise ValueError(f'Residual nuclei does not have state with excited energy: {state} MeV.')
         
         self.__values[state] = sigmas

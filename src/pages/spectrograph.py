@@ -410,7 +410,7 @@ class Spectrograph(QMainWindow, Ui_Spectrograph):
         angle = self.angle_box.currentIndex()
         analitics = self.analitics[self.current_index]
 
-        self.window = Gaussograph(analitics.spectrums[angle], tuple(self.pointers))
+        self.window = Gaussograph(analitics.spectrums[angle], self.pointers)
         self.window.show()
 
     def open_calibration(self) -> None:
