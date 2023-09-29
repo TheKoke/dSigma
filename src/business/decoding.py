@@ -179,7 +179,7 @@ class Decoder:
         state = struct.unpack_from('f', self.buffer, offset)[0]
         offset += 4
 
-        center = struct.unpack_from('I', self.buffer, offset)[0]
+        center = struct.unpack_from('f', self.buffer, offset)[0]
         offset += 4
 
         dispersion = struct.unpack_from('f', self.buffer, offset)[0]

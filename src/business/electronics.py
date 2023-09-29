@@ -94,6 +94,9 @@ class Telescope:
         if val <= 0:
             return
         self.__distance = val
+
+    def solid_angle(self) -> float:
+        return 2 * 3.1415 * (self.collimator_radius ** 2) / (self.distance ** 2)
     
     def __eq__(self, other: Telescope) -> bool:
         return self.e_detector == other.e_detector

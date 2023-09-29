@@ -127,7 +127,7 @@ class Gaussograph(QMainWindow, Ui_Gaussograph):
         info += f'FWHM in channels: {round(self.gauss.fwhm, 3)}\n'
 
         if self.spectrum.is_calibrated:
-            info += f'FWHM in energy view: {round(self.gauss.fwhm / self.spectrum.scale_value, 3)}\n'
+            info += f'FWHM in energy view: {round(self.gauss.fwhm * self.spectrum.scale_value, 3)}\n'
 
         self.info_label.setText(info)
 

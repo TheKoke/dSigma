@@ -28,7 +28,7 @@ class Gaussian:
         return self.__dispersion * (2 * np.sqrt(2 * np.log(2)))
     
     def to_workbook(self) -> str:
-        return f'Peak on mu=({self.mu}) with fwhm=({self.fwhm}) and area under peak=({self.area})'
+        return f'Peak on mu=({round(self.mu, 3)}) with fwhm=({round(self.fwhm, 3)}) and area under peak=({round(self.area, 3)})'
 
     def __str__(self) -> str:
         func = 'G(x) = '
@@ -53,7 +53,7 @@ class Lorentzian:
         self.area = area
 
     def to_workbook(self) -> str:
-        return f'Peak on mu=({self.mu}) with fwhm=({self.fwhm}) and area under peak=({self.area})'
+        return f'Peak on mu=({round(self.mu, 3)}) with fwhm=({round(self.fwhm, 3)}) and area under peak=({round(self.area, 3)})'
 
     def __str__(self) -> str:
         func = 'L(x) = '
