@@ -122,57 +122,37 @@ class MatrixAnalyzer:
         if particle not in fragments:
             raise ValueError(f'{particle} fragment does not exist.')
         
-        splitted = self.__split_by_telescope()
-
-        cs = []
-        for bunch in splitted:
-            events = []
-            integrator = []
-            misscalc = []
-
-            for matrix in bunch:
-                if state in matrix.spectrums[particle].peaks:
-                    integrator.append(matrix.integrator_counts)
-                    misscalc.append(matrix.misscalculation)
-                    events.append(matrix.spectrums[particle].peaks[state].area)
-
-            events = np.array(events)
-            integrator = np.array(integrator)
-            misscalc = np.array(misscalc)
-
-            cs.extend(self.__formula(events, integrator, misscalc, bunch[0].electronics, bunch[0].integrator_constant))
-
-        return cs
-        
-    def __split_by_telescope(self) -> list[list[Matrix]]:
-        collected = []
-        current = None
+        events = []
+        integrator = []
+        misscalc = []
+        intconst = []
+        solid_angle = []
 
         for matrix in self.matrixes:
-            if current is None:
-                current = matrix.electronics
-                collected.append([matrix])
-                continue
+            if state in matrix.spectrums[particle].peaks:
+                solid_angle.append(matrix.electronics.solid_angle())
+                intconst.append(matrix.integrator_constant)
+                integrator.append(matrix.integrator_counts)
+                misscalc.append(matrix.misscalculation)
+                events.append(matrix.spectrums[particle].peaks[state].area)
 
-            if matrix.electronics == current:
-                collected[-1].append(matrix)
-            else:
-                current = None
+        events = np.array(events)
+        integrator = np.array(integrator)
+        misscalc = np.array(misscalc)
+        intconst = np.array(intconst)
+        solid_angle = np.array(solid_angle)
 
-        return collected
+        return self.__formula(events, integrator, misscalc, intconst, solid_angle)
 
     @staticmethod
     def __formula(events: np.ndarray, integrator: np.ndarray, 
-                  misscalculation: np.ndarray, telescope: Telescope,
-                  intconstant: float) -> np.ndarray:
+                  misscalculation: np.ndarray, intconstant: np.ndarray,
+                  solid_angle: np.ndarray) -> np.ndarray:
+        
         numerator =  events * misscalculation
-        denumerator = integrator * intconstant * MatrixAnalyzer.__solid_angle(telescope)
+        denumerator = integrator * intconstant * solid_angle
 
         return numerator / denumerator
-
-    @staticmethod
-    def __solid_angle(telescope: Telescope) -> float:
-        return 2 * np.pi * (telescope.collimator_radius ** 2) / (telescope.distance ** 2)
 
 
 if __name__ == '__main__':

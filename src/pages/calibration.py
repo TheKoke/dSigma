@@ -64,8 +64,8 @@ class Ui_Calibration(object):
         self.first_point.setObjectName("first_point")
         self.first_layout.addWidget(self.first_point)
         self.first_state = QDoubleSpinBox(self.service_layout)
-        self.first_state.setMinimumSize(QSize(50, 0))
-        self.first_state.setMaximumSize(QSize(100, 100))
+        self.first_state.setMinimumSize(QSize(100, 0))
+        self.first_state.setMaximumSize(QSize(200, 100))
         palette = QPalette()
         brush = QBrush(QColor(255, 255, 255))
         brush.setStyle(Qt.SolidPattern)
@@ -144,8 +144,8 @@ class Ui_Calibration(object):
         self.second_point.setObjectName("second_point")
         self.second_layout.addWidget(self.second_point)
         self.second_state = QDoubleSpinBox(self.service_layout)
-        self.second_state.setMinimumSize(QSize(50, 20))
-        self.second_state.setMaximumSize(QSize(100, 100))
+        self.second_state.setMinimumSize(QSize(100, 20))
+        self.second_state.setMaximumSize(QSize(200, 100))
         self.second_state.setPalette(palette)
         font = QFont()
         font.setFamily("Bahnschrift SemiBold")
@@ -200,10 +200,12 @@ class Ui_Calibration(object):
         _translate = QCoreApplication.translate
         SpectrumDemo.setWindowTitle(_translate("SpectrumDemo", "dSigma — Calibration Window"))
         self.info_label.setText(_translate("SpectrumDemo", "Pick the points on spectrum and select states of residual nuclei, then press enter or \"Calibrate\" button"))
-        self.first_point.setText(_translate("SpectrumDemo", "There will shown points"))
-        self.second_point.setText(_translate("SpectrumDemo", "There will shown points"))
+        self.first_point.setText(_translate("SpectrumDemo", "First point"))
+        self.first_state.setSuffix(_translate("SpectrumDemo", " MeV"))
+        self.second_point.setText(_translate("SpectrumDemo", "Second point"))
+        self.second_state.setSuffix(_translate("SpectrumDemo", " MeV"))
         self.calibrate_button.setText(_translate("SpectrumDemo", "Calibrate"))
-        self.output_label.setText(_translate("SpectrumDemo", "TextLabel"))
+        self.output_label.setText(_translate("SpectrumDemo", "Calibration equation"))
 
 
 class CalibrationWindow(QMainWindow, Ui_Calibration):
@@ -263,6 +265,8 @@ class CalibrationWindow(QMainWindow, Ui_Calibration):
         self.first_point.setText(f'{first_point[0]}; {first_point[1]}')
         self.second_point.setText(f'{second_point[0]}; {second_point[1]}')
 
+        self.draw()
+
     def apply(self) -> None:
         if len(self.selected_dots_x) < 2:
             return
@@ -282,9 +286,14 @@ class CalibrationWindow(QMainWindow, Ui_Calibration):
     def draw(self) -> None:
         spectrum = self.analyzer.spectrums[self.index]
 
+        self.axes.clear()
         for i in range(len(spectrum.data)):
             self.axes.plot([i + 1, i + 1], [0, spectrum.data[i]], color='blue')
-        
+
+        if len(self.selected_dots_x) >= 2:
+            dots = [spectrum.data[self.selected_dots_x[-2] - 1], spectrum.data[self.selected_dots_x[-1] - 1]]
+            self.axes.scatter(self.selected_dots_x[-2:], dots, color='red')
+
         self.axes.plot(list(range(1, len(spectrum.data) + 1)), spectrum.data, color='blue')
         self.view.draw()
 
