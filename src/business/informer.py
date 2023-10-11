@@ -1,5 +1,5 @@
 from business.ensdf import NAME2CHARGE, CHARGE2NAME
-from business.ensdf import mass_excess_of, excitation_energies, gammas
+from business.ensdf import mass_excess_of, excitation_energies, spin_parity, gammas
 
 
 class Informator:
@@ -50,6 +50,10 @@ class Informator:
     @staticmethod
     def states(z: int, a: int) -> list[float]:
         return excitation_energies(z, a)
+    
+    @staticmethod
+    def spins(z: int, a: int) -> list[tuple[float, bool]]:
+        return spin_parity(z, a)
 
     @staticmethod
     def wigner_widths(z: int, a: int) -> list[float]:

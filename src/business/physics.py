@@ -22,6 +22,10 @@ class Nuclei:
         return Informator.states(self.charge, self.nuclons)
     
     @property
+    def spins(self) -> list[tuple[float, bool]]:
+        return Informator.spins(self.charge, self.nuclons)
+    
+    @property
     def wigner_widths(self) -> list[float]:
         return Informator.wigner_widths(self.charge, self.nuclons)
     
@@ -283,7 +287,7 @@ class CrossSection:
         report = f'Differential cross-section of {self.reaction} reaction at {self.reaction.beam_energy} MeV energy.\n\n'
         
         for state in self.__values:
-            report += f'Values for {state} MeV excitation state of {self.reaction.residual}->\n'
+            report += f'Values for {state}(spin) MeV excitation state of {self.reaction.residual}->\n' # add spin text.
             report += 'c.m. angle, deg.'.center(30) + '\t|\t' + 'd\u03c3/d\u03c9, mb/sr'.center(30) + '\n'
             for i in range(len(self.__values[state])):
                 report += str(round(angles[i], 3)).center(30) + '\t|\t' + str(round(self.__values[state][i], 3)).center(30) + '\n'

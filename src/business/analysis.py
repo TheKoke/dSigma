@@ -96,11 +96,12 @@ class Peak:
 
     @staticmethod
     def describe(x: np.ndarray, y: np.ndarray, center: float) -> Gaussian:
+        weights = y / y.sum()
         new_x = np.power(x - center, 2)
         y[y == 0] = 1
         new_y = np.log(y)
 
-        coeffs = Peak.least_squares(new_x, new_y)
+        coeffs = Peak.chi_square(new_x, new_y, weights)
 
         sigma = np.sqrt(-1 / (2 * coeffs[0]))
         area = np.exp(coeffs[1]) * np.sqrt(2 * np.pi * sigma ** 2)
@@ -108,9 +109,9 @@ class Peak:
         return Gaussian(center, sigma, area)
 
     @staticmethod
-    def least_squares(x: np.ndarray, y: np.ndarray) -> tuple[float, float]:
-        system = np.array([[len(x), x.sum()], [x.sum(), np.power(x, 2).sum()]])
-        righthand = np.array([y.sum(), (x * y).sum()])
+    def chi_square(x: np.ndarray, y: np.ndarray, w: np.ndarray) -> tuple[float, float]:
+        system = np.array([[1, (w * x).sum()], [(w * x).sum(), (w * np.power(x, 2)).sum()]])
+        righthand = np.array([(w * y).sum(), (w * x * y).sum()])
 
         solutions = np.linalg.solve(system, righthand)
         return (solutions[1], solutions[0])
