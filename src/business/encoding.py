@@ -4,19 +4,19 @@ from business.matrix import Matrix
 
 
 # Physics area
-BEAM_CHARGE    = 0
-BEAM_NUCLON    = 1
-TARGET_CHARGE  = 2
-TARGET_NUCLON  = 3
-BEAM_ENERGY    = 4
-DETECTOR_ANGLE = 8
+BEAM_CHARGE              = 0
+BEAM_NUCLON              = 1
+TARGET_CHARGE            = 2
+TARGET_NUCLON            = 3
+BEAM_ENERGY              = 4
+DETECTOR_ANGLE           = 8
 # Electronics area
-E_DETECTOR_THICKNESS  = 12
-E_DETECTOR_MADEOF     = 16
-E_DETECTOR_RESOLUTION = 20
-DE_DETECTOR_THICKNESS = 24
-DE_DETECTOR_MADEOF    = 28
-DE_DETECTOR_RESOLUTION = 32
+E_DETECTOR_THICKNESS     = 12
+E_DETECTOR_MADEOF        = 16
+E_DETECTOR_RESOLUTION    = 20
+DE_DETECTOR_THICKNESS    = 24
+DE_DETECTOR_MADEOF       = 28
+DE_DETECTOR_RESOLUTION   = 32
 # Cross-section valuable, details area
 INTEGRATOR_COUNTS        = 36
 CONGRUENCE               = 40
@@ -24,9 +24,9 @@ INTEGRATOR_CONSTANT      = 44
 COLLIMATOR_RADIUS        = 48
 TARGET_DETECTOR_DISTANCE = 52
 # Matrix area
-E_SIZE       = 56
-DE_SIZE      = 58
-MATRIX_START = 60
+E_SIZE                   = 56
+DE_SIZE                  = 58
+MATRIX_START             = 60
 # Dynamic area, locuses and spectres
 LOCUSES_START = lambda height, width: MATRIX_START + 4 * height * width
 
@@ -47,9 +47,8 @@ class Encoder:
         self.write_locuses(buffer)
         self.write_spectrums(buffer)
 
-        binary = open(path, 'wb')
-        binary.write(buffer)
-        binary.close()
+        with open(path, 'wb') as binary:
+            binary.write(buffer)
 
         return path
 

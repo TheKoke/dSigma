@@ -60,38 +60,44 @@ GAMMA_SIZE = 10
 
 
 def mass_excess_of(z: int, a: int) -> float:
-    file = open(find_file(z), 'r').read().split('\n')
-    start, _ = find_nuclei_area(z, a, file)
+    with open(find_file(z), 'r') as file:
+        buffer = file.read().split('\n')
 
-    return get_mass_excess(file[start])
+    start, _ = find_nuclei_area(z, a, buffer)
+    return get_mass_excess(buffer[start])
 
 def excitation_energies(z: int, a: int) -> list[float]:
-    file = open(find_file(z), 'r').read().split('\n')
-    start, stop = find_nuclei_area(z, a, file)
+    with open(find_file(z), 'r') as file:
+        buffer = file.read().split('\n')
+
+    start, stop = find_nuclei_area(z, a, buffer)
 
     collected = []
     for i in range(start + 1, stop):
-        collected.append(get_energy(file[i]))
+        collected.append(get_energy(buffer[i]))
 
     return collected
 
 def spin_parity(z: int, a: int) -> list[tuple[float, bool]]:
-    file = open(find_file(z), 'r').read().split('\n')
-    start, stop = find_nuclei_area(z, a, file)
+    with open(find_file(z), 'r') as file:
+        buffer = file.read().split('\n')
+
+    start, stop = find_nuclei_area(z, a, buffer)
 
     collected = []
     for i in range(start + 1, stop):
-        collected.append(get_spin_parity(file[i]))
+        collected.append(get_spin_parity(buffer[i]))
 
     return collected
 
 def gammas(z: int, a: int) -> list[float]:
-    file = open(find_file(z), 'r').read().split('\n')
-    start, stop = find_nuclei_area(z, a, file)
+    with open(find_file(z), 'r') as file:
+        buffer = file.read().split('\n')
+    start, stop = find_nuclei_area(z, a, buffer)
 
     collected = []
     for i in range(start + 1, stop):
-        collected.append(get_gamma(file[i]))
+        collected.append(get_gamma(buffer[i]))
 
     return collected
 
