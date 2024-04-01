@@ -106,14 +106,14 @@ class Decoder:
         flat = [struct.unpack_from('I', self.buffer, MATRIX_START + 4 * i)[0] for i in range(e_size * de_size)]
         return numpy.array(flat).reshape(de_size, e_size)
 
-    def take_locuses(self) -> list[Locus]:
+    def take_locuses(self) -> dict[Nuclei, Locus]:
         matrix = self.get_matrix()
 
         offset = LOCUSES_START(*self.matrix_sizes)
         count = struct.unpack_from('H', self.buffer, offset)[0]
         offset += 2
 
-        collected = []
+        collected = dict()
         for _ in range(count):
             z = struct.unpack_from('B', self.buffer, offset)[0]
             offset += 1
@@ -132,18 +132,18 @@ class Decoder:
                 current_points.append((e_coordinate, de_coordinate))
                 offset += 4
 
-            collected.append(Locus(Nuclei(z, a), matrix, current_points))
+            collected[Nuclei(z, a)] = Locus(matrix, current_points)
 
         return collected
 
     def take_spectrums(self) -> dict[Nuclei, Spectrum]:
-        locuses_size = sum([6 + 4 * len(locus.points) for locus in self.take_locuses()]) + 2
+        locuses = self.take_locuses()
+        locuses_size = sum([6 + 4 * len(locuses[nuclei].points) for nuclei in locuses]) + 2
         offset = LOCUSES_START(*self.matrix_sizes) + locuses_size
 
         angle = self.get_angle()
         electronics = self.get_electronics()
         experiment = self.get_experiment()
-        locuses = self.take_locuses()
 
         collected = dict()
         while offset < len(self.buffer):
@@ -153,7 +153,7 @@ class Decoder:
             offset += 2
 
             current_reaction = experiment.create_reaction(current_nuclei)
-            current_locus = next(i for i in locuses if i.particle == current_nuclei)
+            current_locus = locuses[current_nuclei]
 
             current_spectrum = Spectrum(current_reaction, angle, electronics, current_locus.to_spectrum())
 

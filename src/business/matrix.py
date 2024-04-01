@@ -19,7 +19,7 @@ class Matrix:
         self.integrator_constant = decoder.get_integrator_constant()
         self.misscalculation = decoder.get_misscalculation()
 
-        self.locuses: list[Locus] = decoder.take_locuses()
+        self.locuses: dict[Nuclei, Locus] = decoder.take_locuses()
         self.spectrums: dict[Nuclei, Spectrum] = decoder.take_spectrums()
     
     def to_workbook(self) -> str:
@@ -36,10 +36,9 @@ class Matrix:
         report += f"E detector thickness: {self.electronics.e_detector.thickness} micron.\n"
 
         report += '\n\n'
-        for locus in self.locuses:
-            report += f'Locus of {locus.particle.name}:\n'
-            for i in locus.points:
-                report += f'\t(E: {i[0]}; dE: {i[1]})\n'
+        for nuclei in self.locuses:
+            report += f'Locus of {nuclei.name}:\n'
+            report += self.locuses[nuclei].to_workbook()
             report += '--\n'
 
         report += '\nSpectrum area\n'
@@ -50,21 +49,14 @@ class Matrix:
         return report
 
     def add_locus(self, particle: Nuclei, points: list[tuple[int, int]]) -> None:
-        if particle in [locus.particle for locus in self.locuses]:
-            index = next(i for i in range(len(self.locuses)) if self.locuses[i].particle == particle)
-            self.locuses[index] = Locus(particle, self.numbers, points)
-
-            if particle in self.spectrums:
-                self.spectrums.pop(particle)
-        else:
-            self.locuses.append(Locus(particle, self.numbers, points))
+        self.locuses[particle] = Locus(self.numbers, points)
 
     def spectrum_of(self, particle: Nuclei) -> Spectrum:
         if particle in [self.spectrums[n].reaction.fragment for n in self.spectrums]:
             return next(self.spectrums[n] for n in self.spectrums if self.spectrums[n].reaction.fragment == particle)
 
-        if particle in [locus.particle for locus in self.locuses]:
-            locus = next(locus for locus in self.locuses if locus.particle == particle)
+        if particle in self.locuses:
+            locus = self.locuses[particle]
             reaction = self.__build_reaction(particle)
             spectrum_data = locus.to_spectrum()
 
@@ -99,9 +91,9 @@ class MatrixAnalyzer:
     def __particles(self) -> list[Nuclei]:
         found = []
         for m in self.matrixes:
-            for locus in m.locuses:
-                if locus.particle not in found:
-                    found.append(locus.particle)
+            for nuclei in m.locuses:
+                if nuclei not in found:
+                    found.append(nuclei)
 
         return found
     
@@ -142,10 +134,10 @@ class MatrixAnalyzer:
         intconst = np.array(intconst)
         solid_angle = np.array(solid_angle)
 
-        return self.__formula(events, integrator, misscalc, intconst, solid_angle)
+        return self.__relation(events, integrator, misscalc, intconst, solid_angle)
 
     @staticmethod
-    def __formula(events: np.ndarray, integrator: np.ndarray, 
+    def __relation(events: np.ndarray, integrator: np.ndarray, 
                   misscalculation: np.ndarray, intconstant: np.ndarray,
                   solid_angle: np.ndarray) -> np.ndarray:
         

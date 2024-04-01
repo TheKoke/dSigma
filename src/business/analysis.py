@@ -76,7 +76,7 @@ class Lorentzian:
         return constant * brackets
 
 
-class Peak:
+class PeakAnalyzer:
     def __init__(self, spectrum: np.ndarray, mu_index: int, fwhm: int) -> None:
         self.spectrum = spectrum
         self.mu_index = mu_index
@@ -92,7 +92,7 @@ class Peak:
         peak_stop = int(peak_stop) if peak_stop < len(self.spectrum) else len(self.spectrum) - 1
         center = (peak_stop + peak_start) / 2
 
-        return Peak.describe(np.arange(peak_start, peak_stop), self.spectrum[peak_start: peak_stop], center)
+        return PeakAnalyzer.describe(np.arange(peak_start, peak_stop), self.spectrum[peak_start: peak_stop], center)
 
     @staticmethod
     def describe(x: np.ndarray, y: np.ndarray, center: float) -> Gaussian:
@@ -101,7 +101,7 @@ class Peak:
         y[y == 0] = 1
         new_y = np.log(y)
 
-        coeffs = Peak.chi_square(new_x, new_y, weights)
+        coeffs = PeakAnalyzer.chi_square(new_x, new_y, weights)
 
         sigma = np.sqrt(-1 / (2 * coeffs[0]))
         area = np.exp(coeffs[1]) * np.sqrt(2 * np.pi * sigma ** 2)
@@ -231,7 +231,7 @@ class SpectrumAnalyzer:
         for i in range(len(found)):
             spectrum.add_peak(states[i], found[i].approximate())
             
-    def find_peaks(self, index: int) -> list[Peak]:
+    def find_peaks(self, index: int) -> list[PeakAnalyzer]:
         spectrum = self.spectrums[index]
         if not spectrum.is_calibrated:
             raise ValueError('Spectrum must be calibrated before finding peaks')
@@ -247,7 +247,7 @@ class SpectrumAnalyzer:
                 continue
 
             fwhm_in_channels = int(spectrum.gamma_widths[i] / spectrum.scale_value)
-            collected.append(Peak(spectrum.data, pretend_channel, fwhm_in_channels))
+            collected.append(PeakAnalyzer(spectrum.data, pretend_channel, fwhm_in_channels))
 
         return collected
     

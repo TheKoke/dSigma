@@ -1,5 +1,4 @@
 import numpy as np
-from business.physics import Nuclei
 
 
 class Cell:
@@ -91,18 +90,20 @@ class Locus:
     '''
     Class that represents Locus in Matrix.
     '''
-    def __init__(self, particle: Nuclei, matrix: np.ndarray, points: list[tuple[int, int]]) -> None:
-        self.__particle = particle
+    def __init__(self, matrix: np.ndarray, points: list[tuple[int, int]]) -> None:
         self.__points = points
         self.__projector = Extrapolation(matrix, points)
-
-    @property
-    def particle(self) -> Nuclei:
-        return self.__particle
         
     @property
     def points(self) -> list[tuple[int, int]]:
         return self.__points
+    
+    def to_workbook(self) -> str:
+        report = ''
+        for i in self.__points:
+            report += f'\t(E: {i[0]}; dE: {i[1]})\n'
+
+        return report
 
     def to_spectrum(self) -> list[int]:
         return self.__projector.to_spectrum()

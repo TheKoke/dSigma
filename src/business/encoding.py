@@ -113,17 +113,17 @@ class Encoder:
         struct.pack_into('H', buffer, offset, len(locuses))
         offset += 2
 
-        for locus in locuses:
-            struct.pack_into('B', buffer, offset, locus.particle.charge)
+        for nuclei in locuses:
+            struct.pack_into('B', buffer, offset, nuclei.charge)
             offset += 1
 
-            struct.pack_into('B', buffer, offset, locus.particle.nuclons)
+            struct.pack_into('B', buffer, offset, nuclei.nuclons)
             offset += 1
 
-            struct.pack_into('I', buffer, offset, len(locus.points))
+            struct.pack_into('I', buffer, offset, len(locuses[nuclei].points))
             offset += 4
 
-            for point in locus.points:
+            for point in locuses[nuclei].points:
                 struct.pack_into('H', buffer, offset, point[0])
                 struct.pack_into('H', buffer, offset + 2, point[1])
                 offset += 4
@@ -179,7 +179,7 @@ class Encoder:
         details_area_size = 20
         matrix_area_size = 4 + 4 * len(self.matrix.numbers.flat)
 
-        locuses_area_size = sum([6 + 4 * len(locus.points) for locus in self.matrix.locuses]) + 2
+        locuses_area_size = sum([6 + 4 * len(self.matrix.locuses[n].points) for n in self.matrix.locuses]) + 2
         spectrums_area_size = sum([12 + 16 * len(self.matrix.spectrums[n].peaks) for n in self.matrix.spectrums])
 
         return physical_area_size + electronics_area_size + \
