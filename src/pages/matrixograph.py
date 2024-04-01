@@ -472,13 +472,15 @@ class DrawDialog(QWidget):
         e_de = self.matrix.numbers[:]
         e_de = e_de + 1
 
+        locuses = self.matrix.locuses
+
         self.axes.pcolor(numpy.log(e_de), vmin=0, vmax=self.lum)
         self.axes.plot(self.selected_dots_x, self.selected_dots_y, color='red')
         self.axes.scatter(self.selected_dots_x, self.selected_dots_y, color='red')
 
-        for locus in self.matrix.locuses:
-            self.axes.plot([point[0] for point in locus.points], [point[1] for point in locus.points], color='blue')
-            self.axes.scatter([point[0] for point in locus.points], [point[1] for point in locus.points], color='blue')
+        for n in locuses:
+            self.axes.plot([point[0] for point in locuses[n].points], [point[1] for point in locuses[n].points], color='blue')
+            self.axes.scatter([point[0] for point in locuses[n].points], [point[1] for point in locuses[n].points], color='blue')
 
         self.view.draw()
 
@@ -554,12 +556,15 @@ class Matrixograph(QMainWindow, Ui_Matrixograph):
 
     def draw_locuses(self) -> None:
         colors = ['blue', 'red', 'green', 'yellow', 'white', 'darkred', 'purple']
-        locuses = self.analyzer.matrixes[self.current_index].locuses
-        for i in range(len(locuses)):
-            xs = [locuses[i].points[j][0] for j in range(len(locuses[i].points))]
-            ys = [locuses[i].points[j][1] for j in range(len(locuses[i].points))]
+        color_index = 0
 
-            self.axes.plot(xs, ys, colors[i])
+        locuses = self.analyzer.matrixes[self.current_index].locuses
+        for n in locuses:
+            xs = [locuses[n].points[j][0] for j in range(len(locuses[n].points))]
+            ys = [locuses[n].points[j][1] for j in range(len(locuses[n].points))]
+
+            self.axes.plot(xs, ys, colors[color_index])
+            color_index += 1
 
         self.view.draw()
 

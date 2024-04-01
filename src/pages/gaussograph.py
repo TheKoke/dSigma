@@ -1,6 +1,6 @@
 import numpy
 
-from business.analysis import Spectrum, Peak
+from business.analysis import Spectrum, PeakAnalyzer
 
 from matplotlib.figure import Figure
 from matplotlib.backend_bases import MouseEvent, MouseButton
@@ -111,7 +111,7 @@ class Gaussograph(QMainWindow, Ui_Gaussograph):
         xs = numpy.arange(start + 1, stop + 1)
         ys = self.spectrum.data[start: stop]
 
-        self.gauss = Peak.describe(xs, ys, (stop + start) / 2)
+        self.gauss = PeakAnalyzer.describe(xs, ys, (stop + start) / 2)
         self.show_info()
         self.draw()
 
