@@ -518,7 +518,8 @@ class Matrixograph(QMainWindow, Ui_Matrixograph):
         layout.addWidget(self.view)
 
         self.angles_box.currentTextChanged.connect(self.show_matrix)
-        self.angles_box.addItems([str(angle) for angle in self.analyzer.angles])
+        angles = sorted(self.analyzer.angles)
+        self.angles_box.addItems(map(str, angles))
 
         # EVENT HANDLING
         self.bright_up_button.clicked.connect(self.bright_up)

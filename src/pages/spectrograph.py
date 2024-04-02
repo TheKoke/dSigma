@@ -464,7 +464,7 @@ class Spectrograph(QMainWindow, Ui_Spectrograph):
 
         self.linear_sum.setText('SUM=')
         self.angle_box.clear()
-        self.angle_box.addItems([str(a) for a in angles])
+        self.angle_box.addItems(map(str, sorted(angles)))
 
     def draw_angle(self) -> None:
         angle_index = self.angle_box.currentIndex()
