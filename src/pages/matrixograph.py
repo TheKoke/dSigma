@@ -504,6 +504,7 @@ class Matrixograph(QMainWindow, Ui_Matrixograph):
         self.analyzer = MatrixAnalyzer([Matrix(d) for d in decoders])
         self.__matrixes = [Matrix(d) for d in decoders]
 
+        self.current_index = 0
         self.luminiosity = 0
 
         self.is_locuses_on = False
@@ -518,7 +519,7 @@ class Matrixograph(QMainWindow, Ui_Matrixograph):
 
         self.angles_box.currentTextChanged.connect(self.show_matrix)
         angles = sorted(self.analyzer.angles)
-        self.angles_box.addItems(map(str, angles))
+        self.angles_box.addItems(map(str, self.analyzer.angles))
 
         # EVENT HANDLING
         self.bright_up_button.clicked.connect(self.bright_up)
@@ -533,12 +534,13 @@ class Matrixograph(QMainWindow, Ui_Matrixograph):
         self.save_button.clicked.connect(self.save)
 
     def show_matrix(self) -> None:
-        self.luminiosity = self.analyzer.matrix_of_angle(float(self.angles_box.currentText())).numbers.mean() * 2
+        self.current_index = self.angles_box.currentIndex()
+        self.luminiosity = self.analyzer.matrixes[self.current_index].numbers.mean() * 2
         self.draw_e_de()
 
     def draw_e_de(self) -> None:
         self.axes.clear()
-        e_de = self.analyzer.matrix_of_angle(float(self.angles_box.currentText())).numbers[:]
+        e_de = self.analyzer.matrixes[self.current_index].numbers[:]
         e_de = e_de + 1
 
         self.axes.pcolor(numpy.log(e_de), vmin=0, vmax=self.luminiosity)
@@ -556,7 +558,7 @@ class Matrixograph(QMainWindow, Ui_Matrixograph):
         colors = ['blue', 'red', 'green', 'yellow', 'white', 'darkred', 'purple']
         color_index = 0
 
-        locuses = self.analyzer.matrix_of_angle(float(self.angles_box.currentText())).locuses
+        locuses = self.analyzer.matrixes[self.current_index].locuses
         for n in locuses:
             xs = [locuses[n].points[j][0] for j in range(len(locuses[n].points))]
             ys = [locuses[n].points[j][1] for j in range(len(locuses[n].points))]
@@ -576,15 +578,15 @@ class Matrixograph(QMainWindow, Ui_Matrixograph):
         self.draw_e_de()
 
     def bright_default(self) -> None:
-        self.luminiosity = self.analyzer.matrix_of_angle(float(self.angles_box.currentText())).numbers.mean() * 2
+        self.luminiosity = self.analyzer.matrixes[self.current_index].numbers.mean() * 2
         self.draw_e_de()
 
     def locus_dialog(self) -> None:
-        self.window = DrawDialog(self.analyzer.matrix_of_angle(float(self.angles_box.currentText())), self.luminiosity)
+        self.window = DrawDialog(self.analyzer.matrixes[self.current_index], self.luminiosity)
         self.window.show()
 
     def open_workbook(self) -> None:
-        self.window = Workbooker(self.analyzer.matrix_of_angle(float(self.angles_box.currentText())).to_workbook())
+        self.window = Workbooker(self.analyzer.matrixes[self.current_index].to_workbook())
         self.window.show()
 
     def open_spectrograph(self) -> None:
@@ -596,7 +598,7 @@ class Matrixograph(QMainWindow, Ui_Matrixograph):
         self.window.show()
 
     def open_file_editor(self) -> None:
-        self.window = FileEditor(self.analyzer.matrix_of_angle(float(self.angles_box.currentText())))
+        self.window = FileEditor(self.analyzer.matrixes[self.current_index])
         self.window.show()
 
     def save(self) -> None:
@@ -606,8 +608,7 @@ class Matrixograph(QMainWindow, Ui_Matrixograph):
             en = Encoder(matrix, self.directory)
             en.write_down()
 
-        information = InformWindow('E-dE matrixes was saved succesfully.')
-        self.window = information
+        self.window = InformWindow('E-dE matrixes was saved succesfully.')
         self.window.show()
 
     def __find_changed_ones(self) -> None:

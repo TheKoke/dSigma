@@ -213,36 +213,33 @@ class Spectrum:
 
 class SpectrumAnalyzer:
     def __init__(self, spectrums: list[Spectrum]) -> None:
-        self.spectrums = spectrums
+        self.spectrums = sorted(spectrums, key=lambda x: x.angle)
         self.dsigma = self.__create_cross_section()
 
     def __create_cross_section(self) -> CrossSection:
-        angles = np.array([sp.angle for sp in self.spectrums])
+        angles = np.array(self.angles())
         return CrossSection(self.spectrums[0].reaction, angles)
     
-    def spectrum_of_angle(self, angle: float) -> Spectrum:
-        try:
-            return next(sp for sp in self.spectrums if sp.angle == angle)
-        except: 
-            raise ValueError('No such spectrum')
+    def angles(self) -> list[float]:
+        return [sp.angle for sp in self.spectrums]
 
-    def approximate(self, angle: float) -> None:
-        spectrum = self.spectrum_of_angle(angle)
+    def approximate(self, index: int) -> None:
+        spectrum = self.spectrums[index]
         if not spectrum.is_calibrated:
             raise ValueError('Spectrum must be calibrated before finding peaks')
 
         states = spectrum.reaction.residual_states
 
-        found = self.find_peaks(angle)
+        found = self.find_peaks(index)
         for i in range(len(found)):
             spectrum.add_peak(states[i], found[i].approximate())
             
-    def find_peaks(self, angle: float) -> list[PeakAnalyzer]:
-        spectrum = self.spectrum_of_angle(angle)
+    def find_peaks(self, index: int) -> list[PeakAnalyzer]:
+        spectrum = self.spectrums[index]
         if not spectrum.is_calibrated:
             raise ValueError('Spectrum must be calibrated before finding peaks')
         
-        theories = self.theory_peaks(angle)
+        theories = self.theory_peaks(index)
         
         collected = []
         for i in range(len(theories)):
@@ -257,8 +254,8 @@ class SpectrumAnalyzer:
 
         return collected
     
-    def theory_peaks(self, angle: int) -> list[float]:
-        current = self.spectrum_of_angle(angle)
+    def theory_peaks(self, index: int) -> list[float]:
+        current = self.spectrums[index]
 
         piercing = current.electronics.de_detector
         stopping = current.electronics.e_detector

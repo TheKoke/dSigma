@@ -48,6 +48,10 @@ class Ui_Gaussograph(object):
         self.approximate_button.setMinimumSize(QSize(0, 70))
         self.approximate_button.setObjectName("approximate_button")
         self.verticalLayout.addWidget(self.approximate_button)
+        self.trapezoid_button = QPushButton(self.services_layout)
+        self.trapezoid_button.setMinimumSize(QSize(0, 70))
+        self.trapezoid_button.setObjectName("trapezoid_button")
+        self.verticalLayout.addWidget(self.trapezoid_button)
         self.close_button = QPushButton(self.services_layout)
         self.close_button.setMinimumSize(QSize(0, 70))
         self.close_button.setObjectName("close_button")
@@ -63,6 +67,7 @@ class Ui_Gaussograph(object):
         Gaussograph.setWindowTitle(_translate("Gaussograph", "dSigma — Gaussian Approximating Dialog"))
         self.info_label.setText(_translate("Gaussograph", "Gaussian information"))
         self.approximate_button.setText(_translate("Gaussograph", "Approximate"))
+        self.trapezoid_button.setText(_translate("Gaussograph", "Subtract trapezoid"))
         self.close_button.setText(_translate("Gaussograph", "Close"))
 
 
@@ -77,6 +82,7 @@ class Gaussograph(QMainWindow, Ui_Gaussograph):
         self.spectrum = spectrum
         self.pointers = pointers
         self.gauss = None
+        self.trapezoid = None
 
         # MATPLOTLIB INITIALIZING
         layout = QVBoxLayout(self.matplotlib_layout)
@@ -90,6 +96,7 @@ class Gaussograph(QMainWindow, Ui_Gaussograph):
 
         # EVENT HANDLING
         self.approximate_button.clicked.connect(self.approximate)
+        self.trapezoid_button.clicked.connect(self.sub_trapezoid)
         self.close_button.clicked.connect(self.close)
 
         self.draw()
@@ -102,6 +109,8 @@ class Gaussograph(QMainWindow, Ui_Gaussograph):
                 self.pointers.pop(0)
                 self.pointers.append(int(event.xdata))
 
+            self.gauss = None
+            self.trapezoid = None
             self.draw()
 
     def approximate(self) -> None:
@@ -112,6 +121,20 @@ class Gaussograph(QMainWindow, Ui_Gaussograph):
         ys = self.spectrum.data[start: stop]
 
         self.gauss = PeakAnalyzer.describe(xs, ys, (stop + start) / 2)
+        self.trapezoid = None
+        self.show_info()
+        self.draw()
+
+    def sub_trapezoid(self) -> None:
+        if self.gauss is None or not self.trapezoid is None:
+            return
+
+        start = min(self.pointers)
+        stop = max(self.pointers)
+
+        a, b = self.spectrum.data[start], self.spectrum.data[stop]
+        self.trapezoid = (a + b) / 2 * (stop - start)
+
         self.show_info()
         self.draw()
 
@@ -120,12 +143,16 @@ class Gaussograph(QMainWindow, Ui_Gaussograph):
         if self.gauss == None:
             self.info_label.setText(info)
             return
+        
+        linear = self.spectrum.data[min(self.pointers): max(self.pointers)].sum()
 
         info += f'Center at: {round(self.gauss.mu, 3)}\n'
         info += f'Area under peak: {round(self.gauss.area, 3)}\n'
-        info += f'Linear sum: {self.spectrum.data[min(self.pointers): max(self.pointers)].sum()}\n'
-        info += f'FWHM in channels: {round(self.gauss.fwhm, 3)}\n'
+        info += f'Linear sum: {linear}\n'
+        if self.trapezoid is not None:
+            info += f'Linear sum - Trapezoid: {linear - self.trapezoid}\n'
 
+        info += f'FWHM in channels: {round(self.gauss.fwhm, 3)}\n'
         if self.spectrum.is_calibrated:
             info += f'FWHM in energy view: {round(self.gauss.fwhm * self.spectrum.scale_value, 3)}\n'
 
@@ -145,6 +172,11 @@ class Gaussograph(QMainWindow, Ui_Gaussograph):
 
         if self.gauss is not None:
             self.axes.plot(self.gauss.three_sigma(), self.gauss.function(), color='black')
+
+        if self.trapezoid is not None:
+            point1 = min(self.pointers)
+            point2 = max(self.pointers)
+            self.axes.fill_between([point1, point2], [0, 0], [self.spectrum.data[point1 - 1], self.spectrum.data[point2 - 1]], color='blue')
 
         self.axes.plot(numpy.arange(start + 1, stop + 1), self.spectrum.data[start: stop], color='blue')
         self.view.draw()

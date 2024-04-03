@@ -379,9 +379,9 @@ class Spectrograph(QMainWindow, Ui_Spectrograph):
             self.draw_pointers()
 
     def draw_pointers(self) -> None:
-        angle = float(self.angle_box.currentText())
+        angle = self.angle_box.currentIndex()
         analitics = self.analitics[self.current_index]
-        maximum = analitics.spectrum_of_angle(angle).data.max()
+        maximum = analitics.spectrums[angle].data.max()
         
         self.draw_angle()
         for i in range(len(self.pointers)):
@@ -394,35 +394,35 @@ class Spectrograph(QMainWindow, Ui_Spectrograph):
         if len(self.pointers) < 2:
             return
 
-        angle = float(self.angle_box.currentText())
+        angle = angle = self.angle_box.currentIndex()
         analitics = self.analitics[self.current_index]
 
         first = self.pointers[0]
         second = self.pointers[1]
 
-        channels_sum = analitics.spectrum_of_angle(angle).data[min(first, second): max(first, second)].sum()
+        channels_sum = analitics.spectrums[angle].data[min(first, second): max(first, second)].sum()
         self.linear_sum.setText(f'SUM={channels_sum}')
 
     def open_gaussograph(self) -> None:
         if len(self.pointers) < 2:
             return
         
-        angle = float(self.angle_box.currentText())
+        angle = self.angle_box.currentIndex()
         analitics = self.analitics[self.current_index]
 
-        self.window = Gaussograph(analitics.spectrum_of_angle(angle), self.pointers)
+        self.window = Gaussograph(analitics.spectrums[angle], self.pointers)
         self.window.show()
 
     def open_calibration(self) -> None:
-        angle = float(self.angle_box.currentText())
+        angle = self.angle_box.currentIndex()
         analitics = self.analitics[self.current_index]
 
         self.window = CalibrationWindow(analitics, angle)
         self.window.show()
 
     def show_peaks(self) -> None:
-        angle = float(self.angle_box.currentText())
-        spectrum = self.analitics[self.current_index].spectrum_of_angle(angle)
+        angle = self.angle_box.currentIndex()
+        spectrum = self.analitics[self.current_index].spectrums[angle]
 
         if spectrum.is_calibrated and len(spectrum.peaks) == 0:
             self.analitics[self.current_index].approximate(angle)
@@ -433,8 +433,8 @@ class Spectrograph(QMainWindow, Ui_Spectrograph):
         pass
 
     def open_workbook(self) -> None:
-        angle = float(self.angle_box.currentText())
-        spectrum = self.analitics[self.current_index].spectrum_of_angle(angle)
+        angle = self.angle_box.currentIndex()
+        spectrum = self.analitics[self.current_index].spectrums[angle]
 
         self.window = Workbooker(spectrum.to_workbook())
         self.window.show()
@@ -448,9 +448,9 @@ class Spectrograph(QMainWindow, Ui_Spectrograph):
         if name == '':
             return
         
-        angle = float(self.angle_box.currentText())
+        angle = self.angle_box.currentIndex()
         analitics = self.analitics[self.current_index]
-        spectrum = analitics.spectrum_of_angle(angle).data
+        spectrum = analitics.spectrums[angle].data
 
         txt = open(name, 'w')
         for i in range(len(spectrum)):
@@ -460,18 +460,15 @@ class Spectrograph(QMainWindow, Ui_Spectrograph):
 
     def take_current(self) -> None:
         self.current_index = int(self.particle_box.currentIndex())
-        angles = [spectrum.angle for spectrum in self.analitics[self.current_index].spectrums]
+        angles = self.analitics[self.current_index].angles()
 
         self.linear_sum.setText('SUM=')
         self.angle_box.clear()
-        self.angle_box.addItems(map(str, sorted(angles)))
+        self.angle_box.addItems(map(str, angles))
 
     def draw_angle(self) -> None:
-        if self.angle_box.currentText() == '':
-            return
-
-        angle = float(self.angle_box.currentText())
-        spectrum = self.analitics[self.current_index].spectrum_of_angle(angle)
+        angle = self.angle_box.currentIndex()
+        spectrum = self.analitics[self.current_index].spectrums[angle]
 
         self.axes.clear()
         
