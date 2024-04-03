@@ -81,6 +81,12 @@ class MatrixAnalyzer:
     def angles(self) -> list[float]:
         return [matrix.angle for matrix in self.matrixes]
     
+    def matrix_of_angle(self, angle: float) -> None:
+        try:
+            return next(matrix for matrix in self.matrixes if matrix.angle == angle)
+        except:
+            raise ValueError('No such matrix!')
+    
     def __all_analyzers(self) -> list[SpectrumAnalyzer]:
         particles = self.__particles()
         return [self.__collect_spectres(p) for p in particles]
