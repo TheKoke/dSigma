@@ -209,7 +209,7 @@ class Ui_Calibration(object):
 
 
 class CalibrationWindow(QMainWindow, Ui_Calibration):
-    def __init__(self, analyzer: SpectrumAnalyzer, angle_index: int) -> None:
+    def __init__(self, analyzer: SpectrumAnalyzer, angle: float) -> None:
         # WINDOW SETUP
         super().__init__()
         self.setupUi(self)
@@ -217,7 +217,7 @@ class CalibrationWindow(QMainWindow, Ui_Calibration):
 
         # DATA
         self.analyzer = analyzer
-        self.index = angle_index
+        self.index = next(i for i in range(len(analyzer.spectrums)) if analyzer.spectrums[i] == angle)
 
         self.selected_dots_x = []
         self.selected_dots_y = []
