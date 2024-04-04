@@ -108,7 +108,7 @@ class Gaussograph(QMainWindow, Ui_Gaussograph):
         super().keyPressEvent(a0)
 
         if a0.key() == Qt.Key.Key_Comma:
-            self.pointers[-1] = 0 if self.pointers[-1] - 1 < 0 else self.pointers[-1] - 1
+            self.pointers[-1] = 0 if self.pointers[-1] - 1 <= 0 else self.pointers[-1] - 1
 
             self.gauss = None
             self.trapezoid = None
@@ -133,6 +133,7 @@ class Gaussograph(QMainWindow, Ui_Gaussograph):
 
             self.gauss = None
             self.trapezoid = None
+            self.show_info()
             self.draw()
 
     def approximate(self) -> None:
@@ -191,6 +192,9 @@ class Gaussograph(QMainWindow, Ui_Gaussograph):
     def draw(self) -> None:
         start = min(self.pointers) - int(len(self.spectrum.data) * 0.05)
         stop = max(self.pointers) + int(len(self.spectrum.data) * 0.05)
+        start = 1 if start <= 0 else start
+        stop = len(self.spectrum.data) - 1 if stop >= len(self.spectrum.data) else stop
+
         height = self.spectrum.data[start: stop].max()
 
         self.axes.clear()
