@@ -122,6 +122,11 @@ class Ui_Calibration(object):
         brush.setStyle(Qt.SolidPattern)
         palette.setBrush(QPalette.Disabled, QPalette.Window, brush)
         self.first_state.setPalette(palette)
+        font = QFont()
+        font.setFamily("Bahnschrift SemiBold")
+        font.setPointSize(11)
+        font.setBold(True)
+        font.setWeight(75)
         self.first_state.setFont(font)
         self.first_state.setStyleSheet("background-color: rgb(85, 85, 127);\ncolor: rgb(255, 255, 255);")
         self.first_state.setDecimals(3)
@@ -209,7 +214,7 @@ class Ui_Calibration(object):
 
 
 class CalibrationWindow(QMainWindow, Ui_Calibration):
-    def __init__(self, analyzer: SpectrumAnalyzer, angle_index: int) -> None:
+    def __init__(self, analyzer: SpectrumAnalyzer, index: int) -> None:
         # WINDOW SETUP
         super().__init__()
         self.setupUi(self)
@@ -217,7 +222,7 @@ class CalibrationWindow(QMainWindow, Ui_Calibration):
 
         # DATA
         self.analyzer = analyzer
-        self.index = angle_index
+        self.index = index
 
         self.selected_dots_x = []
         self.selected_dots_y = []

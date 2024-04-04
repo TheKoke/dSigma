@@ -213,12 +213,15 @@ class Spectrum:
 
 class SpectrumAnalyzer:
     def __init__(self, spectrums: list[Spectrum]) -> None:
-        self.spectrums = spectrums
+        self.spectrums = sorted(spectrums, key=lambda x: x.angle)
         self.dsigma = self.__create_cross_section()
 
     def __create_cross_section(self) -> CrossSection:
-        angles = np.array([sp.angle for sp in self.spectrums])
+        angles = np.array(self.angles())
         return CrossSection(self.spectrums[0].reaction, angles)
+    
+    def angles(self) -> list[float]:
+        return [sp.angle for sp in self.spectrums]
 
     def approximate(self, index: int) -> None:
         spectrum = self.spectrums[index]

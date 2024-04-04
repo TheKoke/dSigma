@@ -50,6 +50,10 @@ class Matrix:
 
     def add_locus(self, particle: Nuclei, points: list[tuple[int, int]]) -> None:
         self.locuses[particle] = Locus(self.numbers, points)
+        
+        reaction = self.__build_reaction(particle)
+        spectrum_data = self.locuses[particle].to_spectrum()
+        self.spectrums[particle] = Spectrum(reaction, self.angle, self.electronics, spectrum_data)
 
     def spectrum_of(self, particle: Nuclei) -> Spectrum:
         if particle in [self.spectrums[n].reaction.fragment for n in self.spectrums]:
@@ -71,7 +75,7 @@ class Matrix:
 
 class MatrixAnalyzer:
     def __init__(self, matrixes: list[Matrix]) -> None:
-        self.matrixes = matrixes
+        self.matrixes = sorted(matrixes, key=lambda x: x.angle)
 
     @property
     def analyzers(self) -> list[SpectrumAnalyzer]:

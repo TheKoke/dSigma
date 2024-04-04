@@ -518,7 +518,8 @@ class Matrixograph(QMainWindow, Ui_Matrixograph):
         layout.addWidget(self.view)
 
         self.angles_box.currentTextChanged.connect(self.show_matrix)
-        self.angles_box.addItems([str(angle) for angle in self.analyzer.angles])
+        angles = sorted(self.analyzer.angles)
+        self.angles_box.addItems(map(str, self.analyzer.angles))
 
         # EVENT HANDLING
         self.bright_up_button.clicked.connect(self.bright_up)
@@ -535,7 +536,6 @@ class Matrixograph(QMainWindow, Ui_Matrixograph):
     def show_matrix(self) -> None:
         self.current_index = self.angles_box.currentIndex()
         self.luminiosity = self.analyzer.matrixes[self.current_index].numbers.mean() * 2
-
         self.draw_e_de()
 
     def draw_e_de(self) -> None:
@@ -608,8 +608,7 @@ class Matrixograph(QMainWindow, Ui_Matrixograph):
             en = Encoder(matrix, self.directory)
             en.write_down()
 
-        information = InformWindow('E-dE matrixes was saved succesfully.')
-        self.window = information
+        self.window = InformWindow('E-dE matrixes was saved succesfully.')
         self.window.show()
 
     def __find_changed_ones(self) -> None:

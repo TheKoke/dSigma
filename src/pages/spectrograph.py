@@ -10,7 +10,7 @@ from matplotlib.figure import Figure
 from matplotlib.backend_bases import MouseEvent, MouseButton
 from matplotlib.backends.backend_qt5agg import FigureCanvasQTAgg, NavigationToolbar2QT
 
-from PyQt5.QtGui import QFont, QIcon, QPalette, QBrush, QColor
+from PyQt5.QtGui import QFont, QIcon, QPalette, QBrush, QColor, QKeyEvent
 from PyQt5.QtCore import Qt, QSize, QMetaObject, QCoreApplication
 from PyQt5.QtWidgets import (
     QWidget, QMainWindow, QVBoxLayout, 
@@ -66,71 +66,71 @@ class Ui_Spectrograph(object):
         self.particle_box = QComboBox(self.services_layout)
         self.particle_box.setMinimumSize(QSize(0, 30))
         self.particle_box.setMaximumSize(QSize(16777215, 45))
-        palette = QPalette()
-        brush = QBrush(QColor(255, 255, 255))
-        brush.setStyle(Qt.SolidPattern)
-        palette.setBrush(QPalette.Active, QPalette.WindowText, brush)
-        brush = QBrush(QColor(85, 85, 127))
-        brush.setStyle(Qt.SolidPattern)
-        palette.setBrush(QPalette.Active, QPalette.Button, brush)
-        brush = QBrush(QColor(255, 255, 255))
-        brush.setStyle(Qt.SolidPattern)
-        palette.setBrush(QPalette.Active, QPalette.Text, brush)
-        brush = QBrush(QColor(255, 255, 255))
-        brush.setStyle(Qt.SolidPattern)
-        palette.setBrush(QPalette.Active, QPalette.ButtonText, brush)
-        brush = QBrush(QColor(85, 85, 127))
-        brush.setStyle(Qt.SolidPattern)
-        palette.setBrush(QPalette.Active, QPalette.Base, brush)
-        brush = QBrush(QColor(85, 85, 127))
-        brush.setStyle(Qt.SolidPattern)
-        palette.setBrush(QPalette.Active, QPalette.Window, brush)
-        brush = QBrush(QColor(85, 85, 127))
-        brush.setStyle(Qt.SolidPattern)
-        palette.setBrush(QPalette.Active, QPalette.Highlight, brush)
-        brush = QBrush(QColor(255, 255, 255))
-        brush.setStyle(Qt.SolidPattern)
-        palette.setBrush(QPalette.Inactive, QPalette.WindowText, brush)
-        brush = QBrush(QColor(85, 85, 127))
-        brush.setStyle(Qt.SolidPattern)
-        palette.setBrush(QPalette.Inactive, QPalette.Button, brush)
-        brush = QBrush(QColor(255, 255, 255))
-        brush.setStyle(Qt.SolidPattern)
-        palette.setBrush(QPalette.Inactive, QPalette.Text, brush)
-        brush = QBrush(QColor(255, 255, 255))
-        brush.setStyle(Qt.SolidPattern)
-        palette.setBrush(QPalette.Inactive, QPalette.ButtonText, brush)
-        brush = QBrush(QColor(85, 85, 127))
-        brush.setStyle(Qt.SolidPattern)
-        palette.setBrush(QPalette.Inactive, QPalette.Base, brush)
-        brush = QBrush(QColor(85, 85, 127))
-        brush.setStyle(Qt.SolidPattern)
-        palette.setBrush(QPalette.Inactive, QPalette.Window, brush)
-        brush = QBrush(QColor(85, 85, 127))
-        brush.setStyle(Qt.SolidPattern)
-        palette.setBrush(QPalette.Inactive, QPalette.Highlight, brush)
-        brush = QBrush(QColor(255, 255, 255))
-        brush.setStyle(Qt.SolidPattern)
-        palette.setBrush(QPalette.Disabled, QPalette.WindowText, brush)
-        brush = QBrush(QColor(85, 85, 127))
-        brush.setStyle(Qt.SolidPattern)
-        palette.setBrush(QPalette.Disabled, QPalette.Button, brush)
-        brush = QBrush(QColor(255, 255, 255))
-        brush.setStyle(Qt.SolidPattern)
-        palette.setBrush(QPalette.Disabled, QPalette.Text, brush)
-        brush = QBrush(QColor(255, 255, 255))
-        brush.setStyle(Qt.SolidPattern)
-        palette.setBrush(QPalette.Disabled, QPalette.ButtonText, brush)
-        brush = QBrush(QColor(85, 85, 127))
-        brush.setStyle(Qt.SolidPattern)
-        palette.setBrush(QPalette.Disabled, QPalette.Base, brush)
-        brush = QBrush(QColor(85, 85, 127))
-        brush.setStyle(Qt.SolidPattern)
-        palette.setBrush(QPalette.Disabled, QPalette.Window, brush)
-        brush = QBrush(QColor(0, 120, 215))
-        brush.setStyle(Qt.SolidPattern)
-        palette.setBrush(QPalette.Disabled, QPalette.Highlight, brush)
-        self.particle_box.setPalette(palette)
+        # palette = QPalette()
+        # brush = QBrush(QColor(255, 255, 255))
+        # brush.setStyle(Qt.SolidPattern)
+        # palette.setBrush(QPalette.Active, QPalette.WindowText, brush)
+        # brush = QBrush(QColor(85, 85, 127))
+        # brush.setStyle(Qt.SolidPattern)
+        # palette.setBrush(QPalette.Active, QPalette.Button, brush)
+        # brush = QBrush(QColor(255, 255, 255))
+        # brush.setStyle(Qt.SolidPattern)
+        # palette.setBrush(QPalette.Active, QPalette.Text, brush)
+        # brush = QBrush(QColor(255, 255, 255))
+        # brush.setStyle(Qt.SolidPattern)
+        # palette.setBrush(QPalette.Active, QPalette.ButtonText, brush)
+        # brush = QBrush(QColor(85, 85, 127))
+        # brush.setStyle(Qt.SolidPattern)
+        # palette.setBrush(QPalette.Active, QPalette.Base, brush)
+        # brush = QBrush(QColor(85, 85, 127))
+        # brush.setStyle(Qt.SolidPattern)
+        # palette.setBrush(QPalette.Active, QPalette.Window, brush)
+        # brush = QBrush(QColor(85, 85, 127))
+        # brush.setStyle(Qt.SolidPattern)
+        # palette.setBrush(QPalette.Active, QPalette.Highlight, brush)
+        # brush = QBrush(QColor(255, 255, 255))
+        # brush.setStyle(Qt.SolidPattern)
+        # palette.setBrush(QPalette.Inactive, QPalette.WindowText, brush)
+        # brush = QBrush(QColor(85, 85, 127))
+        # brush.setStyle(Qt.SolidPattern)
+        # palette.setBrush(QPalette.Inactive, QPalette.Button, brush)
+        # brush = QBrush(QColor(255, 255, 255))
+        # brush.setStyle(Qt.SolidPattern)
+        # palette.setBrush(QPalette.Inactive, QPalette.Text, brush)
+        # brush = QBrush(QColor(255, 255, 255))
+        # brush.setStyle(Qt.SolidPattern)
+        # palette.setBrush(QPalette.Inactive, QPalette.ButtonText, brush)
+        # brush = QBrush(QColor(85, 85, 127))
+        # brush.setStyle(Qt.SolidPattern)
+        # palette.setBrush(QPalette.Inactive, QPalette.Base, brush)
+        # brush = QBrush(QColor(85, 85, 127))
+        # brush.setStyle(Qt.SolidPattern)
+        # palette.setBrush(QPalette.Inactive, QPalette.Window, brush)
+        # brush = QBrush(QColor(85, 85, 127))
+        # brush.setStyle(Qt.SolidPattern)
+        # palette.setBrush(QPalette.Inactive, QPalette.Highlight, brush)
+        # brush = QBrush(QColor(255, 255, 255))
+        # brush.setStyle(Qt.SolidPattern)
+        # palette.setBrush(QPalette.Disabled, QPalette.WindowText, brush)
+        # brush = QBrush(QColor(85, 85, 127))
+        # brush.setStyle(Qt.SolidPattern)
+        # palette.setBrush(QPalette.Disabled, QPalette.Button, brush)
+        # brush = QBrush(QColor(255, 255, 255))
+        # brush.setStyle(Qt.SolidPattern)
+        # palette.setBrush(QPalette.Disabled, QPalette.Text, brush)
+        # brush = QBrush(QColor(255, 255, 255))
+        # brush.setStyle(Qt.SolidPattern)
+        # palette.setBrush(QPalette.Disabled, QPalette.ButtonText, brush)
+        # brush = QBrush(QColor(85, 85, 127))
+        # brush.setStyle(Qt.SolidPattern)
+        # palette.setBrush(QPalette.Disabled, QPalette.Base, brush)
+        # brush = QBrush(QColor(85, 85, 127))
+        # brush.setStyle(Qt.SolidPattern)
+        # palette.setBrush(QPalette.Disabled, QPalette.Window, brush)
+        # brush = QBrush(QColor(0, 120, 215))
+        # brush.setStyle(Qt.SolidPattern)
+        # palette.setBrush(QPalette.Disabled, QPalette.Highlight, brush)
+        # self.particle_box.setPalette(palette)
         self.particle_box.setFont(font)
         self.particle_box.setStyleSheet("background-color: rgb(85, 85, 127);\ncolor: rgb(255, 255, 255);")
         self.particle_box.setObjectName("particle_box")
@@ -147,7 +147,7 @@ class Ui_Spectrograph(object):
         self.angle_box = QComboBox(self.services_layout)
         self.angle_box.setMinimumSize(QSize(0, 30))
         self.angle_box.setMaximumSize(QSize(16777215, 45))
-        self.angle_box.setPalette(palette)
+        # self.angle_box.setPalette(palette)
         self.angle_box.setFont(font)
         self.angle_box.setStyleSheet("background-color: rgb(85, 85, 127);\ncolor: rgb(255, 255, 255);")
         self.angle_box.setObjectName("angle_box")
@@ -317,6 +317,7 @@ class Spectrograph(QMainWindow, Ui_Spectrograph):
         super().__init__()
         self.setupUi(self)
         self.setWindowIcon(QIcon("./icon.ico"))
+        self.setFocus()
 
         # DATA
         self.analitics = analitics
@@ -346,7 +347,7 @@ class Spectrograph(QMainWindow, Ui_Spectrograph):
         font.setBold(True)
         font.setWeight(75)
         self.linear_sum = QLabel('SUM=', tab)
-        self.linear_sum.setMinimumSize(100, 30)
+        self.linear_sum.setMinimumSize(100, 40)
         self.linear_sum.setFont(font)
         horizont.addWidget(self.linear_sum)
 
@@ -368,8 +369,26 @@ class Spectrograph(QMainWindow, Ui_Spectrograph):
         self.ladder_button.clicked.connect(self.build_ladder)
         self.save_button.clicked.connect(self.save)
 
+    def keyPressEvent(self, a0: QKeyEvent) -> None:
+        super().keyPressEvent(a0)
+        if len(self.pointers) < 2:
+            return
+
+        if a0.key() == Qt.Key.Key_Comma:
+            self.pointers[-1] = 0 if self.pointers[-1] - 1 <= 0 else self.pointers[-1] - 1
+            self.draw_pointers()
+
+        if a0.key() == Qt.Key.Key_Period:
+            angle = self.angle_box.currentIndex()
+            analitics = self.analitics[self.current_index]
+            spectrum = analitics.spectrums[angle]
+
+            self.pointers[-1] = len(spectrum.data) - 1 if self.pointers[-1] + 1 >= len(spectrum.data) else self.pointers[-1] + 1
+            self.draw_pointers()
+
     def add_pointer(self, event: MouseEvent) -> None:
         if event.button == MouseButton.LEFT and event.dblclick:
+            self.setFocus()
             if len(self.pointers) < 2:
                 self.pointers.append(int(event.xdata))
             else:
@@ -394,14 +413,14 @@ class Spectrograph(QMainWindow, Ui_Spectrograph):
         if len(self.pointers) < 2:
             return
 
-        angle = self.angle_box.currentIndex()
+        angle = angle = self.angle_box.currentIndex()
         analitics = self.analitics[self.current_index]
 
-        first = self.pointers[0]
-        second = self.pointers[1]
+        first = min(self.pointers)
+        second = max(self.pointers)
 
-        channels_sum = analitics.spectrums[angle].data[min(first, second): max(first, second)].sum()
-        self.linear_sum.setText(f'SUM={channels_sum}')
+        channels_sum = analitics.spectrums[angle].data[first:second].sum()
+        self.linear_sum.setText(f'SUM={channels_sum}\nL={first}, R={second}')
 
     def open_gaussograph(self) -> None:
         if len(self.pointers) < 2:
@@ -421,11 +440,11 @@ class Spectrograph(QMainWindow, Ui_Spectrograph):
         self.window.show()
 
     def show_peaks(self) -> None:
-        angle_index = self.angle_box.currentIndex()
-        spectrum = self.analitics[self.current_index].spectrums[angle_index]
+        angle = self.angle_box.currentIndex()
+        spectrum = self.analitics[self.current_index].spectrums[angle]
 
         if spectrum.is_calibrated and len(spectrum.peaks) == 0:
-            self.analitics[self.current_index].approximate(angle_index)
+            self.analitics[self.current_index].approximate(angle)
 
         self.draw_angle()
 
@@ -433,8 +452,8 @@ class Spectrograph(QMainWindow, Ui_Spectrograph):
         pass
 
     def open_workbook(self) -> None:
-        angle_index = self.angle_box.currentIndex()
-        spectrum = self.analitics[self.current_index].spectrums[angle_index]
+        angle = self.angle_box.currentIndex()
+        spectrum = self.analitics[self.current_index].spectrums[angle]
 
         self.window = Workbooker(spectrum.to_workbook())
         self.window.show()
@@ -460,15 +479,15 @@ class Spectrograph(QMainWindow, Ui_Spectrograph):
 
     def take_current(self) -> None:
         self.current_index = int(self.particle_box.currentIndex())
-        angles = [spectrum.angle for spectrum in self.analitics[self.current_index].spectrums]
+        angles = self.analitics[self.current_index].angles()
 
         self.linear_sum.setText('SUM=')
         self.angle_box.clear()
-        self.angle_box.addItems([str(a) for a in angles])
+        self.angle_box.addItems(map(str, angles))
 
     def draw_angle(self) -> None:
-        angle_index = self.angle_box.currentIndex()
-        spectrum = self.analitics[self.current_index].spectrums[angle_index]
+        angle = self.angle_box.currentIndex()
+        spectrum = self.analitics[self.current_index].spectrums[angle]
 
         self.axes.clear()
         
