@@ -346,7 +346,7 @@ class Spectrograph(QMainWindow, Ui_Spectrograph):
         font.setBold(True)
         font.setWeight(75)
         self.linear_sum = QLabel('SUM=', tab)
-        self.linear_sum.setMinimumSize(100, 30)
+        self.linear_sum.setMinimumSize(100, 40)
         self.linear_sum.setFont(font)
         horizont.addWidget(self.linear_sum)
 
@@ -397,11 +397,11 @@ class Spectrograph(QMainWindow, Ui_Spectrograph):
         angle = angle = self.angle_box.currentIndex()
         analitics = self.analitics[self.current_index]
 
-        first = self.pointers[0]
-        second = self.pointers[1]
+        first = min(self.pointers)
+        second = max(self.pointers)
 
-        channels_sum = analitics.spectrums[angle].data[min(first, second): max(first, second)].sum()
-        self.linear_sum.setText(f'SUM={channels_sum}')
+        channels_sum = analitics.spectrums[angle].data[first:second].sum()
+        self.linear_sum.setText(f'SUM={channels_sum}\nL={first}, R={second}')
 
     def open_gaussograph(self) -> None:
         if len(self.pointers) < 2:

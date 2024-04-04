@@ -6,11 +6,12 @@ from matplotlib.figure import Figure
 from matplotlib.backend_bases import MouseEvent, MouseButton
 from matplotlib.backends.backend_qt5agg import FigureCanvasQTAgg, NavigationToolbar2QT
 
-from PyQt5.QtGui import QIcon
+from PyQt5.QtGui import QIcon, QKeyEvent
 from PyQt5.QtCore import Qt, QSize, QMetaObject, QCoreApplication
 from PyQt5.QtWidgets import (
     QWidget, QMainWindow, QVBoxLayout, 
-    QHBoxLayout, QPushButton, QFrame, QLabel
+    QHBoxLayout, QPushButton, QFrame, QLabel,
+    QTextEdit
 )
 
 
@@ -39,10 +40,11 @@ class Ui_Gaussograph(object):
         self.services_layout.setObjectName("services_layout")
         self.verticalLayout = QVBoxLayout(self.services_layout)
         self.verticalLayout.setObjectName("verticalLayout")
-        self.info_label = QLabel(self.services_layout)
+        self.info_label = QTextEdit(self.services_layout)
         self.info_label.setStyleSheet("background-color: rgb(85, 85, 127);\nfont: 63 12pt \"Bahnschrift SemiBold\";\ncolor: rgb(255, 255, 255);")
         self.info_label.setAlignment(Qt.AlignHCenter|Qt.AlignTop)
         self.info_label.setObjectName("info_label")
+        self.info_label.setReadOnly(True)
         self.verticalLayout.addWidget(self.info_label)
         self.approximate_button = QPushButton(self.services_layout)
         self.approximate_button.setMinimumSize(QSize(0, 70))
@@ -65,7 +67,7 @@ class Ui_Gaussograph(object):
     def retranslateUi(self, Gaussograph):
         _translate = QCoreApplication.translate
         Gaussograph.setWindowTitle(_translate("Gaussograph", "dSigma — Gaussian Approximating Dialog"))
-        self.info_label.setText(_translate("Gaussograph", "Gaussian information"))
+        self.info_label.setText(_translate("Gaussograph", ""))
         self.approximate_button.setText(_translate("Gaussograph", "Approximate"))
         self.trapezoid_button.setText(_translate("Gaussograph", "Subtract trapezoid"))
         self.close_button.setText(_translate("Gaussograph", "Close"))
@@ -99,15 +101,35 @@ class Gaussograph(QMainWindow, Ui_Gaussograph):
         self.trapezoid_button.clicked.connect(self.sub_trapezoid)
         self.close_button.clicked.connect(self.close)
 
+        self.show_info()
         self.draw()
 
+    def keyPressEvent(self, a0: QKeyEvent) -> None:
+        super().keyPressEvent(a0)
+
+        if a0.key() == Qt.Key.Key_Comma:
+            self.pointers[-1] = 0 if self.pointers[-1] - 1 < 0 else self.pointers[-1] - 1
+
+            self.gauss = None
+            self.trapezoid = None
+            self.draw()
+            self.show_info()
+
+        if a0.key() == Qt.Key.Key_Period:
+            self.pointers[-1] = len(self.spectrum.data) - 1 if self.pointers[-1] + 1 >= len(self.spectrum.data) else self.pointers[-1] + 1
+
+            self.gauss = None
+            self.trapezoid = None
+            self.draw()
+            self.show_info()
+    
     def add_pointer(self, event: MouseEvent) -> None:
-        if event.button == MouseButton.LEFT and event.dblclick:
+        if event.button == MouseButton.LEFT:
             if len(self.pointers) < 2:
-                self.pointers.append(int(event.xdata))
+                self.pointers.append(int(round(event.xdata)))
             else:
                 self.pointers.pop(0)
-                self.pointers.append(int(event.xdata))
+                self.pointers.append(int(round(event.xdata)))
 
             self.gauss = None
             self.trapezoid = None
@@ -132,25 +154,33 @@ class Gaussograph(QMainWindow, Ui_Gaussograph):
         start = min(self.pointers)
         stop = max(self.pointers)
 
-        a, b = self.spectrum.data[start], self.spectrum.data[stop]
-        self.trapezoid = (a + b) / 2 * (stop - start)
+        a, b = self.spectrum.data[start - 1], self.spectrum.data[stop - 1]
+        self.trapezoid = (stop - start) * (a + b) / 2
 
         self.show_info()
         self.draw()
 
     def show_info(self) -> None:
-        info = 'Gaussian information\n'
+        info = f'Left Marker:\n'
+        info += f'Channel: {min(self.pointers)} Value: {self.spectrum.data[min(self.pointers) - 1]}\n\n'
+        info += f'Right Marker:\n'
+        info += f'Channel: {max(self.pointers)} Value : {self.spectrum.data[max(self.pointers) - 1]}\n\n'
+
         if self.gauss == None:
             self.info_label.setText(info)
             return
         
-        linear = self.spectrum.data[min(self.pointers): max(self.pointers)].sum()
+        linear = self.spectrum.data[min(self.pointers) - 1: max(self.pointers)].sum()
+        center_max = min(self.pointers) + numpy.argmax(self.spectrum.data[min(self.pointers) - 1: max(self.pointers)]) - 1
 
-        info += f'Center at: {round(self.gauss.mu, 3)}\n'
+        info += f'Gaussian Center: {round(self.gauss.mu, 3)}\n'
+        info += f'Channel Center: {center_max}\n\n'
         info += f'Area under peak: {round(self.gauss.area, 3)}\n'
         info += f'Linear sum: {linear}\n'
         if self.trapezoid is not None:
-            info += f'Linear sum - Trapezoid: {linear - self.trapezoid}\n'
+            info += f'Linear sum - Trapezoid: {linear - self.trapezoid}\n\n'
+        else:
+            info += '\n'
 
         info += f'FWHM in channels: {round(self.gauss.fwhm, 3)}\n'
         if self.spectrum.is_calibrated:
