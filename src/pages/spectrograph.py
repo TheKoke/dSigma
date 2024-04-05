@@ -189,6 +189,12 @@ class Ui_Spectrograph(object):
         self.ladder_button.setFont(font)
         self.ladder_button.setObjectName("ladder_button")
         self.verticalLayout.addWidget(self.ladder_button)
+        self.gif_button = QPushButton(self.services_layout)
+        self.gif_button.setMinimumSize(QSize(0, 90))
+        self.gif_button.setMaximumSize(QSize(16777215, 180))
+        self.gif_button.setFont(font)
+        self.gif_button.setObjectName("gif_button")
+        self.verticalLayout.addWidget(self.gif_button)
         self.save_button = QPushButton(self.services_layout)
         self.save_button.setMinimumSize(QSize(0, 90))
         self.save_button.setMaximumSize(QSize(16777215, 180))
@@ -212,6 +218,7 @@ class Ui_Spectrograph(object):
         self.impurity_button.setText(_translate("MainWindow", "Validate Impurities"))
         self.workbook_button.setText(_translate("MainWindow", "Open Workbook"))
         self.ladder_button.setText(_translate("MainWindow", "Build Ladder View"))
+        self.gif_button.setText(_translate("MainWindow", "Make Gif"))
         self.save_button.setText(_translate("MainWindow", "Save as .txt"))
 
 
@@ -367,6 +374,7 @@ class Spectrograph(QMainWindow, Ui_Spectrograph):
         self.impurity_button.clicked.connect(self.validate_impurities)
         self.workbook_button.clicked.connect(self.open_workbook)
         self.ladder_button.clicked.connect(self.build_ladder)
+        self.gif_button.clicked.connect(self.make_gif)
         self.save_button.clicked.connect(self.save)
 
     def keyPressEvent(self, a0: QKeyEvent) -> None:
@@ -462,6 +470,9 @@ class Spectrograph(QMainWindow, Ui_Spectrograph):
         self.window = LadderViewer(self.analitics[self.current_index])
         self.window.show()
 
+    def make_gif(self) -> None:
+        pass
+
     def save(self) -> None:
         name, _ = QFileDialog.getSaveFileName(self, 'Save File', filter='TXT Documents (*.txt)')
         if name == '':
@@ -498,6 +509,7 @@ class Spectrograph(QMainWindow, Ui_Spectrograph):
             self.axes.plot(peak.three_sigma(), peak.function(), color='red')
         
         self.axes.plot(list(range(1, len(spectrum.data) + 1)), spectrum.data, color='blue')
+        self.axes.set_title(f'{spectrum.reaction} at {spectrum.angle} deg.')
         self.view.draw()
 
 
