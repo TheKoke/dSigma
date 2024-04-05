@@ -1,5 +1,7 @@
-import numpy as np
+import numpy
+from scipy.optimize import curve_fit
 
+from business.smoothing import QH353
 from business.electronics import Telescope
 from business.physics import Reaction, Struggling, CrossSection
 
@@ -25,24 +27,24 @@ class Gaussian:
     
     @property
     def fwhm(self) -> float:
-        return self.__dispersion * (2 * np.sqrt(2 * np.log(2)))
+        return self.__dispersion * (2 * numpy.sqrt(2 * numpy.log(2)))
     
     def to_workbook(self) -> str:
         return f'Peak on mu=({round(self.mu, 3)}) with fwhm=({round(self.fwhm, 3)}) and area under peak=({round(self.area, 3)})'
 
     def __str__(self) -> str:
         func = 'G(x) = '
-        func += f'{np.round(self.area, 3)} / (sqrt(2pi * {np.round(self.dispersion, 3)}) * '
-        func += f'exp(-(x - {np.round(self.mu, 3)})^2 / 2{np.round(self.dispersion, 3)})'
+        func += f'{numpy.round(self.area, 3)} / (sqrt(2pi * {numpy.round(self.dispersion, 3)}) * '
+        func += f'exp(-(x - {numpy.round(self.mu, 3)})^2 / 2{numpy.round(self.dispersion, 3)})'
 
         return func
 
-    def three_sigma(self) -> np.ndarray:
-        return np.linspace(-3 * self.__dispersion + self.__mu, 3 * self.__dispersion + self.__mu, 100)
+    def three_sigma(self) -> numpy.ndarray:
+        return numpy.linspace(-3 * self.__dispersion + self.__mu, 3 * self.__dispersion + self.__mu, 100)
     
-    def function(self) -> np.ndarray:
-        constant = self.__area / np.sqrt(2 * np.pi * np.power(self.__dispersion, 2))
-        array = np.exp(-np.power(self.three_sigma() - self.__mu, 2) / (2 * np.power(self.__dispersion, 2)))
+    def function(self) -> numpy.ndarray:
+        constant = self.__area / numpy.sqrt(2 * numpy.pi * numpy.power(self.__dispersion, 2))
+        array = numpy.exp(-numpy.power(self.three_sigma() - self.__mu, 2) / (2 * numpy.power(self.__dispersion, 2)))
         return constant * array
     
 
@@ -58,63 +60,105 @@ class Lorentzian:
     def __str__(self) -> str:
         func = 'L(x) = '
         func += f'2 * {round(self.area, 3)} / pi'
-        func += f'* [{np.round(self.fwhm, 3)} / ((x - {round(self.mu)})^2 + {round(self.fwhm, 3)}^2)]'
+        func += f'* [{numpy.round(self.fwhm, 3)} / ((x - {round(self.mu)})^2 + {round(self.fwhm, 3)}^2)]'
 
         return func
     
     def dispersion(self) -> float:
-        return self.fwhm / (2 * np.sqrt(2 * np.log(2)))
+        return self.fwhm / (2 * numpy.sqrt(2 * numpy.log(2)))
     
-    def three_sigma(self) -> np.ndarray:
+    def three_sigma(self) -> numpy.ndarray:
         sigma = self.dispersion()
-        return np.linspace(-5 * sigma + self.mu, 5 * sigma + self.mu, 50)
+        return numpy.linspace(-5 * sigma + self.mu, 5 * sigma + self.mu, 50)
     
-    def function(self) -> np.ndarray:
-        constant = 2 * self.area / np.pi
+    def function(self) -> numpy.ndarray:
+        constant = 2 * self.area / numpy.pi
         brackets = self.fwhm / (4 * (self.three_sigma() - self.mu) ** 2 + self.fwhm ** 2)
 
         return constant * brackets
 
 
 class PeakAnalyzer:
-    def __init__(self, spectrum: np.ndarray, mu_index: int, fwhm: int) -> None:
+    def __init__(self, spectrum: numpy.ndarray, mu_index: int) -> None:
         self.spectrum = spectrum
+        self.smoothed = QH353().smooth(self.spectrum)
         self.mu_index = mu_index
 
-        self.width = fwhm / np.log10(2)
-        self.area = 0
-
     def approximate(self) -> Gaussian:
-        peak_start = self.mu_index - self.width / 2
-        peak_stop = self.mu_index + self.width / 2
+        minimum_width = 5
 
-        peak_start = int(peak_start) if peak_start >= 0 else 0
-        peak_stop = int(peak_stop) if peak_stop < len(self.spectrum) else len(self.spectrum) - 1
-        center = (peak_stop + peak_start) / 2
+        start, stop = self.mu_index - minimum_width // 2 + 1, self.mu_index + minimum_width // 2 + 2
+        is_over_border = start < 0 or stop > len(self.spectrum)
 
-        return PeakAnalyzer.describe(np.arange(peak_start, peak_stop), self.spectrum[peak_start: peak_stop], center)
+        chi_squares = []
 
+        while not self.is_increasing(chi_squares, minimum_width) and not is_over_border:
+            chi2 = self.fit_gauss(self.mu_index, start, stop)
+            chi_squares.append(chi2)
+
+            start -= 1
+            stop += 1
+            is_over_border = start < 0 or stop > len(self.spectrum)
+
+        start = self.mu_index - minimum_width + 1
+        stop = self.mu_index + minimum_width - 1
+
+        xdata = numpy.arange(start + 1, stop + 1)
+        ydata = self.spectrum[start: stop]
+
+        area, dispersion, center = self.describe_gauss(xdata, ydata)
+        center += self.mu_index
+        return Gaussian(center, dispersion, area)
+    
+    def fit_gauss(self, peak: int, start: int, stop: int) -> float:
+        xdata = numpy.arange(start + 1, stop + 1)
+        ydata = self.smoothed[start: stop]
+
+        area, dispersion, center = self.describe_gauss(xdata, ydata)
+        center += peak
+
+        y_hat = PeakAnalyzer.gauss(area, dispersion, center, xdata)
+        return PeakAnalyzer.collective_chi_square(y_hat, ydata)
+    
+    def describe_gauss(self, xdata: numpy.ndarray, ydata: numpy.ndarray) -> tuple[float, float, float]:
+        weights = ydata / ydata.sum()
+        xdata = numpy.power(xdata - xdata[len(xdata) // 2], 2)
+        ydata[ydata == 0] = 1
+        ydata = numpy.log(ydata)
+
+        d_hat, a_hat = PeakAnalyzer.least_squares(xdata, ydata, weights)
+        dispersion = numpy.sqrt(-1 / (2 * d_hat))
+        area = numpy.exp(a_hat) * numpy.sqrt(2 * numpy.pi * dispersion ** 2)
+        center = xdata[len(xdata) // 2]
+
+        return area, dispersion, center
+    
+    def is_increasing(self, chi: list[float], minimum_width: int) -> bool:
+        if len(chi) <= minimum_width:
+            return False
+        
+        lasts = chi[-minimum_width:]
+        for i in range(len(lasts) - 1):
+            if lasts[i] > lasts[i + 1]:
+                return False
+
+        return True
+    
     @staticmethod
-    def describe(x: np.ndarray, y: np.ndarray, center: float) -> Gaussian:
-        weights = y / y.sum()
-        new_x = np.power(x - center, 2)
-        y[y == 0] = 1
-        new_y = np.log(y)
+    def least_squares(x: numpy.ndarray, y: numpy.ndarray, w: numpy.ndarray) -> tuple[float, float]:
+        system = numpy.array([[1, (w * x).sum()], [(w * x).sum(), (w * numpy.power(x, 2)).sum()]])
+        righthand = numpy.array([(w * y).sum(), (w * x * y).sum()])
 
-        coeffs = PeakAnalyzer.chi_square(new_x, new_y, weights)
-
-        sigma = np.sqrt(-1 / (2 * coeffs[0]))
-        area = np.exp(coeffs[1]) * np.sqrt(2 * np.pi * sigma ** 2)
-
-        return Gaussian(center, sigma, area)
-
-    @staticmethod
-    def chi_square(x: np.ndarray, y: np.ndarray, w: np.ndarray) -> tuple[float, float]:
-        system = np.array([[1, (w * x).sum()], [(w * x).sum(), (w * np.power(x, 2)).sum()]])
-        righthand = np.array([(w * y).sum(), (w * x * y).sum()])
-
-        solutions = np.linalg.solve(system, righthand)
+        solutions = numpy.linalg.solve(system, righthand)
         return (solutions[1], solutions[0])
+    
+    @staticmethod
+    def gauss(a: float, d: float, c: float, x: float) -> float:
+        return a / numpy.sqrt(2 * numpy.pi * (d ** 2)) * numpy.exp(- (x - c) ** 2 / (2 * (d ** 2)))
+
+    @staticmethod
+    def collective_chi_square(theory: numpy.ndarray, experimenthal: numpy.ndarray) -> float:
+        return ((experimenthal - theory) ** 2).sum() / len(theory)
 
 
 class Spectrum:
@@ -123,7 +167,7 @@ class Spectrum:
         self.__reaction = reaction
         self.__electronics = electronics
 
-        self.__data = np.array(data)
+        self.__data = numpy.array(data)
 
         self.__scale_shift = 0
         self.__scale_value = 0
@@ -136,9 +180,9 @@ class Spectrum:
     
     @property
     def gamma_widths(self) -> list[float]:
-        self_widths = np.array(self.__reaction.residual.wigner_widths[:len(self.__reaction.residual_states)])
+        self_widths = numpy.array(self.__reaction.residual.wigner_widths[:len(self.__reaction.residual_states)])
         detector_resolution = self.__electronics.e_detector.resolution
-        return np.sqrt(self_widths ** 2 + detector_resolution ** 2).tolist()
+        return numpy.sqrt(self_widths ** 2 + detector_resolution ** 2).tolist()
     
     @property
     def angle(self) -> float:
@@ -153,15 +197,15 @@ class Spectrum:
         return self.__electronics
     
     @property
-    def data(self) -> np.ndarray:
+    def data(self) -> numpy.ndarray:
         return self.__data
     
     @property
-    def energy_view(self) -> np.ndarray:
+    def energy_view(self) -> numpy.ndarray:
         if self.__scale_shift == 0 and self.__scale_value == 0:
-            return np.array([])
+            return numpy.array([])
         
-        return self.__scale_value * np.arange(1, len(self.__data) + 1) + self.__scale_shift
+        return self.__scale_value * numpy.arange(1, len(self.__data) + 1) + self.__scale_shift
     
     @property
     def scale_shift(self) -> float:
@@ -217,7 +261,7 @@ class SpectrumAnalyzer:
         self.dsigma = self.__create_cross_section()
 
     def __create_cross_section(self) -> CrossSection:
-        angles = np.array(self.angles())
+        angles = numpy.array(self.angles())
         return CrossSection(self.spectrums[0].reaction, angles)
     
     def angles(self) -> list[float]:
@@ -232,7 +276,14 @@ class SpectrumAnalyzer:
 
         found = self.find_peaks(index)
         for i in range(len(found)):
-            spectrum.add_peak(states[i], found[i].approximate())
+            gauss = found[i].approximate()
+            if numpy.isnan(gauss.area) or numpy.isnan(gauss.fwhm):
+                continue
+
+            if numpy.isinf(gauss.area) or numpy.isinf(gauss.fwhm):
+                continue
+
+            spectrum.add_peak(states[i], gauss)
             
     def find_peaks(self, index: int) -> list[PeakAnalyzer]:
         spectrum = self.spectrums[index]
@@ -246,11 +297,10 @@ class SpectrumAnalyzer:
             k, e0 = spectrum.scale_value, spectrum.scale_shift
 
             pretend_channel = int((theories[i] - e0) / k)
-            if pretend_channel <= 0:
+            if pretend_channel <= len(self.spectrums[index].data) * 0.02:
                 continue
 
-            fwhm_in_channels = int(spectrum.gamma_widths[i] / spectrum.scale_value)
-            collected.append(PeakAnalyzer(spectrum.data, pretend_channel, fwhm_in_channels))
+            collected.append(PeakAnalyzer(spectrum.data, pretend_channel))
 
         return collected
     
@@ -288,10 +338,10 @@ class SpectrumAnalyzer:
         first_state_index = current.reaction.residual.states.index(states[0])
         second_state_index = current.reaction.residual.states.index(states[1])
 
-        matrix = np.array([[anchors_indexes[0], 1], [anchors_indexes[1], 1]])
-        right_side = np.array([theories[first_state_index], theories[second_state_index]])
+        matrix = numpy.array([[anchors_indexes[0], 1], [anchors_indexes[1], 1]])
+        right_side = numpy.array([theories[first_state_index], theories[second_state_index]])
 
-        solution = np.linalg.solve(matrix, right_side)
+        solution = numpy.linalg.solve(matrix, right_side)
         current.scale_value, current.scale_shift = solution[0], solution[1]
 
 
