@@ -540,7 +540,8 @@ class Matrixograph(QMainWindow, Ui_Matrixograph):
 
     def draw_e_de(self) -> None:
         self.axes.clear()
-        e_de = self.analyzer.matrixes[self.current_index].numbers[:]
+        current = self.analyzer.matrixes[self.current_index]
+        e_de = current.numbers[:]
         e_de = e_de + 1
 
         self.axes.pcolor(numpy.log(e_de), vmin=0, vmax=self.luminiosity)
@@ -548,6 +549,7 @@ class Matrixograph(QMainWindow, Ui_Matrixograph):
         if self.is_locuses_on:
             self.draw_locuses()
 
+        self.axes.set_title(f'{current.experiment}\nLab system angle: {current.angle}')
         self.view.draw()
 
     def change_locuses_status(self) -> None:

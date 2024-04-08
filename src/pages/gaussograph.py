@@ -10,8 +10,7 @@ from PyQt5.QtGui import QIcon, QKeyEvent
 from PyQt5.QtCore import Qt, QSize, QMetaObject, QCoreApplication
 from PyQt5.QtWidgets import (
     QWidget, QMainWindow, QVBoxLayout, 
-    QHBoxLayout, QPushButton, QFrame, QLabel,
-    QTextEdit
+    QHBoxLayout, QPushButton, QFrame, QTextEdit
 )
 
 
@@ -143,7 +142,7 @@ class Gaussograph(QMainWindow, Ui_Gaussograph):
         xs = numpy.arange(start + 1, stop + 1)
         ys = self.spectrum.data[start: stop]
 
-        self.gauss = PeakAnalyzer.describe(xs, ys, (stop + start) / 2)
+        self.gauss = PeakAnalyzer(self.spectrum, (stop + start) / 2).approximate()
         self.trapezoid = None
         self.show_info()
         self.draw()

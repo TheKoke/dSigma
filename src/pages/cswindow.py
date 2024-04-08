@@ -240,6 +240,8 @@ class CSWindow(QMainWindow, Ui_CSWindow):
         self.axes.plot(angles, values, color='green')
         self.axes.scatter(angles, values, color='green')
 
+        self.axes.set_xlabel('Center-of-mass angle, deg.')
+        self.axes.set_ylabel('Diff.cross-section, rel.units')
         self.view.draw()
 
     def save_txt(self) -> None:

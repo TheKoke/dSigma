@@ -91,7 +91,7 @@ class Ui_Welcome(object):
         self.input.setPlaceholderText(_translate("dSigma", "Example: C:\\Users\\User\\Directory\\"))
         self.file_button.setText(_translate("dSigma", "..."))
         self.enter_button.setText(_translate("dSigma", "Enter"))
-        self.version_label.setText(_translate("dSigma", "dSigma v0.1.1"))
+        self.version_label.setText(_translate("dSigma", "dSigma v0.3.0"))
         self.info_label.setText(_translate("dSigma", "LLENR application for analyzing spectres"))
 
 

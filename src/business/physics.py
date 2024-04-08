@@ -288,9 +288,9 @@ class CrossSection:
         
         for state in self.__values:
             report += f'Values for {state}(spin) MeV excitation state of {self.reaction.residual}->\n' # add spin text.
-            report += 'c.m. angle, deg.'.center(30) + '\t|\t' + 'd\u03c3/d\u03c9, mb/sr'.center(30) + '\n'
+            report += 'c.m. angle, deg.'.center(30) + '\t|\t' + 'diff.c.s., mb/sr'.center(30) + '\n'
             for i in range(len(self.__values[state])):
-                report += str(round(angles[i], 3)).center(30) + '\t|\t' + str(round(self.__values[state][i], 3)).center(30) + '\n'
+                report += str(round(angles[i], 3)).center(30) + '\t\t' + str(round(self.__values[state][i], 3)).center(30) + '\n'
 
             report += '\n\n'
 
@@ -346,6 +346,12 @@ class PhysicalExperiment:
         self.beam = beam
         self.target = target
         self.beam_energy = beam_energy
+
+    def __str__(self) -> str:
+        return f'{self.target} + {self.beam} at {self.beam_energy} MeV.'
+    
+    def __repr__(self) -> str:
+        return str(self)
 
     def possible_channels(self) -> list[Reaction]:
         queue = [Nuclei(0, 1), Nuclei(1, 1), Nuclei(1, 2), Nuclei(1, 3), Nuclei(2, 3), Nuclei(2, 4)]
