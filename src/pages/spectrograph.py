@@ -1,4 +1,6 @@
+import os
 import numpy
+import imageio
 
 from business.analysis import SpectrumAnalyzer
 
@@ -471,7 +473,33 @@ class Spectrograph(QMainWindow, Ui_Spectrograph):
         self.window.show()
 
     def make_gif(self) -> None:
-        pass
+        if os.path.exists('Output'):
+            for file in os.listdir('Output'):
+                os.remove(f'Output/{file}')
+        else:
+            os.mkdir('Output')
+
+        analitics = self.analitics[self.current_index]
+        for sp in analitics.spectrums:
+            for i in range(len(sp.data)):
+                self.axes.plot([i + 1, i + 1], [0, sp.data[i]], color='blue')
+
+            self.axes.plot(list(range(1, len(sp.data) + 1)), sp.data, color='blue')
+            self.axes.set_title(f'{sp.reaction} at {sp.angle} deg.')
+
+            self.axes.figure.savefig(f'Output/{sp.angle}.png', transparent = False,  facecolor = 'white')
+            self.axes.clear()
+
+        frames = []
+        for sp in analitics.spectrums:
+            frames.append(imageio.v2.imread(f'Output/{sp.angle}.png'))
+
+        name, _ = QFileDialog.getSaveFileName(self, 'Save File', filter='GIF (*.gif)')
+        while name == '':
+            name, _ = QFileDialog.getSaveFileName(self, 'Save File', filter='GIF (*.gif)')
+        
+        imageio.mimsave(name, frames, fps=2, loop=0)
+        self.draw_angle()
 
     def save(self) -> None:
         name, _ = QFileDialog.getSaveFileName(self, 'Save File', filter='TXT Documents (*.txt)')
