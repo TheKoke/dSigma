@@ -1,4 +1,6 @@
+import os
 import numpy
+import imageio
 
 from filexplorer import Sleuth
 from business.encoding import Encoder
@@ -20,7 +22,7 @@ from PyQt5.QtWidgets import (
     QWidget, QMainWindow, QDialog,
     QVBoxLayout, QHBoxLayout, QComboBox, 
     QPushButton, QFrame, QLabel,
-    QSpinBox, QLineEdit
+    QSpinBox, QLineEdit, QFileDialog
 )
 
 
@@ -217,6 +219,12 @@ class Ui_Matrixograph(object):
         self.filedit_button.setFont(font)
         self.filedit_button.setObjectName("filedit_button")
         self.verticalLayout_2.addWidget(self.filedit_button)
+        self.gif_button = QPushButton(self.services_layout)
+        self.gif_button.setMinimumSize(QSize(50, 80))
+        self.gif_button.setMaximumSize(QSize(16777215, 160))
+        self.gif_button.setFont(font)
+        self.gif_button.setObjectName("gif_button")
+        self.verticalLayout_2.addWidget(self.gif_button)
         self.save_button = QPushButton(self.services_layout)
         self.save_button.setMinimumSize(QSize(50, 80))
         self.save_button.setMaximumSize(QSize(16777215, 160))
@@ -261,6 +269,7 @@ class Ui_Matrixograph(object):
         self.spectrograph_button.setText(_translate("dSigma", "Open Spectres Window"))
         self.cross_section_button.setText(_translate("dSigma", "Open Cross Section Window"))
         self.filedit_button.setText(_translate("dSigma", "Experiment File Editor"))
+        self.gif_button.setText(_translate("dSigma", "Make GIF"))
         self.save_button.setText(_translate("dSigma", "Save Analysis"))
         self.label.setText(_translate("dSigma", "dSigma — LLENR app for analyzing E-dE matrices."))
 
@@ -346,21 +355,11 @@ class Ui_ConfirmWindow(object):
         self.verticalLayout.addWidget(self.nuclei_name)
         self.apply_button =  QPushButton(ConfirmWindow)
         self.apply_button.setMinimumSize(QSize(0, 60))
-        font = QFont()
-        font.setFamily("Bahnschrift SemiBold")
-        font.setPointSize(14)
-        font.setBold(True)
-        font.setWeight(75)
         self.apply_button.setFont(font)
         self.apply_button.setObjectName("apply_button")
         self.verticalLayout.addWidget(self.apply_button)
         self.cancel_button =  QPushButton(ConfirmWindow)
         self.cancel_button.setMinimumSize(QSize(0, 60))
-        font = QFont()
-        font.setFamily("Bahnschrift SemiBold")
-        font.setPointSize(14)
-        font.setBold(True)
-        font.setWeight(75)
         self.cancel_button.setFont(font)
         self.cancel_button.setObjectName("cancel_button")
         self.verticalLayout.addWidget(self.cancel_button)
@@ -531,6 +530,7 @@ class Matrixograph(QMainWindow, Ui_Matrixograph):
         self.spectrograph_button.clicked.connect(self.open_spectrograph)
         self.cross_section_button.clicked.connect(self.open_dsigma)
         self.filedit_button.clicked.connect(self.open_file_editor)
+        self.gif_button.clicked.connect(self.make_gif)
         self.save_button.clicked.connect(self.save)
 
     def show_matrix(self) -> None:
@@ -541,7 +541,7 @@ class Matrixograph(QMainWindow, Ui_Matrixograph):
     def draw_e_de(self) -> None:
         self.axes.clear()
         current = self.analyzer.matrixes[self.current_index]
-        e_de = current.numbers[:]
+        e_de = current.numbers.copy()
         e_de = e_de + 1
 
         self.axes.pcolor(numpy.log(e_de), vmin=0, vmax=self.luminiosity)
@@ -602,6 +602,34 @@ class Matrixograph(QMainWindow, Ui_Matrixograph):
     def open_file_editor(self) -> None:
         self.window = FileEditor(self.analyzer.matrixes[self.current_index])
         self.window.show()
+
+    def make_gif(self) -> None:
+        if os.path.exists('Output'):
+            for file in os.listdir('Output'):
+                os.remove(f'Output/{file}')
+        else:
+            os.mkdir('Output')
+
+        for mx in self.analyzer.matrixes:
+            e_de = mx.numbers.copy()
+            e_de += 1
+
+            self.axes.pcolor(numpy.log(e_de), vmin=0, vmax=self.luminiosity)
+            self.axes.set_title(f'{mx.experiment}\nLab system angle: {mx.angle}')
+
+            self.axes.figure.savefig(f'Output/{mx.angle}.png', transparent = False,  facecolor = 'white')
+            self.axes.clear()
+
+        frames = []
+        for mx in self.analyzer.matrixes:
+            frames.append(imageio.v2.imread(f'Output/{mx.angle}.png'))
+
+        name, _ = QFileDialog.getSaveFileName(self, 'Save File', filter='GIF (*.gif)')
+        while name == '':
+            name, _ = QFileDialog.getSaveFileName(self, 'Save File', filter='GIF (*.gif)')
+        
+        imageio.mimsave(name, frames, fps=2, loop=0)
+        self.draw_e_de()
 
     def save(self) -> None:
         changed = self.__find_changed_ones()
