@@ -1,5 +1,4 @@
 import numpy
-from scipy.optimize import curve_fit
 
 from business.smoothing import QH353
 from business.electronics import Telescope
@@ -85,7 +84,7 @@ class PeakAnalyzer:
         self.mu_index = mu_index
 
     def approximate(self) -> Gaussian:
-        minimum_width = 5
+        minimum_width = 3
 
         start, stop = self.mu_index - minimum_width // 2 + 1, self.mu_index + minimum_width // 2 + 2
         is_over_border = start < 0 or stop > len(self.spectrum)
@@ -93,45 +92,30 @@ class PeakAnalyzer:
         chi_squares = []
 
         while not self.is_increasing(chi_squares, minimum_width) and not is_over_border:
-            chi2 = self.fit_gauss(self.mu_index, start, stop)
-            chi_squares.append(chi2)
+            chi2 = self.fit_gauss(start, stop)
+
+            if not numpy.isnan(chi2) and not numpy.isinf(chi2):
+                chi_squares.append(chi2)
 
             start -= 1
             stop += 1
             is_over_border = start < 0 or stop > len(self.spectrum)
 
-        start = self.mu_index - minimum_width + 1
-        stop = self.mu_index + minimum_width - 1
+        start = start + numpy.argmin(chi_squares) - 1
+        stop = stop - numpy.argmin(chi_squares)
 
         xdata = numpy.arange(start + 1, stop + 1)
         ydata = self.spectrum[start: stop]
 
-        area, dispersion, center = self.describe_gauss(xdata, ydata)
-        center += self.mu_index
+        area, dispersion, center = self.describe_gauss(xdata, ydata, self.mu_index + 1)
         return Gaussian(center, dispersion, area)
     
-    def fit_gauss(self, peak: int, start: int, stop: int) -> float:
+    def fit_gauss(self, start: int, stop: int) -> float:
         xdata = numpy.arange(start + 1, stop + 1)
         ydata = self.smoothed[start: stop]
 
-        area, dispersion, center = self.describe_gauss(xdata, ydata)
-        center += peak
-
-        y_hat = PeakAnalyzer.gauss(area, dispersion, center, xdata)
-        return PeakAnalyzer.collective_chi_square(y_hat, ydata)
-    
-    def describe_gauss(self, xdata: numpy.ndarray, ydata: numpy.ndarray) -> tuple[float, float, float]:
-        weights = ydata / ydata.sum()
-        xdata = numpy.power(xdata - xdata[len(xdata) // 2], 2)
-        ydata[ydata == 0] = 1
-        ydata = numpy.log(ydata)
-
-        d_hat, a_hat = PeakAnalyzer.least_squares(xdata, ydata, weights)
-        dispersion = numpy.sqrt(-1 / (2 * d_hat))
-        area = numpy.exp(a_hat) * numpy.sqrt(2 * numpy.pi * dispersion ** 2)
-        center = xdata[len(xdata) // 2]
-
-        return area, dispersion, center
+        area, dispersion, center = PeakAnalyzer.describe_gauss(xdata, ydata, self.mu_index)
+        return PeakAnalyzer.chi_square(area, ydata.sum())
     
     def is_increasing(self, chi: list[float], minimum_width: int) -> bool:
         if len(chi) <= minimum_width:
@@ -143,6 +127,19 @@ class PeakAnalyzer:
                 return False
 
         return True
+    
+    @staticmethod
+    def describe_gauss(xdata: numpy.ndarray, ydata: numpy.ndarray, center: int) -> tuple[float, float, float]:
+        weights = ydata / ydata.sum()
+        xdata = numpy.power(xdata - center, 2)
+        ydata[ydata == 0] = 1
+        ydata = numpy.log(ydata)
+
+        d_hat, a_hat = PeakAnalyzer.least_squares(xdata, ydata, weights)
+        dispersion = numpy.sqrt(-1 / (2 * d_hat))
+        area = numpy.exp(a_hat) * numpy.sqrt(2 * numpy.pi * dispersion ** 2)
+
+        return area, dispersion, center
     
     @staticmethod
     def least_squares(x: numpy.ndarray, y: numpy.ndarray, w: numpy.ndarray) -> tuple[float, float]:
@@ -157,8 +154,8 @@ class PeakAnalyzer:
         return a / numpy.sqrt(2 * numpy.pi * (d ** 2)) * numpy.exp(- (x - c) ** 2 / (2 * (d ** 2)))
 
     @staticmethod
-    def collective_chi_square(theory: numpy.ndarray, experimenthal: numpy.ndarray) -> float:
-        return ((experimenthal - theory) ** 2).sum() / len(theory)
+    def chi_square(theory: numpy.ndarray, experimenthal: numpy.ndarray) -> float:
+        return (experimenthal - theory) ** 2 / theory
 
 
 class Spectrum:
@@ -307,27 +304,15 @@ class SpectrumAnalyzer:
     def theory_peaks(self, index: int) -> list[float]:
         current = self.spectrums[index]
 
-        piercing = current.electronics.de_detector
-        stopping = current.electronics.e_detector
-
-        de_bete_bloch = Struggling(current.reaction.fragment, piercing.madeof_nuclei)
-        e_bete_bloch = Struggling(current.reaction.fragment, stopping.madeof_nuclei)
-
-        likely_peaks = []
+        peaks = []
         for state in current.reaction.residual_states:
-            initial = current.reaction.fragment_energy(state, current.angle)
-
-            de_loss = de_bete_bloch.energy_loss(initial, piercing.thickness * 1e-4, piercing.density)
-            if initial < de_loss:
+            fragment_energy = current.reaction.fragment_energy(state, current.angle)
+            if numpy.isnan(fragment_energy) or numpy.isinf(fragment_energy):
                 break
 
-            e_loss = e_bete_bloch.energy_loss(initial - de_loss, stopping.thickness * 1e-4, stopping.density)
-            if initial - de_loss < e_loss:
-                likely_peaks.append(initial - de_loss)
-            else:
-                likely_peaks.append(e_loss)
+            peaks.append(fragment_energy)
 
-        return likely_peaks
+        return peaks
     
     def calibrate(self, index: int, anchors_indexes: tuple[int], states: tuple[float]) -> None:
         current = self.spectrums[index]

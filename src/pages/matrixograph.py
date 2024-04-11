@@ -2,11 +2,11 @@ import os
 import numpy
 import imageio
 
-from filexplorer import Sleuth
 from business.encoding import Encoder
 from business.matrix import Matrix, MatrixAnalyzer, Nuclei
 
 from pages.cswindow import CSWindow
+from pages.filexplorer import Sleuth
 from pages.fileconfig import FileEditor
 from pages.workbooker import Workbooker
 from pages.information import InformWindow
@@ -572,11 +572,11 @@ class Matrixograph(QMainWindow, Ui_Matrixograph):
 
     def bright_up(self) -> None:
         if self.luminiosity > 2:
-            self.luminiosity -= 2
+            self.luminiosity -= 1
             self.draw_e_de()
 
     def bright_down(self) -> None:
-        self.luminiosity += 2
+        self.luminiosity += 1
         self.draw_e_de()
 
     def bright_default(self) -> None:
