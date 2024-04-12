@@ -101,13 +101,16 @@ class PeakAnalyzer:
             stop += 1
             is_over_border = start < 0 or stop > len(self.spectrum)
 
+        if len(chi_squares) < minimum_width:
+            return Gaussian(self.mu_index, numpy.nan, numpy.nan)
+
         start = start + numpy.argmin(chi_squares) - 1
         stop = stop - numpy.argmin(chi_squares)
 
         xdata = numpy.arange(start + 1, stop + 1)
         ydata = self.spectrum[start: stop]
 
-        area, dispersion, center = self.describe_gauss(xdata, ydata, self.mu_index + 1)
+        area, dispersion, center = self.describe_gauss(xdata, ydata, self.mu_index)
         return Gaussian(center, dispersion, area)
     
     def fit_gauss(self, start: int, stop: int) -> float:
