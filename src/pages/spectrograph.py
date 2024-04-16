@@ -411,9 +411,12 @@ class Spectrograph(QMainWindow, Ui_Spectrograph):
         angle = self.angle_box.currentIndex()
         analitics = self.analitics[self.current_index]
         maximum = analitics.spectrums[angle].data.max()
+        n = len(analitics.spectrums[angle].data)
         
         self.draw_angle()
         for i in range(len(self.pointers)):
+            self.pointers[i] = 1 if self.pointers[i] <= 0 else self.pointers[i]
+            self.pointers[i] = n if self.pointers[i] > n else self.pointers[i]
             self.axes.plot([self.pointers[i], self.pointers[i]], [0, maximum], color='red')
         
         self.show_linear_sum()
@@ -426,8 +429,8 @@ class Spectrograph(QMainWindow, Ui_Spectrograph):
         angle = angle = self.angle_box.currentIndex()
         analitics = self.analitics[self.current_index]
 
-        first = min(self.pointers)
-        second = max(self.pointers)
+        first = min(self.pointers) - 1
+        second = max(self.pointers) # - 1 + 1
 
         channels_sum = analitics.spectrums[angle].data[first:second].sum()
         self.linear_sum.setText(f'SUM={channels_sum}\nL={first}, R={second}')
