@@ -385,7 +385,7 @@ class Spectrograph(QMainWindow, Ui_Spectrograph):
             return
 
         if a0.key() == Qt.Key.Key_Comma:
-            self.pointers[-1] = 0 if self.pointers[-1] - 1 <= 0 else self.pointers[-1] - 1
+            self.pointers[-1] = 1 if self.pointers[-1] - 1 <= 0 else self.pointers[-1] - 1
             self.draw_pointers()
 
         if a0.key() == Qt.Key.Key_Period:

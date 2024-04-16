@@ -172,7 +172,7 @@ class Gaussograph(QMainWindow, Ui_Gaussograph):
             return
         
         linear = self.spectrum.data[min(self.pointers) - 1: max(self.pointers)].sum()
-        center_max = min(self.pointers) + numpy.argmax(self.spectrum.data[min(self.pointers) - 1: max(self.pointers)]) - 1
+        center_max = min(self.pointers) + numpy.argmax(self.spectrum.data[min(self.pointers) - 1: max(self.pointers)])
 
         info += f'Gaussian Center: {round(self.gauss.mu, 3)}\n'
         info += f'Channel Center: {center_max}\n\n'
