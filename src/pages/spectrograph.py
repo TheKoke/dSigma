@@ -9,7 +9,7 @@ from pages.gaussograph import Gaussograph
 from pages.calibration import CalibrationWindow
 
 from matplotlib.figure import Figure
-from matplotlib.backend_bases import MouseEvent, MouseButton
+from matplotlib.backend_bases import MouseEvent, MouseButton, ResizeEvent
 from matplotlib.backends.backend_qt5agg import FigureCanvasQTAgg, NavigationToolbar2QT
 
 from PyQt5.QtGui import QFont, QIcon, QPalette, QBrush, QColor, QKeyEvent
@@ -332,7 +332,9 @@ class Spectrograph(QMainWindow, Ui_Spectrograph):
         self.analitics = analitics
         self.current_index = 0
         
-        self.pointers = []
+        self.pointers = list()
+        self.xzoom = tuple()
+        self.yzoom = tuple()
 
         # MATPLOTLIB INITIALIZING
         layout = QVBoxLayout(self.matplotlib_layout)
@@ -364,8 +366,8 @@ class Spectrograph(QMainWindow, Ui_Spectrograph):
         layout.addWidget(self.view)
 
         # EVENT HANDLING
-        self.angle_box.currentTextChanged.connect(self.draw_angle)
         self.angle_box.currentTextChanged.connect(self.pointers.clear)
+        self.angle_box.currentTextChanged.connect(self.draw_angle)
         self.particle_box.currentTextChanged.connect(self.take_current)
         particles = [analyzer.spectrums[0].reaction.fragment for analyzer in self.analitics]
         self.particle_box.addItems([str(p) for p in particles])
@@ -385,7 +387,7 @@ class Spectrograph(QMainWindow, Ui_Spectrograph):
             return
 
         if a0.key() == Qt.Key.Key_Comma:
-            self.pointers[-1] = 0 if self.pointers[-1] - 1 <= 0 else self.pointers[-1] - 1
+            self.pointers[-1] = 1 if self.pointers[-1] - 1 <= 0 else self.pointers[-1] - 1
             self.draw_pointers()
 
         if a0.key() == Qt.Key.Key_Period:
@@ -404,33 +406,21 @@ class Spectrograph(QMainWindow, Ui_Spectrograph):
             else:
                 self.pointers.pop(0)
                 self.pointers.append(int(event.xdata))
+            
+            self.save_zooms()
+            self.draw_angle()
 
-            self.draw_pointers()
+        if event.button == MouseButton.RIGHT:
+            self.del_zooms()
+            self.draw_angle()
 
-    def draw_pointers(self) -> None:
-        angle = self.angle_box.currentIndex()
-        analitics = self.analitics[self.current_index]
-        maximum = analitics.spectrums[angle].data.max()
-        
-        self.draw_angle()
-        for i in range(len(self.pointers)):
-            self.axes.plot([self.pointers[i], self.pointers[i]], [0, maximum], color='red')
-        
-        self.show_linear_sum()
-        self.view.draw()
+    def save_zooms(self) -> None:
+        self.xzoom = self.axes.get_xlim()
+        self.yzoom = self.axes.get_ylim()
 
-    def show_linear_sum(self) -> None:
-        if len(self.pointers) < 2:
-            return
-
-        angle = angle = self.angle_box.currentIndex()
-        analitics = self.analitics[self.current_index]
-
-        first = min(self.pointers)
-        second = max(self.pointers)
-
-        channels_sum = analitics.spectrums[angle].data[first:second].sum()
-        self.linear_sum.setText(f'SUM={channels_sum}\nL={first}, R={second}')
+    def del_zooms(self) -> None:
+        self.xzoom = tuple()
+        self.yzoom = tuple()
 
     def open_gaussograph(self) -> None:
         if len(self.pointers) < 2:
@@ -527,6 +517,8 @@ class Spectrograph(QMainWindow, Ui_Spectrograph):
     def draw_angle(self) -> None:
         angle = self.angle_box.currentIndex()
         spectrum = self.analitics[self.current_index].spectrums[angle]
+        maximum = spectrum.data.max()
+        n = len(spectrum.data)
 
         self.axes.clear()
         
@@ -538,7 +530,35 @@ class Spectrograph(QMainWindow, Ui_Spectrograph):
         
         self.axes.plot(list(range(1, len(spectrum.data) + 1)), spectrum.data, color='blue')
         self.axes.set_title(f'{spectrum.reaction} at {spectrum.angle} deg.')
+
+        for i in range(len(self.pointers)):
+            self.pointers[i] = 1 if self.pointers[i] <= 0 else self.pointers[i]
+            self.pointers[i] = n if self.pointers[i] > n else self.pointers[i]
+            self.axes.plot([self.pointers[i], self.pointers[i]], [0, maximum], color='red')
+        
+        self.show_linear_sum()
+
+        if len(self.xzoom) == 0:
+            self.axes.set_xlim(auto=True)
+            self.axes.set_ylim(auto=True)
+        else:
+            self.axes.set_xlim(self.xzoom)
+            self.axes.set_ylim(self.yzoom)
+
         self.view.draw()
+
+    def show_linear_sum(self) -> None:
+        if len(self.pointers) < 2:
+            return
+
+        angle = angle = self.angle_box.currentIndex()
+        analitics = self.analitics[self.current_index]
+
+        first = min(self.pointers) - 1
+        second = max(self.pointers) # - 1 + 1
+
+        channels_sum = analitics.spectrums[angle].data[first:second].sum()
+        self.linear_sum.setText(f'SUM={channels_sum}\nL={first}, R={second}')
 
 
 if __name__ == '__main__':
