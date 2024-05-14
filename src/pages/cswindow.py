@@ -234,11 +234,11 @@ class CSWindow(QMainWindow, Ui_CSWindow):
         state = sigma.reaction.residual_states[self.state_box.currentIndex()]
 
         values = sigma.cm_cross_section_of(state)
-        angles = sigma.angle_to_cm()[:len(values)]
+        angles, xsec = values
 
         self.axes.clear()
-        self.axes.plot(angles, values, color='green')
-        self.axes.scatter(angles, values, color='green')
+        self.axes.plot(angles, xsec, color='green')
+        self.axes.scatter(angles, xsec, color='green')
 
         self.axes.set_xlabel('Center-of-mass angle, deg.')
         self.axes.set_ylabel('Diff.cross-section, rel.units')

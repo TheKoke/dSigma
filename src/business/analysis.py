@@ -261,8 +261,7 @@ class SpectrumAnalyzer:
         self.dsigma = self.__create_cross_section()
 
     def __create_cross_section(self) -> CrossSection:
-        angles = numpy.array(self.angles())
-        return CrossSection(self.spectrums[0].reaction, angles)
+        return CrossSection(self.spectrums[0].reaction)
     
     def angles(self) -> list[float]:
         return [sp.angle for sp in self.spectrums]

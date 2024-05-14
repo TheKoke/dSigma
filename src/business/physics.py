@@ -1,6 +1,6 @@
 from __future__ import annotations
 
-import numpy as np
+import numpy
 from business.informer import Informator, NAME2CHARGE
 
 
@@ -32,7 +32,7 @@ class Nuclei:
     @property
     def radius(self) -> float:
         fermi = 1.28e-13 # cm
-        return fermi * np.cbrt(self.nuclons) # cm
+        return fermi * numpy.cbrt(self.nuclons) # cm
     
     def __hash__(self) -> int:
         return hash(self.name)
@@ -64,12 +64,12 @@ class Nuclei:
                 return self.nuclons
             
     @staticmethod
-    def from_string(input: str) -> Nuclei:
-        if Nuclei.handle_human_namings(input) is not None:
-            return Nuclei.handle_human_namings(input)
+    def from_string(inumpyut: str) -> Nuclei:
+        if Nuclei.handle_human_namings(inumpyut) is not None:
+            return Nuclei.handle_human_namings(inumpyut)
 
-        only_name = ''.join([i.lower() for i in input if i.isalpha()])
-        only_nuclons = ''.join([i for i in input if i.isdigit()])
+        only_name = ''.join([i.lower() for i in inumpyut if i.isalpha()])
+        only_nuclons = ''.join([i for i in inumpyut if i.isdigit()])
 
         charge = NAME2CHARGE[only_name]
         nuclon = int(only_nuclons)
@@ -77,11 +77,11 @@ class Nuclei:
         return Nuclei(charge, nuclon)
     
     @staticmethod
-    def handle_human_namings(input: str) -> Nuclei:
-        if input in ['p', 'd', 't']:
-            return Nuclei(1, ['p', 'd', 't'].index(input) + 1)
+    def handle_human_namings(inumpyut: str) -> Nuclei:
+        if inumpyut in ['p', 'd', 't']:
+            return Nuclei(1, ['p', 'd', 't'].index(inumpyut) + 1)
         
-        if input == 'alpha' or input == 'α' or input == 'a':
+        if inumpyut == 'alpha' or inumpyut == 'α' or inumpyut == 'a':
             return Nuclei(2, 4)
         
         return None
@@ -151,7 +151,7 @@ class Reaction:
             self.beam_energy, 
             self.fragment.mass(), 
             self.residual.mass(), 
-            fragment_angle * np.pi / 180
+            fragment_angle * numpy.pi / 180
         )
 
         s = Reaction.__s_factor(
@@ -162,7 +162,7 @@ class Reaction:
             self.reaction_quit(residual_state)
         )
 
-        return (r + np.sqrt(r ** 2 + s)) ** 2
+        return (r + numpy.sqrt(r ** 2 + s)) ** 2
     
     def residual_energy(self, residual_state: float) -> float:
         r = Reaction.__r_factor(
@@ -181,20 +181,20 @@ class Reaction:
             self.reaction_quit(residual_state)
         )
 
-        return (r + np.sqrt(r ** 2 + s)) ** 2
+        return (r + numpy.sqrt(r ** 2 + s)) ** 2
     
     def residual_angle(self, residual_state: float, fragment_angle: float) -> float:
         fragment_ears = self.fragment_energy(residual_state, fragment_angle)
-        energy_relation = np.sqrt(self.beam.mass() * self.beam_energy / (self.fragment.mass() * fragment_ears))
+        energy_relation = numpy.sqrt(self.beam.mass() * self.beam_energy / (self.fragment.mass() * fragment_ears))
 
-        return np.pi / 2 - np.arctan(
-            (energy_relation - np.cos(fragment_angle * np.pi / 180)) / np.sin(fragment_angle * np.pi / 180)
+        return numpy.pi / 2 - numpy.arctan(
+            (energy_relation - numpy.cos(fragment_angle * numpy.pi / 180)) / numpy.sin(fragment_angle * numpy.pi / 180)
         )
     
     @staticmethod
     def __r_factor(beam_mass: float, beam_energy: float, 
                    instance_mass: float, partner_mass: float, angle: float) -> float:
-        numerator = np.sqrt(beam_mass * instance_mass * beam_energy) * np.cos(angle)
+        numerator = numpy.sqrt(beam_mass * instance_mass * beam_energy) * numpy.cos(angle)
         return numerator / (instance_mass + partner_mass)
 
     @staticmethod
@@ -206,7 +206,7 @@ class Reaction:
     def grazing_angle(self) -> float:
         E = self.cm_energy()
         V = self.couloumb_potential()
-        return 2 * np.arcsin(V / (2 * E - V)) * 180 / np.pi
+        return 2 * numpy.arcsin(V / (2 * E - V)) * 180 / numpy.pi
 
     def couloumb_potential(self) -> float:
         reduced_planck = 6.582e-22 # MeV * s
@@ -217,17 +217,17 @@ class Reaction:
         effective_radius = self.beam.radius + self.target.radius + 2e-13
         return self.beam.charge * self.target.charge * e_power_2 / effective_radius
     
-    def rutherford_scattering(self) -> np.ndarray:
-        angle_range = np.arange(1, 179) * np.pi / 180 # rad
+    def rutherford_scattering(self) -> numpy.ndarray:
+        angle_range = numpy.arange(1, 179) * numpy.pi / 180 # rad
         reduced_planck = 6.582e-22 # MeV * s
         lightspeed = 3e10 # cm / s
         fine_structure = 1 / 137 # dimensionless
 
         e_power_2 = fine_structure * reduced_planck * lightspeed
         numerator = self.beam.charge * self.target.charge * e_power_2 # MeV * cm
-        denumerator = 4 * self.beam_energy * np.sin(angle_range / 2) ** 2 # MeV * rad
+        denumerator = 4 * self.beam_energy * numpy.sin(angle_range / 2) ** 2 # MeV * rad
 
-        return np.power(numerator / denumerator, 2) * 1e24 # cm^2 / rad^2  => barn / srad
+        return numpy.power(numerator / denumerator, 2) * 1e24 # cm^2 / rad^2  => barn / srad
     
 
 class Struggling:
@@ -247,11 +247,11 @@ class Struggling:
         e_power_4 = (reduced_planck * lightspeed * fine_structure) ** 2 # MeV^2 * cm^2
         betta_power_2 = self.lorenz_parameter(energy) ** 2 # dimensionless
 
-        common = 4 * np.pi * self.electrons_density(ro) * self.stray.charge ** 2
+        common = 4 * numpy.pi * self.electrons_density(ro) * self.stray.charge ** 2
         common *= e_power_4 / (electron_mass * betta_power_2)
 
-        logarithm = np.log(2 * electron_mass * betta_power_2 / self.mean_environ_excitation())
-        relativistic = np.log(1 - betta_power_2) + betta_power_2
+        logarithm = numpy.log(2 * electron_mass * betta_power_2 / self.mean_environ_excitation())
+        relativistic = numpy.log(1 - betta_power_2) + betta_power_2
 
         return common * (logarithm - relativistic) # MeV * cm^-1
 
@@ -265,80 +265,87 @@ class Struggling:
     
     def lorenz_parameter(self, energy: float) -> float:
         #  dimensionless     MeV          MeV        
-        return np.sqrt(2 * energy / self.stray.mass())
+        return numpy.sqrt(2 * energy / self.stray.mass())
 
 
 class CrossSection:
-    def __init__(self, reaction: Reaction, angle_range: np.ndarray) -> None:
+    def __init__(self, reaction: Reaction) -> None:
         '''
         Differential cross section for reaction.
         '''
-        self.reaction = reaction
-        self.angle_range = angle_range
+        self.__reaction = reaction
 
-        self.__values = {state: np.zeros_like(self.angle_range) for state in self.reaction.residual_states}
+        self.__values: dict[float, tuple[numpy.ndarray, numpy.ndarray]] = dict()
+        for state in self.__reaction.residual_states:
+            self.__values[state] = (numpy.array([]), numpy.array([]))
 
     @property
-    def values(self) -> dict[float, np.ndarray]:
+    def reaction(self) -> Reaction:
+        return self.__reaction
+
+    @property
+    def values(self) -> dict[float, tuple[numpy.ndarray, numpy.ndarray]]:
         return self.__values.copy()
     
     def to_workbook(self) -> str:
-        angles = self.angle_to_cm()
-        report = f'Differential cross-section of {self.reaction} reaction at {self.reaction.beam_energy} MeV energy.\n\n'
+        report = f'Differential cross-section of {self.__reaction} reaction at {self.__reaction.beam_energy} MeV energy.\n\n'
         
         for state in self.__values:
-            report += f'Values for {state}(spin) MeV excitation state of {self.reaction.residual}->\n' # add spin text.
+            report += f'Values for {state}(spin) MeV excitation state of {self.__reaction.residual}->\n' # add spin text.
             report += 'c.m. angle, deg.'.center(30) + '\t|\t' + 'diff.c.s., mb/sr'.center(30) + '\n'
-            for i in range(len(self.__values[state])):
-                report += str(round(angles[i], 3)).center(30) + '\t\t' + str(round(self.__values[state][i], 3)).center(30) + '\n'
+            angles, xsec = self.cm_cross_section_of(state)
+            for i in range(len(angles)):
+                report += str(round(angles[i], 3)).center(30) + '\t\t' + str(round(xsec[i], 3)).center(30) + '\n'
 
             report += '\n\n'
 
         return report
     
-    def angle_to_cm(self) -> np.ndarray:
-        x2 = np.sqrt(self.x_square())
-        angles_in_rad = self.angle_range * np.pi / 180
+    def angle_to_cm(self, state: float) -> numpy.ndarray:
+        x2 = numpy.sqrt(self.x_square())
+        angles = self.__values[state][0]
+        angles_in_rad = angles * numpy.pi / 180
 
-        multiplier = (x2 * np.sin(angles_in_rad)) ** 2
+        multiplier = (x2 * numpy.sin(angles_in_rad)) ** 2
 
-        return np.arctan(np.sqrt(multiplier) / np.sqrt(1 - multiplier)) * 180 / np.pi + self.angle_range
+        return numpy.arctan(numpy.sqrt(multiplier) / numpy.sqrt(1 - multiplier)) * 180 / numpy.pi + angles
     
-    def cm_cross_section_of(self, state: float) -> np.ndarray:
-        lab_dsigma = self.lab_cross_section_of(state)
-        return lab_dsigma * self.g_constant()[:len(lab_dsigma)]
+    def cm_cross_section_of(self, state: float) -> tuple[numpy.ndarray, numpy.ndarray]:
+        lab_angles, lab_dsigma = self.lab_cross_section_of(state)
+        return (self.angle_to_cm(state), lab_dsigma * self.g_constant(state))
     
-    def g_constant(self) -> np.ndarray:
+    def g_constant(self, state: float) -> numpy.ndarray:
         x2 = self.x_square()
-        angles_in_rad = self.angle_range * np.pi / 180
+        angles = self.__values[state][0]
+        angles_in_rad = angles * numpy.pi / 180
 
-        numerator = np.sqrt(1 - x2 * (np.sin(angles_in_rad) ** 2))
-        denumerator = (np.sqrt(x2) * np.cos(angles_in_rad) + numerator) ** 2
+        numerator = numpy.sqrt(1 - x2 * (numpy.sin(angles_in_rad) ** 2))
+        denumerator = (numpy.sqrt(x2) * numpy.cos(angles_in_rad) + numerator) ** 2
 
         return numerator / denumerator
 
     def x_square(self) -> float:
-        a = self.reaction.beam.nuclons
-        b = self.reaction.fragment.nuclons
-        A = self.reaction.target.nuclons
-        B = self.reaction.residual.nuclons
+        a = self.__reaction.beam.nuclons
+        b = self.__reaction.fragment.nuclons
+        A = self.__reaction.target.nuclons
+        B = self.__reaction.residual.nuclons
 
         const = (a * b) / (A * B)
-        brackets = 1 + (1 + a / A) * self.reaction.reaction_quit() / self.reaction.beam_energy
+        brackets = 1 + (1 + a / A) * self.__reaction.reaction_quit() / self.__reaction.beam_energy
 
         return const / brackets
 
-    def lab_cross_section_of(self, state: float) -> np.ndarray:
-        if state not in self.reaction.residual_states:
+    def lab_cross_section_of(self, state: float) -> tuple[numpy.ndarray, numpy.ndarray]:
+        if state not in self.__reaction.residual_states:
             raise ValueError(f'Residual nuclei does not have state with excited energy: {state} MeV.')
         
         return self.__values[state]
         
-    def add_cross_section_for(self, state: float, sigmas: np.ndarray) -> None:
-        if state not in self.reaction.residual_states:
+    def add_cross_section_for(self, state: float, angles: numpy.ndarray, sigmas: numpy.ndarray) -> None:
+        if state not in self.__reaction.residual_states:
             raise ValueError(f'Residual nuclei does not have state with excited energy: {state} MeV.')
         
-        self.__values[state] = sigmas
+        self.__values[state] = (angles, sigmas)
 
 
 class PhysicalExperiment:

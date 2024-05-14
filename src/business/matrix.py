@@ -1,4 +1,4 @@
-import numpy as np
+import numpy
 
 from business.locus import Locus
 from business.decoding import Decoder
@@ -109,15 +109,16 @@ class MatrixAnalyzer:
             current_residual_states = ds.reaction.residual_states
 
             for state in current_residual_states:
-                ds.add_cross_section_for(state, self.cross_section_of(current_particle, state))
+                ds.add_cross_section_for(state, *self.cross_section_of(current_particle, state))
 
         return voids
 
-    def cross_section_of(self, particle: Nuclei, state: float) -> np.ndarray:
+    def cross_section_of(self, particle: Nuclei, state: float) -> tuple[numpy.ndarray, numpy.ndarray]:
         fragments = self.__particles()
         if particle not in fragments:
             raise ValueError(f'{particle} fragment does not exist.')
         
+        angles = []
         events = []
         integrator = []
         misscalc = []
@@ -131,19 +132,21 @@ class MatrixAnalyzer:
                 integrator.append(matrix.integrator_counts)
                 misscalc.append(matrix.misscalculation)
                 events.append(matrix.spectrums[particle].peaks[state].area)
+                angles.append(matrix.angle)
 
-        events = np.array(events)
-        integrator = np.array(integrator)
-        misscalc = np.array(misscalc)
-        intconst = np.array(intconst)
-        solid_angle = np.array(solid_angle)
+        angles = numpy.array(angles)
+        events = numpy.array(events)
+        integrator = numpy.array(integrator)
+        misscalc = numpy.array(misscalc)
+        intconst = numpy.array(intconst)
+        solid_angle = numpy.array(solid_angle)
 
-        return self.__relation(events, integrator, misscalc, intconst, solid_angle)
+        return (angles, self.__relation(events, integrator, misscalc, intconst, solid_angle))
 
     @staticmethod
-    def __relation(events: np.ndarray, integrator: np.ndarray, 
-                  misscalculation: np.ndarray, intconstant: np.ndarray,
-                  solid_angle: np.ndarray) -> np.ndarray:
+    def __relation(events: numpy.ndarray, integrator: numpy.ndarray, 
+                  misscalculation: numpy.ndarray, intconstant: numpy.ndarray,
+                  solid_angle: numpy.ndarray) -> numpy.ndarray:
         
         numerator =  events * misscalculation
         denumerator = integrator * intconstant * solid_angle
