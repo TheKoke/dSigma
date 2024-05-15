@@ -171,10 +171,7 @@ class Encoder:
         energy = self.matrix.experiment.beam_energy
         angle = self.matrix.angle
 
-        angle_str = str(round(angle, 2))
-        angle_str.replace('.', ',')
-
-        return self.directory + f'/{target}+{beam}_{round(energy)}MeV_{angle_str}.ds'
+        return self.directory + f'/{target}+{beam}_{round(energy)}MeV_{round(angle, 2)}.ds'
     
     def calc_byte_size(self) -> int:
         physical_area_size = 12
