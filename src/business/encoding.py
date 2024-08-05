@@ -1,3 +1,4 @@
+import os
 import struct
 
 from business.matrix import Matrix
@@ -46,6 +47,15 @@ class Encoder:
         self.write_matrix(buffer)
         self.write_locuses(buffer)
         self.write_spectrums(buffer)
+
+        i = 1
+        suffix = '.ds'
+        while (path + suffix) in os.listdir(self.directory):
+            suffix = f'({i}).ds'
+            i += 1
+
+        path += suffix
+        path = self.directory + '/' + path
 
         with open(path, 'wb') as binary:
             binary.write(buffer)
@@ -171,7 +181,7 @@ class Encoder:
         energy = self.matrix.experiment.beam_energy
         angle = self.matrix.angle
 
-        return self.directory + f'/{target}+{beam}_{round(energy)}MeV_{round(angle, 2)}.ds'
+        return f'/{target}+{beam}_{round(energy)}MeV_{round(angle, 2)}'
     
     def calc_byte_size(self) -> int:
         physical_area_size = 12
