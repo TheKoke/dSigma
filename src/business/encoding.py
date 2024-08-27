@@ -38,7 +38,7 @@ class Encoder:
         self.directory = directory
 
     def write_down(self) -> str:
-        path = self.generate_file_name()
+        path = self.matrix.decoder.path
         buffer = bytearray(self.calc_byte_size())
 
         self.write_physics(buffer)
@@ -47,15 +47,6 @@ class Encoder:
         self.write_matrix(buffer)
         self.write_locuses(buffer)
         self.write_spectrums(buffer)
-
-        i = 1
-        suffix = '.ds'
-        while (path + suffix) in os.listdir(self.directory):
-            suffix = f'({i}).ds'
-            i += 1
-
-        path += suffix
-        path = self.directory + '/' + path
 
         with open(path, 'wb') as binary:
             binary.write(buffer)

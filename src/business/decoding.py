@@ -37,6 +37,7 @@ LOCUSES_START = lambda height, width: MATRIX_START + 4 * height * width
 
 class Decoder:
     def __init__(self, path: str) -> None:
+        self.path = path
         with open(path, 'rb') as file:
             self.buffer = file.read()
 

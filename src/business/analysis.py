@@ -2,7 +2,7 @@ import numpy
 
 from business.smoothing import QH353
 from business.electronics import Telescope
-from business.physics import Reaction, Struggling, CrossSection
+from business.physics import Reaction, CrossSection
 
 
 

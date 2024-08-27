@@ -2,7 +2,6 @@ import numpy
 
 from business.locus import Locus
 from business.decoding import Decoder
-from business.electronics import Telescope
 from business.analysis import Spectrum, SpectrumAnalyzer
 from business.physics import Nuclei, Reaction, CrossSection
 
