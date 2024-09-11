@@ -2,8 +2,7 @@ import numpy
 
 from business.smoothing import QH353
 from business.electronics import Telescope
-from business.physics import Reaction, CrossSection
-
+from business.physics import Reaction, CrossSection, Struggling
 
 
 class Gaussian:
@@ -104,8 +103,8 @@ class PeakAnalyzer:
         if len(chi_squares) < minimum_width:
             return Gaussian(self.mu_index, numpy.nan, numpy.nan)
 
-        start = start + numpy.argmin(chi_squares) - 1
-        stop = stop - numpy.argmin(chi_squares)
+        start = start + minimum_width - 1
+        stop = stop - minimum_width
 
         xdata = numpy.arange(start + 1, stop + 1)
         ydata = self.spectrum[start: stop]
@@ -290,12 +289,30 @@ class SpectrumAnalyzer:
             raise ValueError('Spectrum must be calibrated before finding peaks')
         
         theories = self.theory_peaks(index)
-        
+
+        e_detector = spectrum.electronics.e_detector
+        de_detector = spectrum.electronics.de_detector
+
+        e_detector_thick = e_detector.thickness * 10e-6
+        de_detector_thick = de_detector.thickness * 10e-6
+
+        de_bete_bloch = Struggling(spectrum.reaction.fragment, de_detector.madeof_nuclei)
+        e_bete_bloch = Struggling(spectrum.reaction.fragment, e_detector.madeof_nuclei)
+
         collected = []
         for i in range(len(theories)):
             k, e0 = spectrum.scale_value, spectrum.scale_shift
 
-            pretend_channel = int((theories[i] - e0) / k)
+            de_loss = de_bete_bloch.energy_loss(theories[i], de_detector_thick, de_detector.density)
+            remain_energy = theories[i] - de_loss
+
+            e_loss = e_bete_bloch.energy_loss(remain_energy, e_detector_thick, e_detector.density)
+            remain_energy -= e_loss
+
+            if remain_energy <= 0:
+                continue
+
+            pretend_channel = int((remain_energy - e0) / k)
             if pretend_channel <= len(self.spectrums[index].data) * 0.02:
                 continue
 

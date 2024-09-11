@@ -235,7 +235,7 @@ class Struggling:
         self.stray = stray
         self.environ = environ
 
-    def energy_loss(self, energy: float, thickness: float, ro: float) -> None:
+    def energy_loss(self, energy: float, thickness: float, ro: float) -> float:
         return self.specific_energy_loss(energy, ro) * thickness
     
     def specific_energy_loss(self, energy: float, ro: float) -> float:
