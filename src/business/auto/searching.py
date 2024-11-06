@@ -1,6 +1,6 @@
 import numpy
 
-from auto.smoothing import QH353
+from business.smoothing import QH353
 
 
 def gauss(x: float, a: float, d: float, m: float) -> float:
