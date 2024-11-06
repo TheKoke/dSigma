@@ -1,7 +1,7 @@
 import numpy
 
 
-class Density:
+class DensityMatrix:
     def __init__(self, matrix: numpy.ndarray, averaging: bool = False, adding_up: bool = True, zero_encount_limit: int = 9) -> None:
         self._matrix = matrix
         self._density = numpy.array([], dtype=numpy.int32)
