@@ -1,7 +1,5 @@
 import numpy
 
-from auto.smoothing import QH353
-
 
 def gauss(x: float, a: float, d: float, m: float) -> float:
     return a / numpy.sqrt(2 * numpy.pi * d ** 2) * numpy.exp(-(x - m) ** 2 / (2 * d ** 2))
@@ -47,13 +45,12 @@ class Pinnacle:
 class Beagle:
     def __init__(self, spectrum: numpy.ndarray) -> None:
         self.spectrum = spectrum
-        self.smoothed = QH353().smooth(spectrum)
 
     def peaks(self) -> list[Pinnacle]:
         pinnacles = []
         self.clear_background()
 
-        copy = self.smoothed.copy()
+        copy = self.spectrum.copy()
 
         iters = 0
         while len(copy[copy != 0]) != 0 and iters < 5:
@@ -72,11 +69,11 @@ class Beagle:
         return pinnacles
     
     def clear_background(self) -> numpy.ndarray:
-        self.smoothed[:5] = 0
-        self.smoothed[-5:] = 0
-        self.smoothed[self.smoothed <= 2] = 0
+        self.spectrum[:5] = 0
+        self.spectrum[-5:] = 0
+        self.spectrum[self.spectrum <= 2] = 0
 
-        return self.smoothed
+        return self.spectrum
 
     def handle_peak(self, peak: int) -> Pinnacle:
         minimum_width = 3
@@ -104,7 +101,7 @@ class Beagle:
     
     def fit_gauss(self, peak: int, start: int, stop: int) -> float:
         xdata = numpy.arange(start + 1, stop + 1)
-        ydata = self.smoothed[start: stop]
+        ydata = self.spectrum[start: stop]
 
         area, dispersion, center = self.describe_gauss(xdata, ydata)
         center += peak
