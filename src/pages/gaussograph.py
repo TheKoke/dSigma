@@ -1,6 +1,7 @@
 import numpy
 
-from business.analysis import Spectrum, PeakAnalyzer, Gaussian
+from business.analysis import Spectrum, PeakAnalyzer
+from business.peaks import Gaussian, Lorentzian, PeakFunction, Trapezoid
 
 from matplotlib.figure import Figure
 from matplotlib.backend_bases import MouseEvent, MouseButton
@@ -45,10 +46,14 @@ class Ui_Gaussograph(object):
         self.info_label.setObjectName("info_label")
         self.info_label.setReadOnly(True)
         self.verticalLayout.addWidget(self.info_label)
-        self.approximate_button = QPushButton(self.services_layout)
-        self.approximate_button.setMinimumSize(QSize(0, 70))
-        self.approximate_button.setObjectName("approximate_button")
-        self.verticalLayout.addWidget(self.approximate_button)
+        self.approximate_gauss_button = QPushButton(self.services_layout)
+        self.approximate_gauss_button.setMinimumSize(QSize(0, 70))
+        self.approximate_gauss_button.setObjectName("approximate_gauss_button")
+        self.verticalLayout.addWidget(self.approximate_gauss_button)
+        self.approximate_lorentz_button = QPushButton(self.services_layout)
+        self.approximate_lorentz_button.setMinimumSize(QSize(0, 70))
+        self.approximate_lorentz_button.setObjectName("approximate_lorentz_button")
+        self.verticalLayout.addWidget(self.approximate_lorentz_button)
         self.trapezoid_button = QPushButton(self.services_layout)
         self.trapezoid_button.setMinimumSize(QSize(0, 70))
         self.trapezoid_button.setObjectName("trapezoid_button")
@@ -67,7 +72,8 @@ class Ui_Gaussograph(object):
         _translate = QCoreApplication.translate
         Gaussograph.setWindowTitle(_translate("Gaussograph", "dSigma — Gaussian Approximating Dialog"))
         self.info_label.setText(_translate("Gaussograph", ""))
-        self.approximate_button.setText(_translate("Gaussograph", "Approximate"))
+        self.approximate_gauss_button.setText(_translate("Gaussograph", "Approximate by Gauss"))
+        self.approximate_lorentz_button.setText(_translate("Gaussograph", "Approximate by Lorentz"))
         self.trapezoid_button.setText(_translate("Gaussograph", "Subtract trapezoid"))
         self.close_button.setText(_translate("Gaussograph", "Close"))
 
@@ -82,7 +88,7 @@ class Gaussograph(QMainWindow, Ui_Gaussograph):
         # DATA
         self.spectrum = spectrum
         self.pointers = pointers
-        self.gauss = None
+        self.peak: PeakFunction = None
         self.trapezoid = None
 
         # MATPLOTLIB INITIALIZING
@@ -96,7 +102,8 @@ class Gaussograph(QMainWindow, Ui_Gaussograph):
         layout.addWidget(self.view)
 
         # EVENT HANDLING
-        self.approximate_button.clicked.connect(self.approximate)
+        self.approximate_lorentz_button.clicked.connect(self.approximate_lorentz)
+        self.approximate_gauss_button.clicked.connect(self.approximate_gauss)
         self.trapezoid_button.clicked.connect(self.sub_trapezoid)
         self.close_button.clicked.connect(self.close)
 
@@ -109,7 +116,7 @@ class Gaussograph(QMainWindow, Ui_Gaussograph):
         if a0.key() == Qt.Key.Key_Comma:
             self.pointers[-1] = 0 if self.pointers[-1] - 1 <= 0 else self.pointers[-1] - 1
 
-            self.gauss = None
+            self.peak = None
             self.trapezoid = None
             self.draw()
             self.show_info()
@@ -117,7 +124,7 @@ class Gaussograph(QMainWindow, Ui_Gaussograph):
         if a0.key() == Qt.Key.Key_Period:
             self.pointers[-1] = len(self.spectrum.data) - 1 if self.pointers[-1] + 1 >= len(self.spectrum.data) else self.pointers[-1] + 1
 
-            self.gauss = None
+            self.peak = None
             self.trapezoid = None
             self.draw()
             self.show_info()
@@ -130,36 +137,43 @@ class Gaussograph(QMainWindow, Ui_Gaussograph):
                 self.pointers.pop(0)
                 self.pointers.append(int(round(event.xdata)))
 
-            self.gauss = None
+            self.peak = None
             self.trapezoid = None
             self.show_info()
             self.draw()
 
-    def approximate(self) -> None:
-        start = min(self.pointers)
-        stop = max(self.pointers)
+    def approximate_gauss(self) -> None:
+        if self.peak is None:
+            start = min(self.pointers)
+            stop = max(self.pointers)
 
-        xs = numpy.arange(start + 1, stop + 1)
-        ys = self.spectrum.data[start: stop]
-        area, dispersion, center = PeakAnalyzer.describe_gauss(xs, ys, (start + stop) / 2)
+            xs = numpy.arange(start + 1, stop + 1)
+            ys = self.spectrum.data[start: stop]
+            area, fwhm, center = PeakAnalyzer.describe_gauss(xs, ys, (start + stop) / 2)
 
-        self.gauss = Gaussian(center, dispersion, area)
-        self.trapezoid = None
-        self.show_info()
-        self.draw()
+            self.peak = Gaussian(center, fwhm, area)
+            self.trapezoid = None
+            self.show_info()
+            self.draw()
+
+    def approximate_lorentz(self) -> None:
+        if self.peak is None:
+            start = min(self.pointers)
+            stop = max(self.pointers)
+
+            xs = numpy.arange(start + 1, stop + 1)
+            ys = self.spectrum.data[start: stop]
 
     def sub_trapezoid(self) -> None:
-        if self.gauss is None or not self.trapezoid is None:
-            return
+        if self.peak is not None and self.trapezoid is None:
+            start = min(self.pointers)
+            stop = max(self.pointers)
 
-        start = min(self.pointers)
-        stop = max(self.pointers)
+            a, b = self.spectrum.data[start - 1], self.spectrum.data[stop - 1]
+            self.trapezoid = (stop - start) * (a + b) / 2
 
-        a, b = self.spectrum.data[start - 1], self.spectrum.data[stop - 1]
-        self.trapezoid = (stop - start) * (a + b) / 2
-
-        self.show_info()
-        self.draw()
+            self.show_info()
+            self.draw()
 
     def show_info(self) -> None:
         info = f'Left Marker:\n'
@@ -167,25 +181,25 @@ class Gaussograph(QMainWindow, Ui_Gaussograph):
         info += f'Right Marker:\n'
         info += f'Channel: {max(self.pointers)} Value : {self.spectrum.data[max(self.pointers) - 1]}\n\n'
 
-        if self.gauss == None:
+        if self.peak == None:
             self.info_label.setText(info)
             return
         
         linear = self.spectrum.data[min(self.pointers) - 1: max(self.pointers)].sum()
         center_max = min(self.pointers) + numpy.argmax(self.spectrum.data[min(self.pointers) - 1: max(self.pointers)])
 
-        info += f'Gaussian Center: {round(self.gauss.mu, 3)}\n'
+        info += f'Peak Center: {round(self.peak.mu, 3)}\n'
         info += f'Channel Center: {center_max}\n\n'
-        info += f'Area under peak: {round(self.gauss.area, 3)}\n'
+        info += f'Area under peak: {round(self.peak.area, 3)}\n'
         info += f'Linear sum: {linear}\n'
         if self.trapezoid is not None:
             info += f'Linear sum - Trapezoid: {linear - self.trapezoid}\n\n'
         else:
             info += '\n'
 
-        info += f'FWHM in channels: {round(self.gauss.fwhm, 3)}\n'
+        info += f'FWHM in channels: {round(self.peak.fwhm, 3)}\n'
         if self.spectrum.is_calibrated:
-            info += f'FWHM in energy view: {round(self.gauss.fwhm * self.spectrum.scale_value, 3)}\n'
+            info += f'FWHM in energy view: {round(self.peak.fwhm * self.spectrum.scale_value, 3)}\n'
 
         self.info_label.setText(info)
 
@@ -204,8 +218,8 @@ class Gaussograph(QMainWindow, Ui_Gaussograph):
         for i in range(len(self.pointers)):
             self.axes.plot([self.pointers[i], self.pointers[i]], [0, height], color='red')
 
-        if self.gauss is not None:
-            self.axes.plot(self.gauss.three_sigma(), self.gauss.function(), color='black')
+        if self.peak is not None:
+            self.axes.plot(self.peak.three_sigma(), self.peak.func(), color='black')
 
         if self.trapezoid is not None:
             point1 = min(self.pointers)

@@ -1,93 +1,7 @@
 import numpy
-
-from business.smoothing import QH353
 from business.electronics import Telescope
-from business.peaks import Gaussian, Lorentzian
+from business.peaks import PeakAnalyzer, PeakFunction
 from business.physics import Reaction, CrossSection, Struggling
-
-
-class PeakAnalyzer:
-    def __init__(self, spectrum: numpy.ndarray, mu_index: int) -> None:
-        self.spectrum = spectrum
-        self.smoothed = QH353().smooth(self.spectrum)
-        self.mu_index = mu_index
-
-    def approximate(self) -> Gaussian:
-        minimum_width = 3
-
-        start, stop = self.mu_index - minimum_width // 2 + 1, self.mu_index + minimum_width // 2 + 2
-        is_over_border = start < 0 or stop > len(self.spectrum)
-
-        chi_squares = []
-
-        while not self.is_increasing(chi_squares, minimum_width) and not is_over_border:
-            chi2 = self.fit_gauss(start, stop)
-
-            if not numpy.isnan(chi2) and not numpy.isinf(chi2):
-                chi_squares.append(chi2)
-
-            start -= 1
-            stop += 1
-            is_over_border = start < 0 or stop > len(self.spectrum)
-
-        if len(chi_squares) < minimum_width:
-            return Gaussian(self.mu_index, numpy.nan, numpy.nan)
-
-        start = start + minimum_width - 1
-        stop = stop - minimum_width
-
-        xdata = numpy.arange(start + 1, stop + 1)
-        ydata = self.spectrum[start: stop]
-
-        area, dispersion, center = self.describe_gauss(xdata, ydata, self.mu_index)
-        return Gaussian(center, dispersion, area)
-    
-    def fit_gauss(self, start: int, stop: int) -> float:
-        xdata = numpy.arange(start + 1, stop + 1)
-        ydata = self.smoothed[start: stop]
-
-        area, dispersion, center = PeakAnalyzer.describe_gauss(xdata, ydata, self.mu_index)
-        return PeakAnalyzer.chi_square(area, ydata.sum())
-    
-    def is_increasing(self, chi: list[float], minimum_width: int) -> bool:
-        if len(chi) <= minimum_width:
-            return False
-        
-        lasts = chi[-minimum_width:]
-        for i in range(len(lasts) - 1):
-            if lasts[i] > lasts[i + 1]:
-                return False
-
-        return True
-    
-    @staticmethod
-    def describe_gauss(xdata: numpy.ndarray, ydata: numpy.ndarray, center: int) -> tuple[float, float, float]:
-        weights = ydata / ydata.sum()
-        xdata = numpy.power(xdata - center, 2)
-        ydata[ydata == 0] = 1
-        ydata = numpy.log(ydata)
-
-        d_hat, a_hat = PeakAnalyzer.least_squares(xdata, ydata, weights)
-        dispersion = numpy.sqrt(-1 / (2 * d_hat))
-        area = numpy.exp(a_hat) * numpy.sqrt(2 * numpy.pi * dispersion ** 2)
-
-        return area, dispersion, center
-    
-    @staticmethod
-    def least_squares(x: numpy.ndarray, y: numpy.ndarray, w: numpy.ndarray) -> tuple[float, float]:
-        system = numpy.array([[1, (w * x).sum()], [(w * x).sum(), (w * numpy.power(x, 2)).sum()]])
-        righthand = numpy.array([(w * y).sum(), (w * x * y).sum()])
-
-        solutions = numpy.linalg.solve(system, righthand)
-        return (solutions[1], solutions[0])
-    
-    @staticmethod
-    def gauss(a: float, d: float, c: float, x: float) -> float:
-        return a / numpy.sqrt(2 * numpy.pi * (d ** 2)) * numpy.exp(- (x - c) ** 2 / (2 * (d ** 2)))
-
-    @staticmethod
-    def chi_square(theory: numpy.ndarray, experimenthal: numpy.ndarray) -> float:
-        return (experimenthal - theory) ** 2 / theory
 
 
 class Spectrum:
@@ -101,7 +15,7 @@ class Spectrum:
         self.__scale_shift = 0
         self.__scale_value = 0
 
-        self.__peaks: dict[float, Gaussian] = dict()
+        self.__peaks: dict[float, PeakFunction] = dict()
 
     @property
     def is_calibrated(self) -> bool:
@@ -158,7 +72,7 @@ class Spectrum:
         self.__peaks.clear()
 
     @property
-    def peaks(self) -> dict[float, Gaussian]:
+    def peaks(self) -> dict[float, PeakFunction]:
         return self.__peaks.copy()
     
     def to_workbook(self) -> str:
@@ -174,7 +88,7 @@ class Spectrum:
 
         return report
     
-    def add_peak(self, state: float, peak: Gaussian) -> None:
+    def add_peak(self, state: float, peak: PeakFunction) -> None:
         if not self.is_calibrated:
             raise ValueError('Spectrum must be calibrated before approximating peaks.')
         
@@ -204,14 +118,14 @@ class SpectrumAnalyzer:
 
         found = self.find_peaks(index)
         for i in range(len(found)):
-            gauss = found[i].approximate()
-            if numpy.isnan(gauss.area) or numpy.isnan(gauss.fwhm):
+            peak = found[i].approximate()
+            if numpy.isnan(peak.area) or numpy.isnan(peak.fwhm):
                 continue
 
-            if numpy.isinf(gauss.area) or numpy.isinf(gauss.fwhm):
+            if numpy.isinf(peak.area) or numpy.isinf(peak.fwhm):
                 continue
 
-            spectrum.add_peak(states[i], gauss)
+            spectrum.add_peak(states[i], peak)
             
     def find_peaks(self, index: int) -> list[PeakAnalyzer]:
         spectrum = self.spectrums[index]

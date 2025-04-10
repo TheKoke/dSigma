@@ -1,30 +1,58 @@
+from __future__ import annotations
+
 import numpy
+from abc import ABC, abstractmethod
+from business.smoothing import QH353
 
 
-class Gaussian:
-    def __init__(self, mu: float, sigma: float, area: float) -> None:
+class PeakFunction(ABC):
+    def __init__(self, mu: float, fwhm: float, area: float) -> None:
         self.__mu = mu
-        self.__dispersion = sigma
+        self.__fwhm = fwhm
         self.__area = area
 
     @property
     def mu(self) -> float:
+        '''
+        Center of peak.
+        '''
         return self.__mu
     
     @property
+    def fwhm(self) -> float:
+        '''
+        Full-width on half maximum of peak.
+        '''
+        return self.__fwhm
+    
+    @property
     def dispersion(self) -> float:
-        return self.__dispersion
+        '''
+        Dispersion of peak.
+        '''
+        return self.__fwhm / (2 * numpy.sqrt(2 * numpy.log(2)))
     
     @property
     def area(self) -> float:
+        '''
+        Area under peak.
+        '''
         return self.__area
-    
-    @property
-    def fwhm(self) -> float:
-        return self.__dispersion * (2 * numpy.sqrt(2 * numpy.log(2)))
     
     def to_workbook(self) -> str:
         return f'Peak on mu=({round(self.mu, 3)}) with fwhm=({round(self.fwhm, 3)}) and area under peak=({round(self.area, 3)})'
+    
+    def three_sigma(self) -> numpy.ndarray:
+        return numpy.linspace(-3 * self.dispersion + self.__mu, 3 * self.dispersion + self.__mu, 100)
+
+    @abstractmethod
+    def func(self, x: numpy.ndarray = None) -> numpy.ndarray:
+        pass
+
+
+class Gaussian(PeakFunction):
+    def __init__(self, mu: float, fwhm: float, area: float) -> None:
+        super().__init__(mu, fwhm, area)
 
     def __str__(self) -> str:
         func = 'G(x) = '
@@ -32,44 +60,119 @@ class Gaussian:
         func += f'exp(-(x - {numpy.round(self.mu, 3)})^2 / 2{numpy.round(self.dispersion, 3)})'
 
         return func
-
-    def three_sigma(self) -> numpy.ndarray:
-        return numpy.linspace(-3 * self.__dispersion + self.__mu, 3 * self.__dispersion + self.__mu, 100)
     
-    def function(self) -> numpy.ndarray:
-        constant = self.__area / numpy.sqrt(2 * numpy.pi * numpy.power(self.__dispersion, 2))
-        array = numpy.exp(-numpy.power(self.three_sigma() - self.__mu, 2) / (2 * numpy.power(self.__dispersion, 2)))
+    def func(self, x: numpy.ndarray = None) -> numpy.ndarray:
+        if x is None:
+            x = self.three_sigma()
+
+        constant = 2 * self.__area * numpy.sqrt(numpy.log(2) / (numpy.pi * numpy.power(self.__fwhm, 2)))
+        array = numpy.exp(-numpy.power(x - self.__mu, 2) / (2 * numpy.power(self.dispersion, 2)))
         return constant * array
     
 
-class Lorentzian:
+class Lorentzian(PeakFunction):
     def __init__(self, mu: float, fwhm: float, area: float) -> None:
-        self.mu = mu
-        self.fwhm = fwhm
-        self.area = area
-
-    def to_workbook(self) -> str:
-        return f'Peak on mu=({round(self.mu, 3)}) with fwhm=({round(self.fwhm, 3)}) and area under peak=({round(self.area, 3)})'
+        super().__init__(mu, fwhm, area)
 
     def __str__(self) -> str:
         func = 'L(x) = '
-        func += f'2 * {round(self.area, 3)} / pi'
-        func += f'* [{numpy.round(self.fwhm, 3)} / ((x - {round(self.mu)})^2 + {round(self.fwhm, 3)}^2)]'
+        func += f'2 * {round(self.__area, 3)} / pi'
+        func += f'* [{numpy.round(self.__fwhm, 3)} / ((x - {round(self.__mu)})^2 + {round(self.__fwhm, 3)}^2)]'
 
         return func
     
-    def dispersion(self) -> float:
-        return self.fwhm / (2 * numpy.sqrt(2 * numpy.log(2)))
-    
-    def three_sigma(self) -> numpy.ndarray:
-        sigma = self.dispersion()
-        return numpy.linspace(-5 * sigma + self.mu, 5 * sigma + self.mu, 50)
-    
-    def function(self) -> numpy.ndarray:
-        constant = 2 * self.area / numpy.pi
-        brackets = self.fwhm / (4 * (self.three_sigma() - self.mu) ** 2 + self.fwhm ** 2)
+    def func(self, x: numpy.ndarray = None) -> numpy.ndarray:
+        if x is None:
+            x = self.three_sigma()
 
+        constant = 2 * self.__area / numpy.pi
+        brackets = self.__fwhm / (4 * (self.three_sigma() - self.__mu) ** 2 + self.__fwhm ** 2)
         return constant * brackets
+
+
+class Trapezoid:
+    def __init__(self):
+        pass
+
+
+class PeakAnalyzer:
+    def __init__(self, spectrum: numpy.ndarray, mu_index: int) -> None:
+        self.spectrum = spectrum
+        self.smoothed = QH353().smooth(self.spectrum)
+        self.mu_index = mu_index
+
+    def approximate(self) -> PeakFunction:
+        minimum_width = 3
+
+        start, stop = self.mu_index - minimum_width // 2 + 1, self.mu_index + minimum_width // 2 + 2
+        is_over_border = start < 0 or stop > len(self.spectrum)
+
+        chi_squares = []
+
+        while not self.is_increasing(chi_squares, minimum_width) and not is_over_border:
+            chi2 = self.fit_gauss(start, stop)
+
+            if not numpy.isnan(chi2) and not numpy.isinf(chi2):
+                chi_squares.append(chi2)
+
+            start -= 1
+            stop += 1
+            is_over_border = start < 0 or stop > len(self.spectrum)
+
+        if len(chi_squares) < minimum_width:
+            return PeakFunction(self.mu_index, numpy.nan, numpy.nan)
+
+        start = start + minimum_width - 1
+        stop = stop - minimum_width
+
+        xdata = numpy.arange(start + 1, stop + 1)
+        ydata = self.spectrum[start: stop]
+
+        area, dispersion, center = self.describe_gauss(xdata, ydata, self.mu_index)
+        return PeakFunction(center, dispersion, area)
+    
+    def fit_gauss(self, start: int, stop: int) -> float:
+        xdata = numpy.arange(start + 1, stop + 1)
+        ydata = self.smoothed[start: stop]
+
+        area, dispersion, center = PeakAnalyzer.describe_gauss(xdata, ydata, self.mu_index)
+        return PeakAnalyzer.chi_square(area, ydata.sum())
+    
+    def is_increasing(self, chi: list[float], minimum_width: int) -> bool:
+        if len(chi) <= minimum_width:
+            return False
+        
+        lasts = chi[-minimum_width:]
+        for i in range(len(lasts) - 1):
+            if lasts[i] > lasts[i + 1]:
+                return False
+
+        return True
+    
+    @staticmethod
+    def describe_gauss(xdata: numpy.ndarray, ydata: numpy.ndarray, center: int) -> tuple[float, float, float]:
+        weights = ydata / ydata.sum()
+        xdata = numpy.power(xdata - center, 2)
+        ydata[ydata == 0] = 1
+        ydata = numpy.log(ydata)
+
+        d_hat, a_hat = PeakAnalyzer.least_squares(xdata, ydata, weights)
+        dispersion = numpy.sqrt(-1 / (2 * d_hat))
+        area = numpy.exp(a_hat) * numpy.sqrt(2 * numpy.pi * dispersion ** 2)
+
+        return area, dispersion, center
+    
+    @staticmethod
+    def least_squares(x: numpy.ndarray, y: numpy.ndarray, w: numpy.ndarray) -> tuple[float, float]:
+        system = numpy.array([[1, (w * x).sum()], [(w * x).sum(), (w * numpy.power(x, 2)).sum()]])
+        righthand = numpy.array([(w * y).sum(), (w * x * y).sum()])
+
+        solutions = numpy.linalg.solve(system, righthand)
+        return (solutions[1], solutions[0])
+
+    @staticmethod
+    def chi_square(theory: numpy.ndarray, experimenthal: numpy.ndarray) -> float:
+        return (experimenthal - theory) ** 2 / theory
 
 
 if __name__ == '__main__':

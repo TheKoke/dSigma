@@ -2,9 +2,10 @@ import struct
 import numpy
 
 from business.locus import Locus
-from business.analysis import Spectrum, Gaussian
+from business.analysis import Spectrum
 from business.electronics import Telescope, Detector
 from business.physics import Nuclei, PhysicalExperiment
+from business.peaks import PeakFunction, Gaussian, Lorentzian
 
 
 # Physics area
@@ -177,18 +178,20 @@ class Decoder:
 
         return collected
     
-    def __gather_peak(self, offset: int) -> tuple[float, Gaussian]:
+    def __gather_peak(self, offset: int) -> tuple[float, PeakFunction]:
         state = struct.unpack_from('f', self.buffer, offset)[0]
         offset += 4
 
         center = struct.unpack_from('f', self.buffer, offset)[0]
         offset += 4
 
-        dispersion = struct.unpack_from('f', self.buffer, offset)[0]
+        fwhm= struct.unpack_from('f', self.buffer, offset)[0]
         offset += 4
 
         area = struct.unpack_from('f', self.buffer, offset)[0]
-        return (round(state, 3), Gaussian(center, dispersion, area))
+        offset += 1
+
+        return (round(state, 3), Gaussian(center, fwhm, area) if offset >= len(self.buffer) else Lorentzian(center, fwhm, area))
     
 
 if __name__ == '__main__':
