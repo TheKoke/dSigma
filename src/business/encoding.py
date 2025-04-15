@@ -2,6 +2,7 @@ import os
 import struct
 
 from business.matrix import Matrix
+from business.peaks import Gaussian
 
 
 # Physics area
@@ -164,7 +165,9 @@ class Encoder:
                 offset += 4
 
                 struct.pack_into('f', buffer, offset, spectres[nuclei].peaks[state].area)
-                offset += 4
+                offset += 1
+
+                struct.pack_into('b', buffer, offset, 0 if isinstance(spectres[nuclei].peaks[state], Gaussian) else 1)
 
     def generate_file_name(self) -> str:
         beam = self.matrix.experiment.beam
@@ -181,7 +184,7 @@ class Encoder:
         matrix_area_size = 4 + 4 * len(self.matrix.numbers.flat)
 
         locuses_area_size = sum([6 + 4 * len(self.matrix.locuses[n].points) for n in self.matrix.locuses]) + 2
-        spectrums_area_size = sum([12 + 16 * len(self.matrix.spectrums[n].peaks) for n in self.matrix.spectrums])
+        spectrums_area_size = sum([12 + 17 * len(self.matrix.spectrums[n].peaks) for n in self.matrix.spectrums])
 
         return physical_area_size + electronics_area_size + \
                 details_area_size + matrix_area_size + \

@@ -171,8 +171,8 @@ class Decoder:
 
             for _ in range(peaks_count):
                 gathered = self.__gather_peak(offset)
-                current_spectrum.add_peak(gathered[0], gathered[1])
-                offset += 16
+                current_spectrum.add_peak(*gathered)
+                offset += 17
             
             collected[current_nuclei] = current_spectrum
 
@@ -185,13 +185,14 @@ class Decoder:
         center = struct.unpack_from('f', self.buffer, offset)[0]
         offset += 4
 
-        fwhm= struct.unpack_from('f', self.buffer, offset)[0]
+        fwhm = struct.unpack_from('f', self.buffer, offset)[0]
         offset += 4
 
         area = struct.unpack_from('f', self.buffer, offset)[0]
         offset += 1
 
-        return (round(state, 3), Gaussian(center, fwhm, area) if offset >= len(self.buffer) else Lorentzian(center, fwhm, area))
+        gauss_or_lorentz = struct.unpack_from('b', self.buffer, offset)[0]
+        return (round(state, 3), Gaussian(center, fwhm, area) if gauss_or_lorentz == 0 else Lorentzian(center, fwhm, area))
     
 
 if __name__ == '__main__':

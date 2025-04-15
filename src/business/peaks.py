@@ -66,7 +66,7 @@ class Gaussian(PeakFunction):
             x = self.three_sigma()
 
         constant = 2 * self.__area * numpy.sqrt(numpy.log(2) / (numpy.pi * numpy.power(self.__fwhm, 2)))
-        array = numpy.exp(-numpy.power(x - self.__mu, 2) / (2 * numpy.power(self.dispersion, 2)))
+        array = numpy.exp(-4 * numpy.log(2) * numpy.power(x - self.__mu, 2) / (2 * numpy.power(self.__fwhm, 2)))
         return constant * array
     
 
@@ -86,7 +86,7 @@ class Lorentzian(PeakFunction):
             x = self.three_sigma()
 
         constant = 2 * self.__area / numpy.pi
-        brackets = self.__fwhm / (4 * (self.three_sigma() - self.__mu) ** 2 + self.__fwhm ** 2)
+        brackets = self.__fwhm / ((x - self.__mu) ** 2 + 4 * self.__fwhm ** 2)
         return constant * brackets
 
 
@@ -97,9 +97,9 @@ class Trapezoid:
 
 class PeakAnalyzer:
     def __init__(self, spectrum: numpy.ndarray, mu_index: int) -> None:
+        self.mu_index = mu_index
         self.spectrum = spectrum
         self.smoothed = QH353().smooth(self.spectrum)
-        self.mu_index = mu_index
 
     def approximate(self) -> PeakFunction:
         minimum_width = 3
@@ -151,16 +151,25 @@ class PeakAnalyzer:
     
     @staticmethod
     def describe_gauss(xdata: numpy.ndarray, ydata: numpy.ndarray, center: int) -> tuple[float, float, float]:
-        weights = ydata / ydata.sum()
         xdata = numpy.power(xdata - center, 2)
         ydata[ydata == 0] = 1
         ydata = numpy.log(ydata)
+        weights = ydata / ydata.sum()
 
-        d_hat, a_hat = PeakAnalyzer.least_squares(xdata, ydata, weights)
-        dispersion = numpy.sqrt(-1 / (2 * d_hat))
-        area = numpy.exp(a_hat) * numpy.sqrt(2 * numpy.pi * dispersion ** 2)
+        f_hat, a_hat = PeakAnalyzer.least_squares(xdata, ydata, weights)
 
-        return area, dispersion, center
+        fsquare = -4 * numpy.log(2) / f_hat
+        if fsquare < 0:
+            return (numpy.nan, numpy.nan, numpy.nan)
+        
+        fwhm = numpy.sqrt(fsquare)
+        area = numpy.exp(a_hat) / 2 * numpy.sqrt(numpy.pi * fsquare / numpy.log(2))
+
+        return area, fwhm, center
+    
+    @staticmethod
+    def describe_lorentz(xdata: numpy.ndarray, ydata: numpy.ndarray, center: int) -> tuple[float, float, float]:
+        pass
     
     @staticmethod
     def least_squares(x: numpy.ndarray, y: numpy.ndarray, w: numpy.ndarray) -> tuple[float, float]:
