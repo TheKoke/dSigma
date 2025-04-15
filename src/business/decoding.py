@@ -2,9 +2,10 @@ import struct
 import numpy
 
 from business.locus import Locus
-from business.analysis import Spectrum, Gaussian
+from business.analysis import Spectrum
 from business.electronics import Telescope, Detector
 from business.physics import Nuclei, PhysicalExperiment
+from business.peaks import PeakFunction, Gaussian, Lorentzian
 
 
 # Physics area
@@ -170,25 +171,28 @@ class Decoder:
 
             for _ in range(peaks_count):
                 gathered = self.__gather_peak(offset)
-                current_spectrum.add_peak(gathered[0], gathered[1])
-                offset += 16
+                current_spectrum.add_peak(*gathered)
+                offset += 17
             
             collected[current_nuclei] = current_spectrum
 
         return collected
     
-    def __gather_peak(self, offset: int) -> tuple[float, Gaussian]:
+    def __gather_peak(self, offset: int) -> tuple[float, PeakFunction]:
         state = struct.unpack_from('f', self.buffer, offset)[0]
         offset += 4
 
         center = struct.unpack_from('f', self.buffer, offset)[0]
         offset += 4
 
-        dispersion = struct.unpack_from('f', self.buffer, offset)[0]
+        fwhm = struct.unpack_from('f', self.buffer, offset)[0]
         offset += 4
 
         area = struct.unpack_from('f', self.buffer, offset)[0]
-        return (round(state, 3), Gaussian(center, dispersion, area))
+        offset += 1
+
+        gauss_or_lorentz = struct.unpack_from('b', self.buffer, offset)[0]
+        return (round(state, 3), Gaussian(center, fwhm, area) if gauss_or_lorentz == 0 else Lorentzian(center, fwhm, area))
     
 
 if __name__ == '__main__':

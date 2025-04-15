@@ -1,22 +1,5 @@
 import numpy
-
-from auto.smoothing import QH353
-
-
-def gauss(x: float, a: float, d: float, m: float) -> float:
-    return a / numpy.sqrt(2 * numpy.pi * d ** 2) * numpy.exp(-(x - m) ** 2 / (2 * d ** 2))
-
-
-def least_squares(x: numpy.ndarray, y: numpy.ndarray, w: numpy.ndarray) -> tuple[float, float]:
-    system = numpy.array([[1, (w * x).sum()], [(w * x).sum(), (w * numpy.power(x, 2)).sum()]])
-    righthand = numpy.array([(w * y).sum(), (w * x * y).sum()])
-
-    solutions = numpy.linalg.solve(system, righthand)
-    return (solutions[1], solutions[0])
-
-
-def collective_chi_square(theory: numpy.ndarray, experimenthal: numpy.ndarray) -> float:
-    return ((experimenthal - theory) ** 2).sum()
+from business.peaks import PeakAnalyzer, Gaussian
     
 
 class Pinnacle:
@@ -47,13 +30,12 @@ class Pinnacle:
 class Beagle:
     def __init__(self, spectrum: numpy.ndarray) -> None:
         self.spectrum = spectrum
-        self.smoothed = QH353().smooth(spectrum)
 
     def peaks(self) -> list[Pinnacle]:
         pinnacles = []
         self.clear_background()
 
-        copy = self.smoothed.copy()
+        copy = self.spectrum.copy()
 
         iters = 0
         while len(copy[copy != 0]) != 0 and iters < 5:
@@ -72,11 +54,11 @@ class Beagle:
         return pinnacles
     
     def clear_background(self) -> numpy.ndarray:
-        self.smoothed[:5] = 0
-        self.smoothed[-5:] = 0
-        self.smoothed[self.smoothed <= 2] = 0
+        self.spectrum[:5] = 0
+        self.spectrum[-5:] = 0
+        self.spectrum[self.spectrum <= 2] = 0
 
-        return self.smoothed
+        return self.spectrum
 
     def handle_peak(self, peak: int) -> Pinnacle:
         minimum_width = 3
@@ -86,7 +68,7 @@ class Beagle:
 
         chi_squares = []
 
-        while not self.is_increasing(chi_squares, minimum_width) and not is_over_border:
+        while not PeakAnalyzer.is_increasing(chi_squares, minimum_width) and not is_over_border:
             chi2 = self.fit_gauss(peak, start, stop)
             chi_squares.append(chi2)
 
@@ -104,38 +86,14 @@ class Beagle:
     
     def fit_gauss(self, peak: int, start: int, stop: int) -> float:
         xdata = numpy.arange(start + 1, stop + 1)
-        ydata = self.smoothed[start: stop]
-
-        area, dispersion, center = self.describe_gauss(xdata, ydata)
-        center += peak
-
-        y_hat = gauss(area, dispersion, center, xdata)
-        return collective_chi_square(y_hat, ydata)
-    
-    def describe_gauss(self, xdata: numpy.ndarray, ydata: numpy.ndarray) -> tuple[float, float, float]:
-        weights = ydata / ydata.sum()
-        x_hat = numpy.power(xdata - xdata[len(xdata) // 2], 2)
-        y_hat = ydata.copy()
-        y_hat[y_hat == 0] = 1
-        y_hat = numpy.log(y_hat)
-
-        d_hat, a_hat = least_squares(x_hat, y_hat, weights)
-        dispersion = numpy.sqrt(-1 / (2 * d_hat))
-        area = numpy.exp(a_hat) * numpy.sqrt(2 * numpy.pi * dispersion ** 2)
+        ydata = self.spectrum[start: stop]
         center = xdata[len(xdata) // 2]
 
-        return area, dispersion, center
-    
-    def is_increasing(self, chi: list[float], minimum_width: int) -> bool:
-        if len(chi) <= minimum_width:
-            return False
-        
-        lasts = chi[-minimum_width:]
-        for i in range(len(lasts) - 1):
-            if lasts[i] > lasts[i + 1]:
-                return False
+        area, fwhm, center = PeakAnalyzer.describe_gauss(xdata, ydata, center)
+        center += peak
 
-        return True
+        y_hat = Gaussian(center, fwhm, area).func(xdata)
+        return PeakAnalyzer.chi_square(y_hat, ydata)
 
 
 if __name__ == '__main__':

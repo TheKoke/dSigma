@@ -46,6 +46,7 @@ File Description for binary coding of dSigma file-format (.ds).
 			6.1.6.2 float (4 bytes) Peak_center_channel.
 			6.1.6.3 float (4 bytes) Peak_fwhm_in_channels.
 			6.1.6.4 float (4 bytes) Peak_under_area.
+			6.1.6.5 byte (1 byte) Gauss_or_Lorentz.
 
 /Final of addressing/
 	

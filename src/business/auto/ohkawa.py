@@ -14,12 +14,11 @@ class Identifier:
 
     @property
     def processed_matrix(self) -> numpy.ndarray:
+        '''
+        Densing matrix with neighbours that zero encounting limit.
+        '''
         if len(self._processed) == 0:
-            # Double densed with first step zero encounting limiting.
-            one_densed = DensityMatrix(self.matrix, zero_encount_limit=0)
-            two_densed = DensityMatrix(one_densed.density)
-            self._processed = two_densed.density.copy()
-
+            self._processed = DensityMatrix(self.matrix, zero_encount_limit=0).density_matrix.copy()
             mean = self._processed.sum() / (len(self.processed_matrix) ** 2)
             self._processed[self._processed < mean] = 0
 
@@ -27,6 +26,10 @@ class Identifier:
     
     @property
     def order(self) -> int:
+        '''
+        Matrix dE-dimension order\n
+        1024 -> 2^10 -> 10.
+        '''
         bins = len(self.matrix)
         n = 0
         while bins > 0:
@@ -81,7 +84,11 @@ class Identifier:
         return families
     
     def gamma(self, e_channel: int, de_channel: int) -> float:
-        return 1.745 * (0.0003 * e_channel + de_channel) * (e_channel + 0.472 * de_channel) ** (0.73)
+        '''
+        Ohkawa Identifier γ with another coefficients.\n
+        Paper: Ohkawa, S., & Husimi, K. (1974). Nuclear Instruments and Methods, 116(1), 61-69.
+        '''
+        return 14.5 * (0.002 * e_channel + de_channel) * (2 * e_channel + 0.4 * de_channel) ** (0.85)
     
     def is_new_locus(self, families: list[float], gamma: float) -> bool:
         pretend_exponent = int(numpy.log10(gamma))
@@ -92,8 +99,8 @@ class Identifier:
             current_exponent = int(numpy.log10(families[i]))
             current_mantissa = int(families[i] / numpy.power(10, current_exponent))
 
-            is_close = current_exponent == pretend_exponent and abs(current_mantissa - pretend_mantissa) <= 1
-            is_close = is_close and gamma <= families[i]
+            is_close = current_exponent == pretend_exponent and abs(current_mantissa - pretend_mantissa) < 1
+            is_close = is_close and current_mantissa >= pretend_mantissa
             flag = flag and not is_close
 
         return flag

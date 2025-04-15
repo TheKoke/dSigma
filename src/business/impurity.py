@@ -1,4 +1,4 @@
-import numpy as np
+import numpy
 
 from business.analysis import Spectrum
 from business.physics import Reaction, Nuclei
@@ -13,7 +13,7 @@ class ImpurityMaster:
     def handle_impurities(self) -> list[Spectrum]:
         pass
 
-    def define_propertions(self) -> np.ndarray:
+    def define_proportions(self) -> numpy.ndarray:
         if self.spectres[0].reaction == self.elastic[0].reaction:
             return self.spectres[0].reaction.rutherford_scattering()
 
