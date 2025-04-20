@@ -2,7 +2,6 @@ import sys
 import pyuac
 
 from PyQt5.QtWidgets import QApplication
-
 from pages.welcomer import WelcomeWindow
 
 
