@@ -89,7 +89,7 @@ class Gaussograph(QMainWindow, Ui_Gaussograph):
         self.spectrum = spectrum
         self.pointers = pointers
         self.peak: PeakFunction = None
-        self.trapezoid = None
+        self.trapezoid: Trapezoid = None
 
         # MATPLOTLIB INITIALIZING
         layout = QVBoxLayout(self.matplotlib_layout)
@@ -163,6 +163,12 @@ class Gaussograph(QMainWindow, Ui_Gaussograph):
 
             xs = numpy.arange(start + 1, stop + 1)
             ys = self.spectrum.data[start: stop]
+            area, fwhm, center = PeakAnalyzer.describe_lorentz(xs, ys, (start + stop) / 2)
+
+            self.peak = Lorentzian(center, fwhm, area)
+            self.trapezoid = None
+            self.show_info()
+            self.draw()
 
     def sub_trapezoid(self) -> None:
         if self.peak is not None and self.trapezoid is None:
@@ -170,7 +176,7 @@ class Gaussograph(QMainWindow, Ui_Gaussograph):
             stop = max(self.pointers)
 
             a, b = self.spectrum.data[start - 1], self.spectrum.data[stop - 1]
-            self.trapezoid = (stop - start) * (a + b) / 2
+            self.trapezoid = Trapezoid(a, b, stop - start)
 
             self.show_info()
             self.draw()
@@ -181,7 +187,7 @@ class Gaussograph(QMainWindow, Ui_Gaussograph):
         info += f'Right Marker:\n'
         info += f'Channel: {max(self.pointers)} Value : {self.spectrum.data[max(self.pointers) - 1]}\n\n'
 
-        if self.peak == None:
+        if self.peak is None:
             self.info_label.setText(info)
             return
         
@@ -193,7 +199,7 @@ class Gaussograph(QMainWindow, Ui_Gaussograph):
         info += f'Area under peak: {round(self.peak.area, 3)}\n'
         info += f'Linear sum: {linear}\n'
         if self.trapezoid is not None:
-            info += f'Linear sum - Trapezoid: {linear - self.trapezoid}\n\n'
+            info += f'Linear sum - Trapezoid: {linear - self.trapezoid.area()}\n\n'
         else:
             info += '\n'
 
