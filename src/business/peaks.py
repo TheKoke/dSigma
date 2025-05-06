@@ -186,15 +186,15 @@ class PeakAnalyzer:
     
     @staticmethod
     def describe_lorentz(xdata: numpy.ndarray, ydata: numpy.ndarray, center: int) -> tuple[float, float, float]:
-        xdata = numpy.power(xdata - center, 2)
-        ydata[ydata == 0] = 0.001
+        xdata = 4 * numpy.power(xdata - center, 2)
+        ydata[ydata == 0] = 1
         ydata = 1 / ydata
 
         a_hat, b_hat = PeakAnalyzer.least_squares(xdata, ydata)
-        if (a_hat <= 0 and b_hat >= 0) or (a_hat >= 0 and b_hat <= 0):
+        if not (a_hat > 0 and b_hat > 0):
             return (numpy.nan, numpy.nan, numpy.nan)
         
-        fwhm = numpy.sqrt(4 * b_hat / a_hat)
+        fwhm = numpy.sqrt(b_hat / a_hat)
         area = numpy.pi * fwhm / (2 * b_hat)
 
         return area, fwhm, center
