@@ -1,5 +1,5 @@
 import os
-from business.matrix import Decoder
+from business.decoding import Decoder
 
 
 class Sleuth:

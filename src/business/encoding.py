@@ -85,12 +85,12 @@ class Encoder:
     def write_details(self, buffer: bytearray) -> None:
         integrator_count = self.matrix.integrator_counts
         integrator_constant = self.matrix.integrator_constant
-        congruence = int(self.matrix.misscalculation * self.matrix.numbers.sum())
+        coincidence = int(self.matrix.misscalculation * self.matrix.numbers.sum())
         radius = self.matrix.electronics.collimator_radius
         distance = self.matrix.electronics.distance
 
         struct.pack_into('I', buffer, INTEGRATOR_COUNTS, integrator_count)
-        struct.pack_into('I', buffer, CONGRUENCE, congruence)
+        struct.pack_into('I', buffer, CONGRUENCE, coincidence)
         struct.pack_into('f', buffer, INTEGRATOR_CONSTANT, integrator_constant)
 
         struct.pack_into('f', buffer, COLLIMATOR_RADIUS, radius)

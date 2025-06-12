@@ -1,5 +1,4 @@
-from PyQt5 import QtGui
-from business.analysis import Spectrum, SpectrumAnalyzer
+from business.analysis import SpectrumAnalyzer
 
 from matplotlib.figure import Figure
 from matplotlib.backend_bases import MouseEvent, MouseButton

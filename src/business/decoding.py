@@ -24,7 +24,7 @@ DE_DETECTOR_MADEOF       = 28
 DE_DETECTOR_RESOLUTION   = 32
 # Cross-section valuable, details area
 INTEGRATOR_COUNTS        = 36
-CONGRUENCE               = 40
+COINCIDENCE              = 40
 INTEGRATOR_CONSTANT      = 44
 COLLIMATOR_RADIUS        = 48
 TARGET_DETECTOR_DISTANCE = 52
@@ -98,10 +98,10 @@ class Decoder:
         return struct.unpack_from('f', self.buffer, INTEGRATOR_CONSTANT)[0]
 
     def get_misscalculation(self) -> float:
-        congruence = struct.unpack_from('I', self.buffer, CONGRUENCE)[0]
+        coincidence = struct.unpack_from('I', self.buffer, COINCIDENCE)[0]
         matrix = self.get_matrix()
 
-        return congruence / matrix.sum()
+        return coincidence / matrix.sum()
 
     def get_matrix(self) -> numpy.ndarray:
         e_size, de_size = self.matrix_sizes

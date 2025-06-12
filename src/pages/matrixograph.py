@@ -2,9 +2,10 @@ import os
 import numpy
 import imageio
 
+from business.matrix import Matrix
 from business.physics import Nuclei
 from business.encoding import Encoder
-from business.matrix import Matrix, MatrixAnalyzer
+from business.matrixcontrol import MatrixAnalyzer
 
 from pages.cswindow import CSWindow
 from pages.filexplorer import Sleuth

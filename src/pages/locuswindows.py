@@ -1,12 +1,11 @@
 from business.physics import Nuclei
 
-from PyQt5.QtGui import QFont, QIcon, QPalette, QBrush, QColor
+from PyQt5.QtGui import QFont, QIcon
 from PyQt5.QtCore import Qt, QSize, QMetaObject, QCoreApplication
 from PyQt5.QtWidgets import (
-    QWidget, QMainWindow, QDialog,
-    QVBoxLayout, QHBoxLayout, QComboBox, 
-    QPushButton, QFrame, QLabel,
-    QSpinBox, QLineEdit, QFileDialog
+    QDialog, QVBoxLayout, 
+    QHBoxLayout, QPushButton, 
+    QLabel, QSpinBox, QLineEdit
 )
 
 
@@ -36,10 +35,7 @@ class Ui_NucleiWindow(object):
         self.nuclon_info = QLabel(ConfirmWindow)
         self.nuclon_info.setMaximumSize(QSize(20, 40))
         font = QFont()
-        font.setFamily("Bahnschrift SemiBold")
         font.setPointSize(16)
-        font.setBold(True)
-        font.setWeight(75)
         self.nuclon_info.setFont(font)
         self.nuclon_info.setObjectName("nuclon_info")
         self.nuclon_layout.addWidget(self.nuclon_info)
@@ -60,10 +56,7 @@ class Ui_NucleiWindow(object):
         self.charge_info = QLabel(ConfirmWindow)
         self.charge_info.setMaximumSize(QSize(20, 40))
         font = QFont()
-        font.setFamily("Bahnschrift SemiBold")
         font.setPointSize(16)
-        font.setBold(True)
-        font.setWeight(75)
         self.charge_info.setFont(font)
         self.charge_info.setObjectName("charge_info")
         self.charge_layout.addWidget(self.charge_info)
@@ -80,10 +73,7 @@ class Ui_NucleiWindow(object):
         self.verticalLayout.addLayout(self.boxes_layout)
         self.nuclei_name = QLineEdit(ConfirmWindow)
         font = QFont()
-        font.setFamily("Bahnschrift SemiBold")
         font.setPointSize(14)
-        font.setBold(True)
-        font.setWeight(75)
         self.nuclei_name.setFont(font)
         self.nuclei_name.setAlignment(Qt.AlignCenter)
         self.nuclei_name.setReadOnly(True)
